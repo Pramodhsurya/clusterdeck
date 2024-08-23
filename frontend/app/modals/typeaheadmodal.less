@@ -1,0 +1,83 @@
+// Copyright 2024, Command Line Inc.
+// SPDX-License-Identifier: Apache-2.0
+
+.type-ahead-modal-wrapper {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: var(--zindex-modal-wrapper);
+
+    .type-ahead-modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: rgba(21, 23, 21, 0.7);
+        z-index: var(--zindex-modal-backdrop);
+    }
+}
+
+.type-ahead-modal {
+    position: relative;
+    z-index: var(--zindex-modal);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 16px;
+    border-radius: 8px;
+    border: 0.5px solid var(--modal-border-color);
+    background: var(--modal-bg-color);
+    box-shadow: 0px 8px 32px 0px rgba(0, 0, 0, 0.25);
+
+    .modal-close-btn {
+        position: absolute;
+        right: 8px;
+        top: 8px;
+        padding: 8px 12px;
+
+        i {
+            font-size: 18px;
+        }
+    }
+
+    .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        min-width: 390px;
+
+        .label {
+            opacity: 0.5;
+            font-size: 13px;
+            white-space: nowrap;
+        }
+
+        input {
+            width: 100%;
+            flex-shrink: 0;
+        }
+
+        .suggestions-wrapper {
+            width: 100%;
+            overflow-y: auto;
+            overflow-x: hidden;
+
+            .suggestion {
+                width: 100%;
+                cursor: pointer;
+                padding: 7px 10px;
+
+                &:hover {
+                    background-color: var(--highlight-bg-color);
+                    border-radius: 4px;
+                }
+            }
+        }
+    }
+}
