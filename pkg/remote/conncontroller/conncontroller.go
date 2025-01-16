@@ -308,12 +308,13 @@ func (conn *SSHConn) StartConnServer(ctx context.Context, afterUpdate bool) (boo
 	if err != nil {
 		return false, "", "", fmt.Errorf("unable to start conn controller command: %w", err)
 	}
-	linesChan := wshutil.StreamToLinesChan(pipeRead)
-	versionLine, err := wshutil.ReadLineWithTimeout(linesChan, 2*time.Second)
+	linesChan := utilfn.StreamToLinesChan(pipeRead)
+	versionLine, err := utilfn.ReadLineWithTimeout(linesChan, 2*time.Second)
 	if err != nil {
 		sshSession.Close()
 		return false, "", "", fmt.Errorf("error reading wsh version: %w", err)
 	}
+	conn.Infof(ctx, "actual connnserverversion: %q\n", versionLine)
 	conn.Infof(ctx, "got connserver version: %s\n", strings.TrimSpace(versionLine))
 	isUpToDate, clientVersion, osArchStr, err := IsWshVersionUpToDate(ctx, versionLine)
 	if err != nil {
@@ -326,11 +327,10 @@ func (conn *SSHConn) StartConnServer(ctx context.Context, afterUpdate bool) (boo
 	}
 	conn.Infof(ctx, "connserver up-to-date: %v\n", isUpToDate)
 	if !isUpToDate {
-
 		sshSession.Close()
 		return true, clientVersion, osArchStr, nil
 	}
-	jwtLine, err := wshutil.ReadLineWithTimeout(linesChan, 3*time.Second)
+	jwtLine, err := utilfn.ReadLineWithTimeout(linesChan, 3*time.Second)
 	if err != nil {
 		sshSession.Close()
 		return false, clientVersion, "", fmt.Errorf("error reading jwt status line: %w", err)
@@ -399,12 +399,6 @@ func (conn *SSHConn) StartConnServer(ctx context.Context, afterUpdate bool) (boo
 type WshInstallOpts struct {
 	Force        bool
 	NoUserPrompt bool
-}
-
-type WshInstallSkipError struct{}
-
-func (wise *WshInstallSkipError) Error() string {
-	return "skipping wsh installation"
 }
 
 var queryTextTemplate = strings.TrimSpace(`
@@ -555,7 +549,7 @@ func (conn *SSHConn) Connect(ctx context.Context, connFlags *wshrpc.ConnKeywords
 		}
 	})
 	if !connectAllowed {
-		conn.Infof(ctx, "cannot connect to when status is %q\n", conn.GetStatus())
+		conn.Infof(ctx, "cannot connect to %q when status is %q\n", conn.GetName(), conn.GetStatus())
 		return fmt.Errorf("cannot connect to %q when status is %q", conn.GetName(), conn.GetStatus())
 	}
 	conn.Infof(ctx, "trying to connect to %q...\n", conn.GetName())
@@ -754,7 +748,12 @@ func (conn *SSHConn) connectInternal(ctx context.Context, connFlags *wshrpc.Conn
 	conn.WithLock(func() {
 		conn.Client = client
 	})
-	go conn.waitForDisconnect()
+	go func() {
+		defer func() {
+			panichandler.PanicHandler("conncontroller:waitForDisconnect", recover())
+		}()
+		conn.waitForDisconnect()
+	}()
 	fmtAddr := knownhosts.Normalize(fmt.Sprintf("%s@%s", client.User(), client.RemoteAddr().String()))
 	conn.Infof(ctx, "normalized knownhosts address: %s\n", fmtAddr)
 	clientDisplayName := fmt.Sprintf("%s (%s)", conn.GetName(), fmtAddr)
