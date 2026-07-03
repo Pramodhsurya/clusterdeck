@@ -107,6 +107,10 @@ const ClusterdeckWelcomeView = memo(() => {
                                     onClick={() => switchToWorkspace(ws.oid)}
                                     title={recentSubtitle(ws)}
                                 >
+                                    <i
+                                        className={makeIconClass(ws.icon || "folder", true)}
+                                        style={{ color: ws.color || undefined }}
+                                    />
                                     <span className="cd-welcome-recent-name">{ws.name}</span>
                                     <span className="cd-welcome-recent-path">{recentSubtitle(ws)}</span>
                                 </div>
