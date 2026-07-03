@@ -9,6 +9,8 @@ import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
+import { Input } from "@/element/input";
+import { WaveModal } from "@/element/modal";
 import { atoms, getApi, getConnStatusAtom, WOS } from "@/store/global";
 import { WorkspaceService } from "@/store/services";
 import { waveEventSubscribeSingle } from "@/store/wps";
@@ -18,7 +20,7 @@ import clsx from "clsx";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
-import { memo, useCallback, useEffect } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import "./connectionsrail.scss";
 
 export const ClusterdeckConnectionMetaKey = "clusterdeck:connection";
@@ -30,6 +32,7 @@ type RailEntry = {
 
 const railEntriesAtom = atom<RailEntry[]>([]);
 const railCollapsedAtom = atomWithStorage<boolean>("clusterdeck:railcollapsed", false);
+const addConnModalOpenAtom = atom<boolean>(false);
 
 // number of terminal blocks in the current tab (subline for the active row)
 const activeTermCountAtom = atom((get) => {
@@ -110,8 +113,55 @@ async function openAddConnectionMenu(e: React.MouseEvent) {
             menu.push({ label: railDisplayName(conn), click: () => openConnectionWorkspace(conn) });
         }
     }
+    menu.push({ type: "separator" }, { label: "New connection…", click: () => globalStore.set(addConnModalOpenAtom, true) });
     ContextMenuModel.getInstance().showContextMenu(menu, e);
 }
+
+// Modal to add a brand-new connection by typing user@host (or a Wave connection
+// string). Opening its workspace triggers Wave's normal connect/auth flow when
+// the blocks mount.
+const AddConnectionModal = memo(() => {
+    const [open, setOpen] = useAtom(addConnModalOpenAtom);
+    const [value, setValue] = useState("");
+    if (!open) {
+        return null;
+    }
+    const close = () => {
+        setValue("");
+        setOpen(false);
+    };
+    const submit = () => {
+        const conn = value.trim();
+        if (conn != "") {
+            openConnectionWorkspace(conn);
+        }
+        close();
+    };
+    return (
+        <WaveModal
+            title="New Connection"
+            description="Enter a connection, e.g. user@host. Its workspace opens with the Clusterdeck layout."
+            buttonLabel="Connect"
+            onSubmit={submit}
+            onCancel={close}
+        >
+            <Input
+                value={value}
+                onChange={setValue}
+                placeholder="user@host"
+                autoFocus={true}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        submit();
+                    } else if (e.key === "Escape") {
+                        close();
+                    }
+                }}
+            />
+        </WaveModal>
+    );
+});
+AddConnectionModal.displayName = "AddConnectionModal";
 
 function hotkeyLabel(num: number): string {
     return isMacOS() ? `⌘${num}` : `Alt+${num}`;
@@ -225,6 +275,7 @@ const ConnectionsRail = memo(() => {
                     </span>
                 )}
             </div>
+            <AddConnectionModal />
         </div>
     );
 });
