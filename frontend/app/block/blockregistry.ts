@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BlockNodeModel } from "@/app/block/blocktypes";
+import { ClusterdeckEditorModel } from "@/app/clusterdeck/editor";
 import { ClusterdeckExplorerModel } from "@/app/clusterdeck/explorer";
 import { ClusterdeckWelcomeModel } from "@/app/clusterdeck/welcome";
 import type { TabModel } from "@/app/store/tab-model";
@@ -39,6 +40,7 @@ BlockRegistry.set("waveconfig", WaveConfigViewModel);
 BlockRegistry.set("processviewer", ProcessViewerViewModel);
 BlockRegistry.set("cdexplorer", ClusterdeckExplorerModel);
 BlockRegistry.set("cdwelcome", ClusterdeckWelcomeModel);
+BlockRegistry.set("cdeditor", ClusterdeckEditorModel);
 
 function makeDefaultViewModel(viewType: string): ViewModel {
     const viewModel: ViewModel = {

@@ -25,7 +25,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from "react";
 
 import "./explorer.scss";
 
-function baseName(path: string): string {
+export function baseName(path: string): string {
     if (path === "~" || path === "") {
         return "Home";
     }
@@ -108,7 +108,7 @@ const NameStyle: Record<string, IconStyle> = {
 
 const DefaultStyle: IconStyle = { icon: "file", color: "#8a9199" };
 
-function fileStyle(name: string): IconStyle {
+export function fileStyle(name: string): IconStyle {
     const lower = name.toLowerCase();
     if (NameStyle[lower]) {
         return NameStyle[lower];
