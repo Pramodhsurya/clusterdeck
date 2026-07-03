@@ -9,6 +9,22 @@
     overflow: hidden;
     font-size: 12px;
 
+    &.collapsed {
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        color: var(--secondary-text-color);
+
+        &:hover {
+            color: var(--main-text-color);
+        }
+
+        i {
+            font-size: 12px;
+            padding-top: 8px;
+        }
+    }
+
     .cd-explorer-header {
         display: flex;
         align-items: center;
@@ -26,12 +42,19 @@
             white-space: nowrap;
         }
 
-        .cd-explorer-refresh {
-            cursor: pointer;
-            font-size: 11px;
-            opacity: 0.7;
-            &:hover {
-                opacity: 1;
+        .cd-explorer-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-shrink: 0;
+
+            i {
+                cursor: pointer;
+                font-size: 11px;
+                opacity: 0.7;
+                &:hover {
+                    opacity: 1;
+                }
             }
         }
     }
