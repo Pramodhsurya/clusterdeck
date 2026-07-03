@@ -100,6 +100,7 @@ type WshRpcInterface interface {
 	ClusterdeckOpenTargetCommand(ctx context.Context, target string) (string, error)
 	ClusterdeckConnectionsConfigPathCommand(ctx context.Context) (string, error)
 	ClusterdeckOpenHomeCommand(ctx context.Context) (string, error)
+	ClusterdeckGitStatusCommand(ctx context.Context, connName string, rootDir string) (map[string]string, error)
 	GetAllBadgesCommand(ctx context.Context) ([]baseds.BadgeEvent, error)
 
 	// connection functions

@@ -107,6 +107,12 @@ func ClusterdeckConnectionsConfigPathCommand(w *wshutil.WshRpc, opts *wshrpc.Rpc
 	return resp, err
 }
 
+// command "clusterdeckgitstatus", wshserver.ClusterdeckGitStatusCommand
+func ClusterdeckGitStatusCommand(w *wshutil.WshRpc, arg1 string, arg2 string, opts *wshrpc.RpcOpts) (map[string]string, error) {
+	resp, err := sendRpcRequestCallHelper[map[string]string](w, "clusterdeckgitstatus", wshrpc.MultiArg{Args: []any{arg1, arg2}}, opts)
+	return resp, err
+}
+
 // command "clusterdeckopenhome", wshserver.ClusterdeckOpenHomeCommand
 func ClusterdeckOpenHomeCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (string, error) {
 	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckopenhome", nil, opts)
