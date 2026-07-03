@@ -266,7 +266,10 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                         initialNodes={initialNodes}
                         fetchDir={fetchDir}
                         onOpenFile={onOpenFile}
+                        hideDirIcons={true}
                         width="100%"
+                        minWidth={0}
+                        maxWidth={100000}
                         height="100%"
                     />
                 )}
