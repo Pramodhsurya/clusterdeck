@@ -614,15 +614,8 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
                 </div>
             )}
             <WaveAIButton divRef={waveAIButtonRef} />
-            <Tooltip
-                content="Workspace Switcher"
-                placement="bottom"
-                hideOnClick
-                divRef={workspaceSwitcherRef}
-                divClassName="flex items-center"
-            >
-                <WorkspaceSwitcher />
-            </Tooltip>
+            {/* Clusterdeck: Wave's native workspace switcher is hidden — the
+                connections rail is the single workspace switcher. */}
             <div className="tab-bar" ref={tabBarRef} data-overlayscrollbars-initialize>
                 <div
                     className="tabs-wrapper"

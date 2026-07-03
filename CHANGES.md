@@ -158,6 +158,16 @@ free-form via the rail "+", with nothing auto-seeded.
     `cdexplorer` view instead of `preview`.
 - OPEN EDITORS + editor tabs (E#/X#) and git decorations (G#) remain later phases.
 
+### feat/rail-single-switcher (2026-07-03)
+
+- `frontend/app/clusterdeck/connectionsrail.tsx`: the rail now lists **all
+  Clusterdeck workspaces** the user has opened (local folders + ssh connections),
+  from `WorkspaceService.ListWorkspaces` (filtered to workspaces tagged with a
+  connection), refreshed on `workspace:update`. Clicking switches to that
+  workspace. Cmd+1..9 switches to the nth.
+- `frontend/app/tab/tabbar.tsx` + `vtabbar.tsx`: hid Wave's native workspace
+  switcher — the connections rail is now the single switcher (no duplicate).
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold
