@@ -25,77 +25,102 @@ const (
 	// workspace inherit this connection.
 	MetaKey_WorkspaceConnection = "clusterdeck:connection"
 
-	connWorkspaceIcon = "server"
+	// LocalConnName is Wave's local connection (resolves to the local
+	// shell/filesystem via conncontroller.IsLocalConnName). The mockup lists
+	// "Local · zsh" as the first connection, so the local machine is seeded as a
+	// first-class connection workspace alongside ssh hosts.
+	LocalConnName = "local"
+
+	connWorkspaceIcon  = "server"
+	localWorkspaceIcon = "laptop"
 
 	// ConnWorkspaceColor is the single Clusterdeck accent (blue). Do not add
 	// other accent colors for connection workspaces.
 	ConnWorkspaceColor = "#429DFF"
 )
 
-// SyncSshConfigWorkspaces ensures that every concrete host in the user's ssh
-// config (~/.ssh/config and /etc/ssh/config; wildcard and negated patterns
-// excluded) has a saved workspace: name = host, meta clusterdeck:connection =
-// host. Name/icon/color are always set so the workspace persists across
-// workspace switches (unsaved workspaces are deleted on switch-away).
+// SyncSshConfigWorkspaces ensures that the local machine and every concrete
+// host in the user's ssh config (~/.ssh/config and /etc/ssh/config; wildcard
+// and negated patterns excluded) has a saved connection workspace: name = host,
+// meta clusterdeck:connection = host, seeded with the default IDE layout.
+// Name/icon/color are always set so the workspace persists across workspace
+// switches (unsaved workspaces are deleted on switch-away).
 //
 // Reconciliation is add-only: workspaces whose host disappeared from the ssh
 // config are left untouched so no user layout is ever destroyed.
 func SyncSshConfigWorkspaces(ctx context.Context) error {
-	hosts, err := conncontroller.GetConnectionsFromConfig()
-	if err != nil {
-		// a missing or empty ssh config is a normal state, not a startup error
-		log.Printf("clusterdeck: no ssh config connections found: %v\n", err)
-		return nil
-	}
 	workspaces, err := wstore.DBGetAllObjsByType[*waveobj.Workspace](ctx, waveobj.OType_Workspace)
 	if err != nil {
 		return err
 	}
 	existing := make(map[string]bool)
 	for _, ws := range workspaces {
-		conn := ws.Meta.GetString(MetaKey_WorkspaceConnection, "")
-		if conn != "" {
+		if conn := ws.Meta.GetString(MetaKey_WorkspaceConnection, ""); conn != "" {
 			existing[conn] = true
 		}
 	}
 	created := 0
-	for _, host := range hosts {
-		if existing[host] {
-			continue
-		}
-		ws, err := wcore.CreateWorkspace(ctx, displayName(host), connWorkspaceIcon, ConnWorkspaceColor, false, false)
-		if err != nil {
-			log.Printf("clusterdeck: error creating workspace for host %q: %v\n", host, err)
-			continue
-		}
-		if ws.Meta == nil {
-			ws.Meta = waveobj.MetaMapType{}
-		}
-		ws.Meta[MetaKey_WorkspaceConnection] = host
-		if err := wstore.DBUpdate(ctx, ws); err != nil {
-			log.Printf("clusterdeck: error setting connection meta on workspace %s: %v\n", ws.OID, err)
-			continue
-		}
-		// Seed the IDE layout (§3.4) into the workspace's initial tab. The
-		// connection meta is now persisted, so the explorer/editor/terminal
-		// blocks inherit it. This replaces the bare terminal CreateWorkspace
-		// created before the meta existed. Blocks don't connect until mounted,
-		// so no SSH connection is opened here at startup.
-		tabId := ws.ActiveTabId
-		if tabId == "" && len(ws.TabIds) > 0 {
-			tabId = ws.TabIds[0]
-		}
-		if tabId != "" {
-			if err := wcore.SeedClusterdeckLayoutForTab(ctx, tabId); err != nil {
-				log.Printf("clusterdeck: error seeding layout for workspace %s: %v\n", ws.OID, err)
-			}
-		}
+
+	// Local connection workspace (mockup: "Local · zsh"). Always ensured, even
+	// when the ssh config is empty.
+	if ensureConnectionWorkspace(ctx, existing, LocalConnName, "Local", localWorkspaceIcon) {
 		created++
 	}
+
+	// SSH hosts from the user's ssh config. A missing/empty config is a normal
+	// state, not a startup error — the local workspace above still applies.
+	hosts, err := conncontroller.GetConnectionsFromConfig()
+	if err != nil {
+		log.Printf("clusterdeck: no ssh config connections found: %v\n", err)
+	} else {
+		for _, host := range hosts {
+			if ensureConnectionWorkspace(ctx, existing, host, displayName(host), connWorkspaceIcon) {
+				created++
+			}
+		}
+	}
+
 	if created > 0 {
-		log.Printf("clusterdeck: created %d connection workspace(s) from ssh config\n", created)
+		log.Printf("clusterdeck: created %d connection workspace(s)\n", created)
 	}
 	return nil
+}
+
+// ensureConnectionWorkspace creates a saved connection workspace for connName
+// (if one does not already exist) and seeds it with the default IDE layout.
+// Returns true if a workspace was created. Blocks in the workspace inherit
+// connName; blocks don't connect until mounted, so no connection is opened here.
+func ensureConnectionWorkspace(ctx context.Context, existing map[string]bool, connName, name, icon string) bool {
+	if existing[connName] {
+		return false
+	}
+	ws, err := wcore.CreateWorkspace(ctx, name, icon, ConnWorkspaceColor, false, false)
+	if err != nil {
+		log.Printf("clusterdeck: error creating workspace for %q: %v\n", connName, err)
+		return false
+	}
+	if ws.Meta == nil {
+		ws.Meta = waveobj.MetaMapType{}
+	}
+	ws.Meta[MetaKey_WorkspaceConnection] = connName
+	if err := wstore.DBUpdate(ctx, ws); err != nil {
+		log.Printf("clusterdeck: error setting connection meta on workspace %s: %v\n", ws.OID, err)
+		return false
+	}
+	existing[connName] = true
+
+	// Seed the IDE layout (§3.4) into the workspace's initial tab, replacing the
+	// bare terminal CreateWorkspace created before the connection meta existed.
+	tabId := ws.ActiveTabId
+	if tabId == "" && len(ws.TabIds) > 0 {
+		tabId = ws.TabIds[0]
+	}
+	if tabId != "" {
+		if err := wcore.SeedClusterdeckLayoutForTab(ctx, tabId); err != nil {
+			log.Printf("clusterdeck: error seeding layout for workspace %s: %v\n", ws.OID, err)
+		}
+	}
+	return true
 }
 
 // displayName strips the user@ prefix from a normalized connection name; the

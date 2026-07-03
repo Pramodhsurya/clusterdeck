@@ -70,6 +70,16 @@ Apache-2.0 §4(b). It is updated as changes land.
 - `frontend/app/view/preview/preview-directory.tsx`: route the double-click and
   Enter file-open handlers through `handleFileActivate`.
 
+### feat/ssh-config-workspaces — Local connection (2026-07-03)
+
+- `pkg/clusterdeck/sshsync.go`: also seed a **Local** connection workspace
+  (`clusterdeck:connection = "local"`, laptop icon) matching the mockup's
+  "Local · zsh". Wave's `IsLocalConnName("local")` resolves it to the local
+  shell/filesystem, so the IDE layout (§3.4) and explorer→editor routing (§3.5)
+  work fully locally without any SSH host. Refactored creation into
+  `ensureConnectionWorkspace`; the sync no longer early-returns on an empty ssh
+  config, so the Local workspace is always ensured.
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold
