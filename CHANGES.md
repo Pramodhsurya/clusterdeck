@@ -70,6 +70,13 @@ Apache-2.0 §4(b). It is updated as changes land.
 - `frontend/app/view/preview/preview-directory.tsx`: route the double-click and
   Enter file-open handlers through `handleFileActivate`.
 
+### Dev experience (2026-07-03)
+
+- `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold
+  first Vite dev-compile (>5s), the 5s init timeout rejected `initPromise`
+  before `wave-init` was sent, leaving the window blank until a restart. Not a
+  feature change; dev-only.
+
 ### Planned reshaping (not yet implemented)
 
 The fork will reshape Wave into a multi-cluster SSH workspace ("connection = workspace"):
