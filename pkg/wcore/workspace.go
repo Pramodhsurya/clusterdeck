@@ -250,7 +250,13 @@ func CreateTab(ctx context.Context, workspaceId string, tabName string, activate
 
 	// No need to apply an initial layout for the initial launch, since the starter layout will get applied after onboarding modal dismissal
 	if !isInitialLaunch {
-		err = ApplyPortableLayout(ctx, tab.OID, GetNewTabLayout(), true)
+		layout := GetNewTabLayout()
+		// Clusterdeck: tabs in a connection workspace seed the IDE layout (§3.4)
+		// — explorer + editor + terminal — instead of a bare terminal.
+		if GetWorkspaceConnectionForTab(ctx, tab.OID) != "" {
+			layout = GetClusterdeckLayout()
+		}
+		err = ApplyPortableLayout(ctx, tab.OID, layout, true)
 		if err != nil {
 			return tab.OID, fmt.Errorf("error applying new tab layout: %w", err)
 		}
