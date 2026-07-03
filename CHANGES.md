@@ -182,6 +182,15 @@ free-form via the rail "+", with nothing auto-seeded.
   - `OpenTarget` records `clusterdeck:lastopened`; rail/recent clicks route
     through `switchToWorkspace`, which also records recency.
 
+### feat/blue-accent-icons (2026-07-03)
+
+- `frontend/app/theme.scss`: changed the global `--accent-color` from Wave green
+  to blue (`rgb(66,157,255)`), so selections, active states, toggles and buttons
+  are blue throughout.
+- `frontend/app/clusterdeck/explorer.tsx`: richer VS Code–style file-type icons
+  (per extension + special filenames, brand glyphs where available); folders are
+  left iconless so the tree shows folder/folder-open on expand.
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold

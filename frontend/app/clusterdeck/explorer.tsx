@@ -31,27 +31,79 @@ function baseName(path: string): string {
     return parts[parts.length - 1] ?? path;
 }
 
-const CodeExts = new Set(["py", "js", "ts", "tsx", "jsx", "go", "rs", "java", "c", "cpp", "h", "sh", "rb"]);
+// VS Code–style file-type icons (FontAwesome; brand glyphs where they exist).
+const ExtIcon: Record<string, string> = {
+    js: "brands@js",
+    mjs: "brands@js",
+    cjs: "brands@js",
+    jsx: "brands@react",
+    ts: "file-code",
+    tsx: "brands@react",
+    py: "brands@python",
+    html: "brands@html5",
+    htm: "brands@html5",
+    css: "brands@css3",
+    scss: "brands@sass",
+    sass: "brands@sass",
+    java: "brands@java",
+    php: "brands@php",
+    rs: "brands@rust",
+    go: "file-code",
+    rb: "file-code",
+    c: "file-code",
+    cpp: "file-code",
+    h: "file-code",
+    hpp: "file-code",
+    sh: "terminal",
+    bash: "terminal",
+    zsh: "terminal",
+    json: "brackets-curly",
+    jsonc: "brackets-curly",
+    yaml: "file-code",
+    yml: "file-code",
+    toml: "file-code",
+    xml: "code",
+    md: "brands@markdown",
+    markdown: "brands@markdown",
+    txt: "file-lines",
+    log: "file-lines",
+    lock: "lock",
+    env: "gear",
+    sql: "database",
+    png: "image",
+    jpg: "image",
+    jpeg: "image",
+    gif: "image",
+    svg: "image",
+    webp: "image",
+    ico: "image",
+    pdf: "file-pdf",
+    zip: "file-zipper",
+    tar: "file-zipper",
+    gz: "file-zipper",
+};
 
-function fileIcon(name: string, isDir: boolean): string {
-    if (isDir) {
-        return "folder";
-    }
+const NameIcon: Record<string, string> = {
+    dockerfile: "brands@docker",
+    "docker-compose.yml": "brands@docker",
+    ".gitignore": "brands@git-alt",
+    ".gitattributes": "brands@git-alt",
+    "package.json": "brands@npm",
+    "package-lock.json": "brands@npm",
+    "go.mod": "file-code",
+    "go.sum": "file-code",
+    makefile: "gear",
+    "readme.md": "brands@markdown",
+    "license": "certificate",
+};
+
+function fileIcon(name: string): string {
     const lower = name.toLowerCase();
-    if (lower === "dockerfile") {
-        return "brands@docker";
+    if (NameIcon[lower]) {
+        return NameIcon[lower];
     }
     const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
-    if (ext === "json") {
-        return "brackets-curly";
-    }
-    if (ext === "md") {
-        return "markdown";
-    }
-    if (CodeExts.has(ext)) {
-        return "file-code";
-    }
-    return "file";
+    return ExtIcon[ext] ?? "file";
 }
 
 // List a directory over SFTP and map its entries to tree nodes. `parentId` is
@@ -67,7 +119,7 @@ async function listDir(path: string, connection: string, parentId: string | unde
             path: f.path,
             label: f.name,
             isDirectory: !!f.isdir,
-            icon: fileIcon(f.name ?? "", !!f.isdir),
+            icon: f.isdir ? undefined : fileIcon(f.name ?? ""),
         }));
 }
 
