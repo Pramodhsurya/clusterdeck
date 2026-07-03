@@ -97,7 +97,7 @@ type WshRpcInterface interface {
 	UpdateTabNameCommand(ctx context.Context, tabId string, newName string) error
 	UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error
 	ClusterdeckResetLayoutCommand(ctx context.Context, tabId string) error
-	ClusterdeckEnsureConnWorkspaceCommand(ctx context.Context, connName string) (string, error)
+	ClusterdeckOpenTargetCommand(ctx context.Context, target string) (string, error)
 	GetAllBadgesCommand(ctx context.Context) ([]baseds.BadgeEvent, error)
 
 	// connection functions

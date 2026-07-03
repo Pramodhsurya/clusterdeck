@@ -102,10 +102,10 @@ export class RpcApiType {
         return client.wshRpcCall("checkgoversion", null, opts);
     }
 
-    // command "clusterdeckensureconnworkspace" [call]
-    ClusterdeckEnsureConnWorkspaceCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<string> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckensureconnworkspace", data, opts);
-        return client.wshRpcCall("clusterdeckensureconnworkspace", data, opts);
+    // command "clusterdeckopentarget" [call]
+    ClusterdeckOpenTargetCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<string> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckopentarget", data, opts);
+        return client.wshRpcCall("clusterdeckopentarget", data, opts);
     }
 
     // command "clusterdeckresetlayout" [call]

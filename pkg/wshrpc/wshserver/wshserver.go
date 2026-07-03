@@ -176,19 +176,15 @@ func (ws *WshServer) ClusterdeckResetLayoutCommand(ctx context.Context, tabId st
 	return nil
 }
 
-// ClusterdeckEnsureConnWorkspaceCommand returns the id of the connection
-// workspace for connName, creating and seeding it (default IDE layout) if it
-// does not exist. Used by the rail's "add connection" action to make any
-// connection's workspace available on demand (connection = workspace).
-func (ws *WshServer) ClusterdeckEnsureConnWorkspaceCommand(ctx context.Context, connName string) (string, error) {
-	workspaceId, _, err := wcore.EnsureConnectionWorkspace(
-		ctx, connName,
-		clusterdeck.WorkspaceNameForConn(connName),
-		clusterdeck.WorkspaceIconForConn(connName),
-		clusterdeck.ConnWorkspaceColor,
-	)
+// ClusterdeckOpenTargetCommand opens (creating + seeding the IDE layout if
+// needed) the workspace for a free-form target: a local folder path OR a
+// connection (user@host). Returns the workspace id to switch to. Used by the
+// rail's "+" — a workspace is a root folder on a connection.
+func (ws *WshServer) ClusterdeckOpenTargetCommand(ctx context.Context, target string) (string, error) {
+	connName, rootDir, name, icon := clusterdeck.ClassifyTarget(target)
+	workspaceId, _, err := wcore.EnsureConnectionWorkspace(ctx, connName, rootDir, name, icon, clusterdeck.ConnWorkspaceColor)
 	if err != nil {
-		return "", fmt.Errorf("error ensuring connection workspace: %w", err)
+		return "", fmt.Errorf("error opening target workspace: %w", err)
 	}
 	return workspaceId, nil
 }
