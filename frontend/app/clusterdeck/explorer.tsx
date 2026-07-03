@@ -31,79 +31,88 @@ function baseName(path: string): string {
     return parts[parts.length - 1] ?? path;
 }
 
-// VS Code–style file-type icons (FontAwesome; brand glyphs where they exist).
-const ExtIcon: Record<string, string> = {
-    js: "brands@js",
-    mjs: "brands@js",
-    cjs: "brands@js",
-    jsx: "brands@react",
-    ts: "file-code",
-    tsx: "brands@react",
-    py: "brands@python",
-    html: "brands@html5",
-    htm: "brands@html5",
-    css: "brands@css3",
-    scss: "brands@sass",
-    sass: "brands@sass",
-    java: "brands@java",
-    php: "brands@php",
-    rs: "brands@rust",
-    go: "file-code",
-    rb: "file-code",
-    c: "file-code",
-    cpp: "file-code",
-    h: "file-code",
-    hpp: "file-code",
-    sh: "terminal",
-    bash: "terminal",
-    zsh: "terminal",
-    json: "brackets-curly",
-    jsonc: "brackets-curly",
-    yaml: "file-code",
-    yml: "file-code",
-    toml: "file-code",
-    xml: "code",
-    md: "brands@markdown",
-    markdown: "brands@markdown",
-    txt: "file-lines",
-    log: "file-lines",
-    lock: "lock",
-    env: "gear",
-    sql: "database",
-    png: "image",
-    jpg: "image",
-    jpeg: "image",
-    gif: "image",
-    svg: "image",
-    webp: "image",
-    ico: "image",
-    pdf: "file-pdf",
-    zip: "file-zipper",
-    tar: "file-zipper",
-    gz: "file-zipper",
+// VS Code–style file-type icons + colors (FontAwesome glyphs; brand glyphs and
+// per-type colors approximating the Seti/Material icon themes).
+type IconStyle = { icon: string; color: string };
+
+const CodeBlue = "#519aba";
+const Media = "#a074c4";
+const ExtStyle: Record<string, IconStyle> = {
+    js: { icon: "brands@js", color: "#f0db4f" },
+    mjs: { icon: "brands@js", color: "#f0db4f" },
+    cjs: { icon: "brands@js", color: "#f0db4f" },
+    jsx: { icon: "brands@react", color: "#61dafb" },
+    ts: { icon: "file-code", color: "#3178c6" },
+    tsx: { icon: "brands@react", color: "#61dafb" },
+    py: { icon: "brands@python", color: "#4b8bbe" },
+    html: { icon: "brands@html5", color: "#e34c26" },
+    htm: { icon: "brands@html5", color: "#e34c26" },
+    css: { icon: "brands@css3", color: CodeBlue },
+    scss: { icon: "brands@sass", color: "#cd6799" },
+    sass: { icon: "brands@sass", color: "#cd6799" },
+    java: { icon: "brands@java", color: "#cc3e44" },
+    php: { icon: "brands@php", color: "#a074c4" },
+    rs: { icon: "brands@rust", color: "#dea584" },
+    go: { icon: "file-code", color: "#00add8" },
+    rb: { icon: "file-code", color: "#cc342d" },
+    c: { icon: "file-code", color: CodeBlue },
+    cpp: { icon: "file-code", color: CodeBlue },
+    h: { icon: "file-code", color: "#a074c4" },
+    hpp: { icon: "file-code", color: "#a074c4" },
+    sh: { icon: "terminal", color: "#89e051" },
+    bash: { icon: "terminal", color: "#89e051" },
+    zsh: { icon: "terminal", color: "#89e051" },
+    json: { icon: "brackets-curly", color: "#cbcb41" },
+    jsonc: { icon: "brackets-curly", color: "#cbcb41" },
+    yaml: { icon: "file-code", color: "#cb171e" },
+    yml: { icon: "file-code", color: "#cb171e" },
+    toml: { icon: "file-code", color: "#9c4221" },
+    xml: { icon: "code", color: "#e37933" },
+    md: { icon: "brands@markdown", color: CodeBlue },
+    markdown: { icon: "brands@markdown", color: CodeBlue },
+    org: { icon: "file-lines", color: CodeBlue },
+    txt: { icon: "file-lines", color: "#cfcfcf" },
+    log: { icon: "file-lines", color: "#cfcfcf" },
+    csv: { icon: "table", color: "#89e051" },
+    lock: { icon: "lock", color: "#c5c5c5" },
+    env: { icon: "gear", color: "#dfb52c" },
+    sql: { icon: "database", color: "#dad8d8" },
+    png: { icon: "image", color: Media },
+    jpg: { icon: "image", color: Media },
+    jpeg: { icon: "image", color: Media },
+    gif: { icon: "image", color: Media },
+    svg: { icon: "image", color: "#ffb13b" },
+    webp: { icon: "image", color: Media },
+    ico: { icon: "image", color: Media },
+    pdf: { icon: "file-pdf", color: "#e34c26" },
+    zip: { icon: "file-zipper", color: "#afb42b" },
+    tar: { icon: "file-zipper", color: "#afb42b" },
+    gz: { icon: "file-zipper", color: "#afb42b" },
 };
 
-const NameIcon: Record<string, string> = {
-    dockerfile: "brands@docker",
-    "docker-compose.yml": "brands@docker",
-    ".gitignore": "brands@git-alt",
-    ".gitattributes": "brands@git-alt",
-    "package.json": "brands@npm",
-    "package-lock.json": "brands@npm",
-    "go.mod": "file-code",
-    "go.sum": "file-code",
-    makefile: "gear",
-    "readme.md": "brands@markdown",
-    "license": "certificate",
+const NameStyle: Record<string, IconStyle> = {
+    dockerfile: { icon: "brands@docker", color: "#2496ed" },
+    "docker-compose.yml": { icon: "brands@docker", color: "#2496ed" },
+    ".gitignore": { icon: "brands@git-alt", color: "#f14e32" },
+    ".gitattributes": { icon: "brands@git-alt", color: "#f14e32" },
+    "package.json": { icon: "brands@npm", color: "#cb3837" },
+    "package-lock.json": { icon: "brands@npm", color: "#cb3837" },
+    "go.mod": { icon: "file-code", color: "#00add8" },
+    "go.sum": { icon: "file-code", color: "#00add8" },
+    makefile: { icon: "gear", color: "#6d8086" },
+    "readme.md": { icon: "brands@markdown", color: CodeBlue },
+    license: { icon: "certificate", color: "#d0b44c" },
 };
 
-function fileIcon(name: string): string {
+const DefaultStyle: IconStyle = { icon: "file", color: "#8a9199" };
+
+function fileStyle(name: string): IconStyle {
     const lower = name.toLowerCase();
-    if (NameIcon[lower]) {
-        return NameIcon[lower];
+    if (NameStyle[lower]) {
+        return NameStyle[lower];
     }
     const ext = lower.includes(".") ? lower.slice(lower.lastIndexOf(".") + 1) : "";
-    return ExtIcon[ext] ?? "file";
+    return ExtStyle[ext] ?? DefaultStyle;
 }
 
 // List a directory over SFTP and map its entries to tree nodes. `parentId` is
@@ -113,14 +122,18 @@ async function listDir(path: string, connection: string, parentId: string | unde
     const files = await RpcApi.FileListCommand(TabRpcClient, { path: uri, opts: { limit } });
     return (files ?? [])
         .filter((f) => f.name && f.name !== "..")
-        .map((f) => ({
-            id: f.path,
-            parentId,
-            path: f.path,
-            label: f.name,
-            isDirectory: !!f.isdir,
-            icon: f.isdir ? undefined : fileIcon(f.name ?? ""),
-        }));
+        .map((f) => {
+            const style = f.isdir ? null : fileStyle(f.name ?? "");
+            return {
+                id: f.path,
+                parentId,
+                path: f.path,
+                label: f.name,
+                isDirectory: !!f.isdir,
+                icon: style?.icon,
+                iconColor: style?.color,
+            };
+        });
 }
 
 class ClusterdeckExplorerModel implements ViewModel {
