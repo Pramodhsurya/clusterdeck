@@ -98,7 +98,10 @@ Apache-2.0 §4(b). It is updated as changes land.
 - `frontend/app/clusterdeck/connectionsrail.tsx`: the rail "+" now opens a
   connection picker (Local + every known connection via `ConnListCommand`);
   choosing one ensures its connection workspace and switches to it (was:
-  `createWorkspace()`, which made a plain untagged workspace).
+  `createWorkspace()`, which made a plain untagged workspace). The picker also
+  offers **"New connection…"**, which opens a small modal (`WaveModal` + `Input`)
+  to type a new `user@host`; its connection workspace is created and opened
+  (Wave's normal connect/auth flow runs when the blocks mount).
 
 ### Dev experience (2026-07-03)
 
