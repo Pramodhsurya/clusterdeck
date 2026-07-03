@@ -120,7 +120,7 @@ const FilePane = memo(
     }) => {
         const contentRef = useRef<HTMLDivElement>(null);
         return (
-            <div className="cd-editor-pane" style={{ display: visible ? "flex" : "none" }}>
+            <div className={clsx("cd-editor-pane", { visible })}>
                 <PreviewView blockId={blockId} blockRef={blockRef} contentRef={contentRef} model={model} />
             </div>
         );
