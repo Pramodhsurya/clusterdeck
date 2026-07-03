@@ -172,8 +172,33 @@ class ClusterdeckExplorerModel implements ViewModel {
         globalStore.set(this.refreshVersion, globalStore.get(this.refreshVersion) + 1);
     }
 
-    // Collapse the explorer to a thin strip (or restore) by resizing its layout
-    // node, and persist the collapsed flag on the block.
+    // Resize the explorer's layout node to sizePercent (0-100) of its row,
+    // sharing the rest among its siblings. Returns false if the node wasn't
+    // found (e.g. the layout isn't ready or was rearranged).
+    resizeExplorer(sizePercent: number): boolean {
+        const lm = getLayoutModelForStaticTab();
+        const children = lm?.treeState?.rootNode?.children;
+        if (!children) {
+            return false;
+        }
+        const explorerNode = children.find((n) => n.data?.blockId === this.blockId);
+        const others = children.filter((n) => n.id !== explorerNode?.id);
+        if (explorerNode == null || others.length === 0) {
+            return false;
+        }
+        const rest = (100 - sizePercent) / others.length;
+        const action: LayoutTreeResizeNodeAction = {
+            type: LayoutTreeActionType.ResizeNode,
+            resizeOperations: [
+                { nodeId: explorerNode.id, size: sizePercent },
+                ...others.map((n) => ({ nodeId: n.id, size: rest })),
+            ],
+        };
+        lm.treeReducer(action);
+        return true;
+    }
+
+    // Collapse the explorer to a thin strip (or restore), persisting the flag.
     toggleCollapse() {
         const collapsed = !globalStore.get(this.collapsedAtom);
         fireAndForget(() =>
@@ -182,26 +207,24 @@ class ClusterdeckExplorerModel implements ViewModel {
                 meta: { "clusterdeck:explorercollapsed": collapsed } as MetaType,
             })
         );
-        const lm = getLayoutModelForStaticTab();
-        const children = lm?.treeState?.rootNode?.children;
-        if (!children) {
+        this.resizeExplorer(collapsed ? 3 : 18);
+    }
+
+    // Apply the narrow default width once per block (fixes older/wide workspaces
+    // without re-seeding; later manual resizes are left untouched).
+    ensureDefaultWidth() {
+        const meta = globalStore.get(this.blockAtom)?.meta;
+        if (meta?.["clusterdeck:sized"] || meta?.["clusterdeck:explorercollapsed"]) {
             return;
         }
-        const explorerNode = children.find((n) => n.data?.blockId === this.blockId);
-        const others = children.filter((n) => n.id !== explorerNode?.id);
-        if (explorerNode == null || others.length === 0) {
-            return;
+        if (this.resizeExplorer(17)) {
+            fireAndForget(() =>
+                RpcApi.SetMetaCommand(TabRpcClient, {
+                    oref: WOS.makeORef("block", this.blockId),
+                    meta: { "clusterdeck:sized": true } as MetaType,
+                })
+            );
         }
-        const explorerSize = collapsed ? 3 : 18;
-        const rest = (100 - explorerSize) / others.length;
-        const action: LayoutTreeResizeNodeAction = {
-            type: LayoutTreeActionType.ResizeNode,
-            resizeOperations: [
-                { nodeId: explorerNode.id, size: explorerSize },
-                ...others.map((n) => ({ nodeId: n.id, size: rest })),
-            ],
-        };
-        lm.treeReducer(action);
     }
 
     // Route a file into the designated editor-zone block in this tab (§3.5).
@@ -261,6 +284,12 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
             cancelled = true;
         };
     }, [connection, rootPath, refreshVersion]);
+
+    // Apply the narrow default width once (after the layout is ready).
+    useEffect(() => {
+        const t = setTimeout(() => model.ensureDefaultWidth(), 150);
+        return () => clearTimeout(t);
+    }, [model]);
 
     const fetchDir = useCallback(
         async (id: string, limit: number) => {
