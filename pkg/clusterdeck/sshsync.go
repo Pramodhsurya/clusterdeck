@@ -10,6 +10,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/wavetermdev/waveterm/pkg/wavebase"
+	"github.com/wavetermdev/waveterm/pkg/wconfig"
 )
 
 const (
@@ -93,4 +96,21 @@ func DisplayName(conn string) string {
 		return conn[idx+1:]
 	}
 	return conn
+}
+
+// EnsureConnectionsConfigPath returns the absolute path to connections.json,
+// creating an empty file (and the config dir) if it does not exist yet, so the
+// rail's gear can always open something editable.
+func EnsureConnectionsConfigPath() (string, error) {
+	dir := wavebase.GetWaveConfigDir()
+	path := filepath.Join(dir, wconfig.ConnectionsFile)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			return "", err
+		}
+		if err := os.WriteFile(path, []byte("{}\n"), 0o644); err != nil {
+			return "", err
+		}
+	}
+	return path, nil
 }

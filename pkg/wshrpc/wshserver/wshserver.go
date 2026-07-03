@@ -189,6 +189,16 @@ func (ws *WshServer) ClusterdeckOpenTargetCommand(ctx context.Context, target st
 	return workspaceId, nil
 }
 
+// ClusterdeckConnectionsConfigPathCommand returns the path to connections.json
+// (creating an empty file if needed) so the rail's gear can open it for editing.
+func (ws *WshServer) ClusterdeckConnectionsConfigPathCommand(ctx context.Context) (string, error) {
+	path, err := clusterdeck.EnsureConnectionsConfigPath()
+	if err != nil {
+		return "", fmt.Errorf("error ensuring connections config: %w", err)
+	}
+	return path, nil
+}
+
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {
 	oref := waveobj.ORef{OType: waveobj.OType_Workspace, OID: workspaceId}
 	err := wcore.UpdateWorkspaceTabIds(ctx, workspaceId, tabIds)
