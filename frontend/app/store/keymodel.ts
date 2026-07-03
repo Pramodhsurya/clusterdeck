@@ -3,6 +3,7 @@
 
 import { WaveAIModel } from "@/app/aipanel/waveai-model";
 import { isConnLockedWorkspace } from "@/app/clusterdeck/connlock";
+import { openRailConnectionByIndex } from "@/app/clusterdeck/connectionsrail";
 import { FocusManager } from "@/app/store/focusManager";
 import {
     atoms,
@@ -21,7 +22,6 @@ import {
     replaceBlock,
     WOS,
 } from "@/app/store/global";
-import { WorkspaceService } from "@/app/store/services";
 import { getActiveTabModel } from "@/app/store/tab-model";
 import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
 import { deleteLayoutModelForTab, getLayoutModelForStaticTab, NavigateDirection } from "@/layout/index";
@@ -282,21 +282,10 @@ function getAllTabs(ws: Workspace): string[] {
     return ws.tabids ?? [];
 }
 
-// Clusterdeck: switch to the nth workspace in rail order (1-based, matches
-// the hotkey labels in the connections rail)
+// Clusterdeck: open the nth connection in rail order (1-based, matches the
+// hotkey labels in the connections rail)
 function switchWorkspaceAbs(index: number) {
-    fireAndForget(async () => {
-        const list = await WorkspaceService.ListWorkspaces();
-        if (!list || index > list.length) {
-            return;
-        }
-        const entry = list[index - 1];
-        const curWs = globalStore.get(atoms.workspace);
-        if (entry.workspaceid === curWs?.oid) {
-            return;
-        }
-        getApi().switchWorkspace(entry.workspaceid);
-    });
+    openRailConnectionByIndex(index);
 }
 
 function switchTabAbs(index: number) {
