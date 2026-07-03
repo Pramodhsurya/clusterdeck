@@ -2,6 +2,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { BlockNodeModel } from "@/app/block/blocktypes";
+import {
+    ClusterdeckZone_Editor,
+    ClusterdeckZone_Explorer,
+    ClusterdeckZoneMetaKey,
+} from "@/app/clusterdeck/connlock";
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import type { TabModel } from "@/app/store/tab-model";
@@ -593,6 +598,55 @@ export class PreviewModel implements ViewModel {
         // Clear the saved file buffers
         globalStore.set(this.fileContentSaved, null);
         globalStore.set(this.newFileContent, null);
+    }
+
+    // Clusterdeck (§3.5): activate an entry from the directory view. Directories
+    // always navigate the explorer in-place. When this block is the seeded
+    // explorer, files are opened in the designated editor block instead of
+    // in-place; otherwise files open in-place (upstream behavior, and a fallback
+    // when no editor block exists).
+    handleFileActivate(newPath: string, isDir: boolean) {
+        if (isDir) {
+            fireAndForget(() => this.goHistory(newPath));
+            return;
+        }
+        const blockMeta = globalStore.get(this.blockAtom)?.meta;
+        if (blockMeta?.[ClusterdeckZoneMetaKey] !== ClusterdeckZone_Explorer) {
+            fireAndForget(() => this.goHistory(newPath));
+            return;
+        }
+        const editorBlockId = this.findClusterdeckEditorBlockId();
+        if (editorBlockId == null) {
+            fireAndForget(() => this.goHistory(newPath));
+            return;
+        }
+        const editorOref = WOS.makeORef("block", editorBlockId);
+        fireAndForget(async () => {
+            await this.env.services.object.UpdateObjectMeta(editorOref, { file: newPath });
+            refocusNode(editorBlockId);
+        });
+    }
+
+    // Find the sibling block in this tab tagged as the Clusterdeck editor zone.
+    findClusterdeckEditorBlockId(): string | null {
+        const tabId = this.tabModel?.tabId;
+        if (tabId == null) {
+            return null;
+        }
+        const tab = globalStore.get(this.env.wos.getWaveObjectAtom<Tab>(WOS.makeORef("tab", tabId)));
+        if (tab?.blockids == null) {
+            return null;
+        }
+        for (const blockId of tab.blockids) {
+            if (blockId === this.blockId) {
+                continue;
+            }
+            const meta = globalStore.get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", blockId)))?.meta;
+            if (meta?.[ClusterdeckZoneMetaKey] === ClusterdeckZone_Editor) {
+                return blockId;
+            }
+        }
+        return null;
     }
 
     async goParentDirectory({ fileInfo = null }: { fileInfo?: FileInfo | null }) {

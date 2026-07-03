@@ -10,6 +10,12 @@ import { atom } from "jotai";
 
 export const ClusterdeckConnectionMetaKey = "clusterdeck:connection";
 
+// Block "zone" tags for the seeded IDE layout (§3.4). Explorer file-clicks are
+// routed into the block tagged as the editor (§3.5).
+export const ClusterdeckZoneMetaKey = "clusterdeck:zone";
+export const ClusterdeckZone_Explorer = "explorer";
+export const ClusterdeckZone_Editor = "editor";
+
 export function getWorkspaceConnection(workspace: Workspace): string {
     return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
 }
