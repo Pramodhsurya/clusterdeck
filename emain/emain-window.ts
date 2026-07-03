@@ -23,7 +23,11 @@ import { delay, ensureBoundsAreVisible, waveKeyToElectronKey } from "./emain-uti
 import { ElectronWshClient } from "./emain-wsh";
 import { updater } from "./updater";
 
-const DevInitTimeoutMs = 5000;
+// Raised from 5000: a cold first Vite dev-compile of the full app can take
+// well over 5s on some machines, which would time out the init handshake
+// (rejecting initPromise before `wave-init` is sent) and leave the window
+// blank. 30s tolerates a slow first compile; warm reloads are unaffected.
+const DevInitTimeoutMs = 30000;
 
 export type WindowOpts = {
     unamePlatform: NodeJS.Platform;
