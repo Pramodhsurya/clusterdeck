@@ -26,6 +26,7 @@ export interface TreeNodeData {
     isDirectory: boolean;
     mimeType?: string;
     icon?: string;
+    iconColor?: string;
     isReadonly?: boolean;
     notfound?: boolean;
     staterror?: string;
@@ -497,7 +498,10 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                         <i
                                             className={makeIconClass(getNodeIcon(row.node, row.isExpanded), true)}
                                             style={{
-                                                color: row.node.notfound || row.node.staterror ? "var(--color-error)" : "inherit",
+                                                color:
+                                                    row.node.notfound || row.node.staterror
+                                                        ? "var(--color-error)"
+                                                        : (row.node.iconColor ?? "inherit"),
                                             }}
                                         />
                                         <span

@@ -78,7 +78,7 @@ func GetClusterdeckLayout(rootDir string) PortableLayout {
 	if rootDir == "" {
 		rootDir = "~"
 	}
-	explorerSize := uint(3)
+	explorerSize := uint(2)
 	terminalSize := uint(6)
 	return PortableLayout{
 		// Explorer — VS Code–style file tree rooted at the workspace folder
