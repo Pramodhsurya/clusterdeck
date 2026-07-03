@@ -3,6 +3,7 @@
 
 import { BlockNodeModel } from "@/app/block/blocktypes";
 import { ClusterdeckExplorerModel } from "@/app/clusterdeck/explorer";
+import { ClusterdeckWelcomeModel } from "@/app/clusterdeck/welcome";
 import type { TabModel } from "@/app/store/tab-model";
 import { AiFileDiffViewModel } from "@/app/view/aifilediff/aifilediff";
 import { LauncherViewModel } from "@/app/view/launcher/launcher";
@@ -37,6 +38,7 @@ BlockRegistry.set("aifilediff", AiFileDiffViewModel);
 BlockRegistry.set("waveconfig", WaveConfigViewModel);
 BlockRegistry.set("processviewer", ProcessViewerViewModel);
 BlockRegistry.set("cdexplorer", ClusterdeckExplorerModel);
+BlockRegistry.set("cdwelcome", ClusterdeckWelcomeModel);
 
 function makeDefaultViewModel(viewType: string): ViewModel {
     const viewModel: ViewModel = {

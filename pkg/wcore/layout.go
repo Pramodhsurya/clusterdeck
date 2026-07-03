@@ -33,31 +33,9 @@ type PortableLayout []struct {
 }
 
 func GetStarterLayout() PortableLayout {
-	return PortableLayout{
-		{IndexArr: []int{0}, BlockDef: &waveobj.BlockDef{
-			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View:       "term",
-				waveobj.MetaKey_Controller: "shell",
-			},
-		}, Focused: true},
-		{IndexArr: []int{1}, BlockDef: &waveobj.BlockDef{
-			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View: "sysinfo",
-			},
-		}},
-		{IndexArr: []int{1, 1}, BlockDef: &waveobj.BlockDef{
-			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View: "web",
-				waveobj.MetaKey_Url:  "https://github.com/wavetermdev/waveterm",
-			},
-		}},
-		{IndexArr: []int{1, 2}, BlockDef: &waveobj.BlockDef{
-			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View: "preview",
-				waveobj.MetaKey_File: "~",
-			},
-		}},
-	}
+	// Clusterdeck: the app starts on the Welcome page (Recent + Open Folder /
+	// New Connection) instead of Wave's term+sysinfo+web+preview starter.
+	return GetClusterdeckWelcomeLayout()
 }
 
 func GetNewTabLayout() PortableLayout {

@@ -26,6 +26,7 @@ import { useState } from "react";
 import "./connectionsrail.scss";
 
 export const ClusterdeckConnectionMetaKey = "clusterdeck:connection";
+export const ClusterdeckLastOpenedMetaKey = "clusterdeck:lastopened";
 
 const railCollapsedAtom = atomWithStorage<boolean>("clusterdeck:railcollapsed", false);
 const addConnModalOpenAtom = atom<boolean>(false);
@@ -91,21 +92,49 @@ function openTargetWorkspace(target: string) {
     });
 }
 
+// Switch to a workspace, recording recency for the Welcome "Recent" list.
+export function switchToWorkspace(oid: string) {
+    if (globalStore.get(atoms.workspace)?.oid === oid) {
+        return;
+    }
+    fireAndForget(async () => {
+        await RpcApi.SetMetaCommand(TabRpcClient, {
+            oref: WOS.makeORef("workspace", oid),
+            meta: { [ClusterdeckLastOpenedMetaKey]: Date.now() } as MetaType,
+        });
+        getApi().switchWorkspace(oid);
+    });
+}
+
 // Switch to the nth workspace in rail order (1-based) — used by Cmd+1..9.
 export function openRailConnectionByIndex(index: number) {
-    const workspaces = globalStore.get(railWorkspacesAtom);
-    const ws = workspaces[index - 1];
-    if (ws != null && globalStore.get(atoms.workspace)?.oid !== ws.oid) {
-        getApi().switchWorkspace(ws.oid);
+    const ws = globalStore.get(railWorkspacesAtom)[index - 1];
+    if (ws != null) {
+        switchToWorkspace(ws.oid);
     }
 }
 
 // "Open Folder" — native folder picker, then open it as a workspace.
-function openFolderPicker() {
+export function openFolderPicker() {
     fireAndForget(async () => {
         const dir = await getApi().selectDirectory();
         if (dir) {
             openTargetWorkspace(dir);
+        }
+    });
+}
+
+// "New Connection" — open the ssh connection modal.
+export function openNewConnection() {
+    globalStore.set(addConnModalOpenAtom, true);
+}
+
+// Open the Welcome/home workspace (creating it if needed).
+export function openHome() {
+    fireAndForget(async () => {
+        const oid = await RpcApi.ClusterdeckOpenHomeCommand(TabRpcClient);
+        if (oid) {
+            getApi().switchWorkspace(oid);
         }
     });
 }
@@ -200,11 +229,7 @@ const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyN
     const iconName = workspaceIcon(workspace, conn);
     const title = conn && !isLocalConn(conn) ? `${workspace.name} (${conn})` : workspace.name;
 
-    const onClick = useCallback(() => {
-        if (globalStore.get(atoms.workspace)?.oid !== workspace.oid) {
-            getApi().switchWorkspace(workspace.oid);
-        }
-    }, [workspace.oid]);
+    const onClick = useCallback(() => switchToWorkspace(workspace.oid), [workspace.oid]);
 
     return (
         <div className={clsx("rail-item", { active: isActive })} onClick={onClick} title={title}>
@@ -262,6 +287,11 @@ const ConnectionsRail = memo(() => {
             <div className="rail-header">
                 {!collapsed && <span className="rail-title">Connections</span>}
                 <div className="rail-actions">
+                    <i
+                        className={makeIconClass("house", true)}
+                        title="Welcome / Home"
+                        onClick={() => openHome()}
+                    />
                     {!collapsed && (
                         <i
                             className={makeIconClass("plus", true)}
