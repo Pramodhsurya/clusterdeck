@@ -135,6 +135,15 @@ free-form via the rail "+", with nothing auto-seeded.
   **New Connection…** (ssh `user@host` modal). Added a **gear** icon next to "+"
   that opens `connections.json` (via `getConfigDir()` + `openNativePath`).
 
+### feat/rail-connections — rail lists connections.json (2026-07-03)
+
+- `frontend/app/clusterdeck/connectionsrail.tsx`: the rail is now
+  connection-based, not workspace-based. It lists Local + every connection from
+  `connections.json` (`fullConfig.connections`); clicking a connection opens its
+  workspace (`ClusterdeckOpenTargetCommand`). Removed the workspace-list
+  plumbing. Exported `openRailConnectionByIndex` for the Cmd+1..9 hotkeys.
+- `frontend/app/store/keymodel.ts`: Cmd+1..9 opens the nth rail connection.
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold
