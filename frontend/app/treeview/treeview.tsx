@@ -68,6 +68,9 @@ export interface TreeViewProps {
     hideDirIcons?: boolean;
     singleClickOpen?: boolean;
     activeId?: string;
+    // If set, the tree's loaded/expanded/selected state is cached under this key
+    // and restored across re-mounts (so expansion survives parent re-renders).
+    persistKey?: string;
     height?: number | string;
     className?: string;
     onOpenFile?: (id: string, node: TreeNodeData) => void;
@@ -207,6 +210,9 @@ function getNodeIcon(node: TreeNodeData, isExpanded: boolean): string {
     return "file";
 }
 
+type CachedTreeState = { nodesById: Map<string, TreeNodeData>; expandedIds: Set<string>; selectedId: string };
+const treeStateCache = new Map<string, CachedTreeState>();
+
 export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
     const {
         rootIds,
@@ -224,31 +230,45 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         hideDirIcons = false,
         singleClickOpen = false,
         activeId,
+        persistKey,
         onOpenFile,
         onSelectionChange,
     } = props;
-    const [nodesById, setNodesById] = useState<Map<string, TreeNodeData>>(
-        () =>
-            new Map(
-                Object.entries(initialNodes).map(([id, node]) => [id, { ...node, childrenStatus: node.childrenStatus ?? "unloaded" }])
-            )
+    const cached = persistKey ? treeStateCache.get(persistKey) : undefined;
+    const [nodesById, setNodesById] = useState<Map<string, TreeNodeData>>(() =>
+        cached
+            ? new Map(cached.nodesById)
+            : new Map(
+                  Object.entries(initialNodes).map(([id, node]) => [
+                      id,
+                      { ...node, childrenStatus: node.childrenStatus ?? "unloaded" },
+                  ])
+              )
     );
-    const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-    const [selectedId, setSelectedId] = useState<string>(rootIds[0]);
+    const [expandedIds, setExpandedIds] = useState<Set<string>>(() =>
+        cached ? new Set(cached.expandedIds) : new Set()
+    );
+    const [selectedId, setSelectedId] = useState<string>(() => cached?.selectedId ?? rootIds[0]);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // Persist state so it survives re-mounts (expansion holds when a file opens).
     useEffect(() => {
-        setNodesById(
-            new Map(
-                Object.entries(initialNodes).map(([id, node]) => [
-                    id,
-                    {
-                        ...node,
-                        childrenStatus: node.childrenStatus ?? "unloaded",
-                    },
-                ])
-            )
-        );
+        if (persistKey) {
+            treeStateCache.set(persistKey, { nodesById, expandedIds, selectedId });
+        }
+    }, [persistKey, nodesById, expandedIds, selectedId]);
+
+    // Merge new root nodes without wiping already-loaded children (non-destructive).
+    useEffect(() => {
+        setNodesById((prev) => {
+            const next = new Map(prev);
+            for (const [id, node] of Object.entries(initialNodes)) {
+                if (!next.has(id)) {
+                    next.set(id, { ...node, childrenStatus: node.childrenStatus ?? "unloaded" });
+                }
+            }
+            return next;
+        });
     }, [initialNodes]);
 
     const visibleRows = useMemo(() => buildVisibleRows(nodesById, rootIds, expandedIds), [nodesById, rootIds, expandedIds]);
