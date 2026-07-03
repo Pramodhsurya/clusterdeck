@@ -66,6 +66,7 @@ export interface TreeViewProps {
     maxWidth?: number;
     width?: number | string;
     hideDirIcons?: boolean;
+    singleClickOpen?: boolean;
     height?: number | string;
     className?: string;
     onOpenFile?: (id: string, node: TreeNodeData) => void;
@@ -220,6 +221,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         height = 360,
         className,
         hideDirIcons = false,
+        singleClickOpen = false,
         onOpenFile,
         onSelectionChange,
     } = props;
@@ -458,9 +460,21 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                     height: rowHeight,
                                     transform: `translateY(${virtualRow.start}px)`,
                                 }}
-                                onClick={() => row.kind === "node" && commitSelection(row.id)}
-                                onDoubleClick={() => {
+                                onClick={() => {
                                     if (row.kind !== "node") {
+                                        return;
+                                    }
+                                    commitSelection(row.id);
+                                    if (singleClickOpen) {
+                                        if (row.isDirectory) {
+                                            toggleExpand(row.id);
+                                        } else if (row.node != null) {
+                                            onOpenFile?.(row.id, row.node);
+                                        }
+                                    }
+                                }}
+                                onDoubleClick={() => {
+                                    if (singleClickOpen || row.kind !== "node") {
                                         return;
                                     }
                                     if (row.isDirectory) {
