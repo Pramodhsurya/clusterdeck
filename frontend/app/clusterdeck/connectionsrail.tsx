@@ -11,7 +11,7 @@ import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { Input } from "@/element/input";
 import { WaveModal } from "@/element/modal";
-import { atoms, getApi, getConnStatusAtom, WOS } from "@/store/global";
+import { atoms, createBlock, getApi, getConnStatusAtom, WOS } from "@/store/global";
 import { isMacOS } from "@/util/platformutil";
 import { fireAndForget, makeIconClass } from "@/util/util";
 import clsx from "clsx";
@@ -110,13 +110,16 @@ function openFolderPicker() {
     });
 }
 
-// Open connections.json in the OS default editor (backend ensures it exists).
+// Open connections.json inside Clusterdeck's own editor (a local preview block,
+// Monaco) rather than the OS default app. connection:"local" is set explicitly
+// so the workspace-connection lock (§3.3) doesn't bind it to a remote host.
 function openConnectionsConfig() {
     fireAndForget(async () => {
         const path = await RpcApi.ClusterdeckConnectionsConfigPathCommand(TabRpcClient);
-        if (path) {
-            getApi().openNativePath(path);
+        if (!path) {
+            return;
         }
+        await createBlock({ meta: { view: "preview", file: path, connection: "local" } }, false, false);
     });
 }
 
