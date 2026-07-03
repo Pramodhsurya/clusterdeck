@@ -152,6 +152,7 @@ class ClusterdeckExplorerModel implements ViewModel {
     collapsedAtom: jotai.Atom<boolean>;
     openFileAtom: jotai.Atom<string | null>;
     openFilesAtom: jotai.Atom<string[]>;
+    gitStatusAtom: jotai.PrimitiveAtom<Record<string, string>>;
     refreshVersion = jotai.atom(0);
 
     constructor({ blockId, nodeModel, tabModel, waveEnv }: ViewModelInitType) {
@@ -175,6 +176,8 @@ class ClusterdeckExplorerModel implements ViewModel {
             const meta = this.editorMeta(get);
             return (meta?.["clusterdeck:openfiles"] as string[]) ?? [];
         });
+        // Git decorations: absolute path -> "modified" | "added" (change #6 G#).
+        this.gitStatusAtom = jotai.atom<Record<string, string>>({});
     }
 
     // Resolve the designated editor-zone block's id in this tab (§3.5). `get` is
@@ -209,6 +212,40 @@ class ClusterdeckExplorerModel implements ViewModel {
 
     refresh() {
         globalStore.set(this.refreshVersion, globalStore.get(this.refreshVersion) + 1);
+        void this.refreshGitStatus();
+    }
+
+    // Query git status over the connection and roll it up to ancestor folders, so
+    // the tree can color changed files (M) and folders that contain them (§ G#).
+    async refreshGitStatus() {
+        const connection = globalStore.get(this.connectionAtom);
+        const rootPath = globalStore.get(this.rootPathAtom);
+        if (!rootPath) {
+            return;
+        }
+        let raw: Record<string, string> = {};
+        try {
+            raw = await RpcApi.ClusterdeckGitStatusCommand(TabRpcClient, connection ?? "local", rootPath);
+        } catch {
+            raw = {};
+        }
+        const map: Record<string, string> = { ...raw };
+        const root = rootPath.replace(/\/+$/, "");
+        for (const [p, status] of Object.entries(raw)) {
+            let dir = p.slice(0, p.lastIndexOf("/"));
+            while (dir && dir.length >= root.length && dir.startsWith(root)) {
+                if (status === "modified") {
+                    map[dir] = "modified";
+                } else if (map[dir] == null) {
+                    map[dir] = "added";
+                }
+                if (dir === root) {
+                    break;
+                }
+                dir = dir.slice(0, dir.lastIndexOf("/"));
+            }
+        }
+        globalStore.set(this.gitStatusAtom, map);
     }
 
     // Resize the explorer's layout node to sizePercent (0-100) of its row,
@@ -331,6 +368,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
     const rootPath = useAtomValue(model.rootPathAtom);
     const refreshVersion = useAtomValue(model.refreshVersion);
     const openFile = useAtomValue(model.openFileAtom);
+    const gitStatus = useAtomValue(model.gitStatusAtom);
     const [rootIds, setRootIds] = useState<string[]>([]);
     const [initialNodes, setInitialNodes] = useState<Record<string, TreeNodeData>>({});
     const [error, setError] = useState<string>(null);
@@ -366,6 +404,14 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
         const t = setTimeout(() => model.ensureDefaultWidth(), 150);
         return () => clearTimeout(t);
     }, [model]);
+
+    // Refresh git decorations on load, on manual refresh, and on a light poll
+    // (catches edits/saves/commits made anywhere).
+    useEffect(() => {
+        void model.refreshGitStatus();
+        const iv = setInterval(() => void model.refreshGitStatus(), 5000);
+        return () => clearInterval(iv);
+    }, [model, connection, rootPath, refreshVersion]);
 
     const fetchDir = useCallback(
         async (id: string, limit: number) => {
@@ -452,6 +498,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                         hideDirIcons={true}
                         singleClickOpen={true}
                         activeId={openFile ?? undefined}
+                        gitStatus={gitStatus}
                         persistKey={`${model.blockId}:${connection}:${rootPath}`}
                         width="100%"
                         minWidth={0}

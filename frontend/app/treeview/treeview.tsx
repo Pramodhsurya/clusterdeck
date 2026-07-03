@@ -68,6 +68,9 @@ export interface TreeViewProps {
     hideDirIcons?: boolean;
     singleClickOpen?: boolean;
     activeId?: string;
+    // Git decorations: absolute path -> "modified" | "added". Applied at render
+    // time (files get a colored name + letter badge; folders roll up to a color).
+    gitStatus?: Record<string, string>;
     // If set, the tree's loaded/expanded/selected state is cached under this key
     // and restored across re-mounts (so expansion survives parent re-renders).
     persistKey?: string;
@@ -210,6 +213,12 @@ function getNodeIcon(node: TreeNodeData, isExpanded: boolean): string {
     return "file";
 }
 
+function gitColor(status?: string): string | undefined {
+    if (status === "modified") return "var(--cd-git-modified, #e2c08d)";
+    if (status === "added") return "var(--cd-git-added, #4fa6ff)";
+    return undefined;
+}
+
 type CachedTreeState = { nodesById: Map<string, TreeNodeData>; expandedIds: Set<string>; selectedId: string };
 const treeStateCache = new Map<string, CachedTreeState>();
 
@@ -230,6 +239,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         hideDirIcons = false,
         singleClickOpen = false,
         activeId,
+        gitStatus,
         persistKey,
         onOpenFile,
         onSelectionChange,
@@ -477,6 +487,9 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                             return null;
                         }
                         const selected = row.id === selectedId;
+                        const gitState =
+                            row.kind === "node" && row.node?.path ? gitStatus?.[row.node.path] : undefined;
+                        const gs = gitState ? { status: gitState, color: gitColor(gitState) } : undefined;
                         return (
                             <div
                                 key={row.id}
@@ -559,10 +572,19 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                         )}
                                         <span
                                             className={clsx("ml-2 pr-3", row.node.isReadonly && "text-muted")}
+                                            style={gs ? { color: gs.color } : undefined}
                                             title={row.label}
                                         >
                                             {row.label}
                                         </span>
+                                        {gs && !row.node.isDirectory && (
+                                            <span
+                                                className="ml-auto pr-2 text-[11px] font-semibold"
+                                                style={{ color: gs.color }}
+                                            >
+                                                {gs.status === "modified" ? "M" : "U"}
+                                            </span>
+                                        )}
                                     </>
                                 ) : (
                                     <span className="ml-6 pr-3 text-xs">{row.label}</span>

@@ -218,6 +218,13 @@ func (ws *WshServer) ClusterdeckConnectionsConfigPathCommand(ctx context.Context
 	return path, nil
 }
 
+// ClusterdeckGitStatusCommand returns a map of absolute file path -> git status
+// ("modified" | "added") for the repo at rootDir on the given connection, for the
+// explorer's git decorations (change #6 G#).
+func (ws *WshServer) ClusterdeckGitStatusCommand(ctx context.Context, connName string, rootDir string) (map[string]string, error) {
+	return clusterdeck.GitStatus(ctx, connName, rootDir)
+}
+
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {
 	oref := waveobj.ORef{OType: waveobj.OType_Workspace, OID: workspaceId}
 	err := wcore.UpdateWorkspaceTabIds(ctx, workspaceId, tabIds)
