@@ -14,8 +14,9 @@ import { WaveEnv } from "@/app/waveenv/waveenv";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { TreeNodeData, TreeView } from "@/app/treeview/treeview";
+import { getLayoutModelForStaticTab, LayoutTreeActionType, type LayoutTreeResizeNodeAction } from "@/layout/index";
 import { WOS, refocusNode } from "@/store/global";
-import { fireAndForget } from "@/util/util";
+import { fireAndForget, makeIconClass } from "@/util/util";
 import { formatRemoteUri } from "@/util/waveutil";
 import * as jotai from "jotai";
 import { useAtomValue } from "jotai";
@@ -147,6 +148,7 @@ class ClusterdeckExplorerModel implements ViewModel {
     viewName: jotai.Atom<string>;
     connectionAtom: jotai.Atom<string>;
     rootPathAtom: jotai.Atom<string>;
+    collapsedAtom: jotai.Atom<boolean>;
     refreshVersion = jotai.atom(0);
 
     constructor({ blockId, nodeModel, tabModel, waveEnv }: ViewModelInitType) {
@@ -159,6 +161,7 @@ class ClusterdeckExplorerModel implements ViewModel {
         this.viewName = jotai.atom("Explorer");
         this.connectionAtom = jotai.atom((get) => (get(this.blockAtom)?.meta?.connection as string) ?? "local");
         this.rootPathAtom = jotai.atom((get) => (get(this.blockAtom)?.meta?.file as string) || "~");
+        this.collapsedAtom = jotai.atom((get) => !!get(this.blockAtom)?.meta?.["clusterdeck:explorercollapsed"]);
     }
 
     get viewComponent(): ViewComponent {
@@ -167,6 +170,38 @@ class ClusterdeckExplorerModel implements ViewModel {
 
     refresh() {
         globalStore.set(this.refreshVersion, globalStore.get(this.refreshVersion) + 1);
+    }
+
+    // Collapse the explorer to a thin strip (or restore) by resizing its layout
+    // node, and persist the collapsed flag on the block.
+    toggleCollapse() {
+        const collapsed = !globalStore.get(this.collapsedAtom);
+        fireAndForget(() =>
+            RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", this.blockId),
+                meta: { "clusterdeck:explorercollapsed": collapsed } as MetaType,
+            })
+        );
+        const lm = getLayoutModelForStaticTab();
+        const children = lm?.treeState?.rootNode?.children;
+        if (!children) {
+            return;
+        }
+        const explorerNode = children.find((n) => n.data?.blockId === this.blockId);
+        const others = children.filter((n) => n.id !== explorerNode?.id);
+        if (explorerNode == null || others.length === 0) {
+            return;
+        }
+        const explorerSize = collapsed ? 3 : 18;
+        const rest = (100 - explorerSize) / others.length;
+        const action: LayoutTreeResizeNodeAction = {
+            type: LayoutTreeActionType.ResizeNode,
+            resizeOperations: [
+                { nodeId: explorerNode.id, size: explorerSize },
+                ...others.map((n) => ({ nodeId: n.id, size: rest })),
+            ],
+        };
+        lm.treeReducer(action);
     }
 
     // Route a file into the designated editor-zone block in this tab (§3.5).
@@ -245,16 +280,32 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
     );
 
     const header = useMemo(() => baseName(rootPath).toUpperCase(), [rootPath]);
+    const collapsed = useAtomValue(model.collapsedAtom);
+
+    if (collapsed) {
+        return (
+            <div className="cd-explorer collapsed" onClick={() => model.toggleCollapse()} title="Expand explorer">
+                <i className={makeIconClass("angles-right", false)} />
+            </div>
+        );
+    }
 
     return (
         <div className="cd-explorer">
             <div className="cd-explorer-header">
                 <span className="cd-explorer-root">{header}</span>
-                <i
-                    className="fa fa-sharp fa-solid fa-arrows-rotate cd-explorer-refresh"
-                    title="Refresh"
-                    onClick={() => model.refresh()}
-                />
+                <span className="cd-explorer-actions">
+                    <i
+                        className={makeIconClass("arrows-rotate", false)}
+                        title="Refresh"
+                        onClick={() => model.refresh()}
+                    />
+                    <i
+                        className={makeIconClass("angles-left", false)}
+                        title="Collapse explorer"
+                        onClick={() => model.toggleCollapse()}
+                    />
+                </span>
             </div>
             <div className="cd-explorer-tree">
                 {error != null ? (
