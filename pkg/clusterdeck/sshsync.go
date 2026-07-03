@@ -25,7 +25,7 @@ const (
 	// workspace inherit this connection.
 	MetaKey_WorkspaceConnection = "clusterdeck:connection"
 
-	connWorkspaceIcon = "server-2"
+	connWorkspaceIcon = "server"
 
 	// ConnWorkspaceColor is the single Clusterdeck accent (blue). Do not add
 	// other accent colors for connection workspaces.
