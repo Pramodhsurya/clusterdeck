@@ -36,7 +36,22 @@ Apache-2.0 §4(b). It is updated as changes land.
 - `frontend/app/store/keymodel.ts`: Cmd+1..9 switches workspaces in rail order
   (was: tab switching; tabs remain on Cmd+[ / Cmd+]).
 
-### Planned reshaping (not yet implemented)
+### feat/ide-layout-template (2026-07-03)
+
+- `pkg/wcore/clusterdeck.go`: added `GetClusterdeckLayout()` — the default IDE
+  layout (§3.4) as a `PortableLayout`: narrow full-height explorer (`preview` at
+  `~`), a file editor (`preview`, tagged `clusterdeck:zone=editor`), and a shell
+  terminal, all inheriting the workspace connection. Added `clusterdeck:zone`
+  block tags (`explorer`/`editor`) for §3.5 routing, and
+  `SeedClusterdeckLayoutForTab` (reuses `ApplyPortableLayout`, which clears the
+  tab first — also serves "reset layout to default").
+- `pkg/wcore/workspace.go`: `CreateTab` seeds the Clusterdeck layout instead of a
+  bare terminal when the tab's workspace is a connection workspace.
+- `pkg/clusterdeck/sshsync.go`: after tagging a new connection workspace, seed its
+  initial tab with the IDE layout (blocks don't connect until mounted, so no SSH
+  connection is opened at startup).
+
+
 
 The fork will reshape Wave into a multi-cluster SSH workspace ("connection = workspace"):
 

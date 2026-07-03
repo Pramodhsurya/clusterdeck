@@ -76,6 +76,20 @@ func SyncSshConfigWorkspaces(ctx context.Context) error {
 			log.Printf("clusterdeck: error setting connection meta on workspace %s: %v\n", ws.OID, err)
 			continue
 		}
+		// Seed the IDE layout (§3.4) into the workspace's initial tab. The
+		// connection meta is now persisted, so the explorer/editor/terminal
+		// blocks inherit it. This replaces the bare terminal CreateWorkspace
+		// created before the meta existed. Blocks don't connect until mounted,
+		// so no SSH connection is opened here at startup.
+		tabId := ws.ActiveTabId
+		if tabId == "" && len(ws.TabIds) > 0 {
+			tabId = ws.TabIds[0]
+		}
+		if tabId != "" {
+			if err := wcore.SeedClusterdeckLayoutForTab(ctx, tabId); err != nil {
+				log.Printf("clusterdeck: error seeding layout for workspace %s: %v\n", ws.OID, err)
+			}
+		}
 		created++
 	}
 	if created > 0 {
