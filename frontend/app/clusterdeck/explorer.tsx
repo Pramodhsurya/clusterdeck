@@ -18,6 +18,7 @@ import { getLayoutModelForStaticTab, LayoutTreeActionType, type LayoutTreeResize
 import { WOS, refocusNode } from "@/store/global";
 import { fireAndForget, makeIconClass } from "@/util/util";
 import { formatRemoteUri } from "@/util/waveutil";
+import clsx from "clsx";
 import * as jotai from "jotai";
 import { useAtomValue } from "jotai";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -150,6 +151,7 @@ class ClusterdeckExplorerModel implements ViewModel {
     rootPathAtom: jotai.Atom<string>;
     collapsedAtom: jotai.Atom<boolean>;
     openFileAtom: jotai.Atom<string | null>;
+    openFilesAtom: jotai.Atom<string[]>;
     refreshVersion = jotai.atom(0);
 
     constructor({ blockId, nodeModel, tabModel, waveEnv }: ViewModelInitType) {
@@ -165,24 +167,40 @@ class ClusterdeckExplorerModel implements ViewModel {
         this.collapsedAtom = jotai.atom((get) => !!get(this.blockAtom)?.meta?.["clusterdeck:explorercollapsed"]);
         // The file open in the designated editor block, for tree highlighting (T5).
         this.openFileAtom = jotai.atom((get) => {
-            const tabId = this.tabModel?.tabId;
-            if (tabId == null) {
-                return null;
-            }
-            const tab = get(this.env.wos.getWaveObjectAtom<Tab>(WOS.makeORef("tab", tabId)));
-            const editorId = tab?.blockids?.find((bid) => {
-                if (bid === this.blockId) {
-                    return false;
-                }
-                const m = get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", bid)))?.meta;
-                return m?.[ClusterdeckZoneMetaKey] === ClusterdeckZone_Editor;
-            });
-            if (editorId == null) {
-                return null;
-            }
-            const editorMeta = get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", editorId)))?.meta;
-            return (editorMeta?.file as string) ?? null;
+            const meta = this.editorMeta(get);
+            return (meta?.file as string) ?? null;
         });
+        // The list of files open in the editor, for the OPEN EDITORS section (E#).
+        this.openFilesAtom = jotai.atom((get) => {
+            const meta = this.editorMeta(get);
+            return (meta?.["clusterdeck:openfiles"] as string[]) ?? [];
+        });
+    }
+
+    // Resolve the designated editor-zone block's id in this tab (§3.5). `get` is
+    // an atom getter (reactive) or globalStore.get.
+    editorBlockId(get: <T>(a: jotai.Atom<T>) => T): string | null {
+        const tabId = this.tabModel?.tabId;
+        if (tabId == null) {
+            return null;
+        }
+        const tab = get(this.env.wos.getWaveObjectAtom<Tab>(WOS.makeORef("tab", tabId)));
+        const editorId = tab?.blockids?.find((bid) => {
+            if (bid === this.blockId) {
+                return false;
+            }
+            const m = get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", bid)))?.meta;
+            return m?.[ClusterdeckZoneMetaKey] === ClusterdeckZone_Editor;
+        });
+        return editorId ?? null;
+    }
+
+    private editorMeta(get: <T>(a: jotai.Atom<T>) => T): MetaType | null {
+        const editorId = this.editorBlockId(get);
+        if (editorId == null) {
+            return null;
+        }
+        return get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", editorId)))?.meta ?? null;
     }
 
     get viewComponent(): ViewComponent {
@@ -248,27 +266,63 @@ class ClusterdeckExplorerModel implements ViewModel {
         }
     }
 
-    // Route a file into the designated editor-zone block in this tab (§3.5).
+    private editorMetaNow(): { editorId: string; meta: MetaType | null } | null {
+        const editorId = this.editorBlockId(globalStore.get);
+        if (editorId == null) {
+            return null;
+        }
+        const meta = globalStore.get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", editorId)))?.meta;
+        return { editorId, meta: meta ?? null };
+    }
+
+    // Route a file into the editor block (§3.5), adding it to OPEN EDITORS (E#).
     openInEditor(path: string) {
-        const tabId = this.tabModel?.tabId;
-        if (tabId == null) {
+        const e = this.editorMetaNow();
+        if (e == null) {
             return;
         }
-        const tab = globalStore.get(this.env.wos.getWaveObjectAtom<Tab>(WOS.makeORef("tab", tabId)));
-        const editorId = tab?.blockids?.find((bid) => {
-            if (bid === this.blockId) {
-                return false;
-            }
-            const meta = globalStore.get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", bid)))?.meta;
-            return meta?.[ClusterdeckZoneMetaKey] === ClusterdeckZone_Editor;
+        const openFiles = (e.meta?.["clusterdeck:openfiles"] as string[]) ?? [];
+        const next = openFiles.includes(path) ? openFiles : [...openFiles, path];
+        fireAndForget(async () => {
+            await RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", e.editorId),
+                meta: { file: path, "clusterdeck:openfiles": next } as MetaType,
+            });
+            refocusNode(e.editorId);
         });
-        if (editorId == null) {
+    }
+
+    // Make an already-open file the active one in the editor.
+    setActiveEditorFile(path: string) {
+        const e = this.editorMetaNow();
+        if (e == null) {
             return;
         }
         fireAndForget(async () => {
-            await RpcApi.SetMetaCommand(TabRpcClient, { oref: WOS.makeORef("block", editorId), meta: { file: path } });
-            refocusNode(editorId);
+            await RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", e.editorId),
+                meta: { file: path },
+            });
+            refocusNode(e.editorId);
         });
+    }
+
+    // Close a file: drop it from OPEN EDITORS; if it was active, activate another.
+    closeEditorFile(path: string) {
+        const e = this.editorMetaNow();
+        if (e == null) {
+            return;
+        }
+        const openFiles = (e.meta?.["clusterdeck:openfiles"] as string[]) ?? [];
+        const next = openFiles.filter((f) => f !== path);
+        const activeFile = e.meta?.file as string;
+        const newActive = activeFile === path ? (next[next.length - 1] ?? "") : activeFile;
+        fireAndForget(() =>
+            RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", e.editorId),
+                meta: { file: newActive, "clusterdeck:openfiles": next } as MetaType,
+            })
+        );
     }
 }
 
@@ -332,6 +386,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
 
     const header = useMemo(() => baseName(rootPath).toUpperCase(), [rootPath]);
     const collapsed = useAtomValue(model.collapsedAtom);
+    const openFiles = useAtomValue(model.openFilesAtom);
 
     if (collapsed) {
         return (
@@ -358,6 +413,32 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                     />
                 </span>
             </div>
+            {openFiles.length > 0 && (
+                <div className="cd-open-editors">
+                    <div className="cd-open-editors-title">OPEN EDITORS</div>
+                    {openFiles.map((f) => {
+                        const style = fileStyle(baseName(f));
+                        return (
+                            <div
+                                key={f}
+                                className={clsx("cd-open-editor", { active: f === openFile })}
+                                onClick={() => model.setActiveEditorFile(f)}
+                                title={f}
+                            >
+                                <i
+                                    className={clsx(makeIconClass("xmark", true), "cd-open-editor-close")}
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        model.closeEditorFile(f);
+                                    }}
+                                />
+                                <i className={makeIconClass(style.icon, true)} style={{ color: style.color }} />
+                                <span className="cd-open-editor-name">{baseName(f)}</span>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
             <div className="cd-explorer-tree">
                 {error != null ? (
                     <div className="cd-explorer-error">{error}</div>
