@@ -5,6 +5,7 @@
 // collapsible left rail. Connection = workspace: clicking a row switches the
 // whole window to that connection's workspace.
 
+import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
@@ -68,10 +69,10 @@ function getWorkspaceConnection(workspace: Workspace): string {
     return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
 }
 
-// Open a workspace for a free-form target — a local folder path (e.g.
-// ~/Documents/proj) OR a connection (user@host) — creating + seeding the IDE
-// layout if needed, then switch the window to it. A workspace is a root folder
-// on a connection, so the same connection can back many folders.
+// Open a workspace for a target — a local folder path (e.g. ~/Documents/proj)
+// OR a connection (user@host) — creating + seeding the IDE layout if needed,
+// then switch the window to it. A workspace is a root folder on a connection,
+// so the same connection can back many folders.
 function openTargetWorkspace(target: string) {
     fireAndForget(async () => {
         const workspaceId = await RpcApi.ClusterdeckOpenTargetCommand(TabRpcClient, target);
@@ -79,6 +80,33 @@ function openTargetWorkspace(target: string) {
             getApi().switchWorkspace(workspaceId);
         }
     });
+}
+
+// "Open Folder" — native folder picker, then open it as a workspace.
+function openFolderPicker() {
+    fireAndForget(async () => {
+        const dir = await getApi().selectDirectory();
+        if (dir) {
+            openTargetWorkspace(dir);
+        }
+    });
+}
+
+// Open connections.json in the OS default editor (via the config dir).
+function openConnectionsConfig() {
+    const configDir = getApi().getConfigDir();
+    if (configDir) {
+        getApi().openNativePath(`${configDir}/connections.json`);
+    }
+}
+
+// The rail "+" — a two-option menu: pick a local folder, or add an ssh connection.
+function openAddMenu(e: React.MouseEvent) {
+    const menu: ContextMenuItem[] = [
+        { label: "Open Folder…", click: () => openFolderPicker() },
+        { label: "New Connection…", click: () => globalStore.set(addConnModalOpenAtom, true) },
+    ];
+    ContextMenuModel.getInstance().showContextMenu(menu, e);
 }
 
 // The rail "+" modal — one free-form input: a local folder path or a connection.
@@ -103,16 +131,16 @@ const AddConnectionModal = memo(() => {
     };
     return (
         <WaveModal
-            title="Open Folder or Connection"
-            description="Enter a local folder (e.g. ~/Documents/project) or a connection (e.g. user@host). It opens as a workspace with the Clusterdeck layout."
-            buttonLabel="Open"
+            title="New Connection"
+            description="Enter an SSH connection (e.g. user@host). It opens as a workspace with the Clusterdeck layout; Wave's connect/auth runs when the blocks mount."
+            buttonLabel="Connect"
             onSubmit={submit}
             onCancel={close}
         >
             <Input
                 value={value}
                 onChange={setValue}
-                placeholder="~/path/to/folder  or  user@host"
+                placeholder="user@host"
                 autoFocus={true}
                 onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -215,8 +243,15 @@ const ConnectionsRail = memo(() => {
                     {!collapsed && (
                         <i
                             className={makeIconClass("plus", true)}
-                            title="Open folder or connection"
-                            onClick={() => globalStore.set(addConnModalOpenAtom, true)}
+                            title="Open folder or add connection"
+                            onClick={(e) => openAddMenu(e)}
+                        />
+                    )}
+                    {!collapsed && (
+                        <i
+                            className={makeIconClass("gear", true)}
+                            title="Edit connections.json"
+                            onClick={() => openConnectionsConfig()}
                         />
                     )}
                     <i
