@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/wavetermdev/waveterm/pkg/waveobj"
 	"github.com/wavetermdev/waveterm/pkg/wavebase"
 	"github.com/wavetermdev/waveterm/pkg/wconfig"
 )
@@ -96,6 +97,17 @@ func DisplayName(conn string) string {
 		return conn[idx+1:]
 	}
 	return conn
+}
+
+// EnsureConnectionRegistered adds connName to connections.json if it is not
+// already there, so a connection added via the rail "+" shows up in the
+// connections list (the rail is driven by connections.json).
+func EnsureConnectionRegistered(connName string) error {
+	config := wconfig.GetWatcher().GetFullConfig()
+	if _, ok := config.Connections[connName]; ok {
+		return nil
+	}
+	return wconfig.SetConnectionsConfigValue(connName, waveobj.MetaMapType{})
 }
 
 // EnsureConnectionsConfigPath returns the absolute path to connections.json,
