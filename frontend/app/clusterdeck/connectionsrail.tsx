@@ -1,9 +1,10 @@
 // Copyright 2026, Clusterdeck Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-// SHELL CONNECTIONS rail — the workspace switcher reshaped as a full-height,
-// collapsible left rail. Connection = workspace: clicking a row switches the
-// whole window to that connection's workspace.
+// CONNECTIONS rail — the single workspace switcher, a full-height collapsible
+// left rail. It lists every workspace the user has opened (local folders and
+// ssh connections); clicking a row switches the whole window to it. This
+// replaces Wave's native workspace switcher.
 
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
@@ -12,13 +13,16 @@ import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { Input } from "@/element/input";
 import { WaveModal } from "@/element/modal";
 import { atoms, createBlock, getApi, getConnStatusAtom, WOS } from "@/store/global";
+import { WorkspaceService } from "@/store/services";
+import { waveEventSubscribeSingle } from "@/store/wps";
 import { isMacOS } from "@/util/platformutil";
 import { fireAndForget, makeIconClass } from "@/util/util";
 import clsx from "clsx";
-import { atom, useAtom, useAtomValue } from "jotai";
+import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
-import { memo, useCallback, useState } from "react";
+import { memo, useCallback, useEffect } from "react";
+import { useState } from "react";
 import "./connectionsrail.scss";
 
 export const ClusterdeckConnectionMetaKey = "clusterdeck:connection";
@@ -26,23 +30,23 @@ export const ClusterdeckConnectionMetaKey = "clusterdeck:connection";
 const railCollapsedAtom = atomWithStorage<boolean>("clusterdeck:railcollapsed", false);
 const addConnModalOpenAtom = atom<boolean>(false);
 
+// The workspaces shown in the rail (Clusterdeck workspaces = folders +
+// connections the user opened). Populated from WorkspaceService and refreshed on
+// workspace updates.
+const railWorkspacesAtom = atom<Workspace[]>([]);
+
 function isLocalConn(conn: string): boolean {
     return conn === "" || conn === "local" || conn.startsWith("local:");
 }
 
-function railDisplayName(conn: string): string {
-    const at = conn.lastIndexOf("@");
-    return at >= 0 ? conn.slice(at + 1) : conn;
+function getWorkspaceConnection(workspace: Workspace): string {
+    return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
 }
 
-// The rail lists Wave's saved connections (connections.json) plus the local
-// machine; clicking a connection opens its workspace.
-const railConnectionsAtom = atom<string[]>((get) => {
-    const conns = get(atoms.fullConfigAtom)?.connections ?? {};
-    const names = Object.keys(conns).filter((c) => !isLocalConn(c) && !c.startsWith("wsl://"));
-    names.sort((a, b) => a.localeCompare(b));
-    return ["local", ...names];
-});
+// A Clusterdeck workspace is one opened via the rail (tagged with a connection).
+function isClusterdeckWorkspace(workspace: Workspace): boolean {
+    return workspace?.meta?.[ClusterdeckConnectionMetaKey] != null;
+}
 
 // number of terminal blocks in the current tab (subline for the active row)
 const activeTermCountAtom = atom((get) => {
@@ -66,7 +70,8 @@ const activeTermCountAtom = atom((get) => {
 
 const connectedCountAtom = atom((get) => {
     let count = 0;
-    for (const conn of get(railConnectionsAtom)) {
+    for (const ws of get(railWorkspacesAtom)) {
+        const conn = getWorkspaceConnection(ws);
         if (!isLocalConn(conn) && get(getConnStatusAtom(conn))?.connected) {
             count++;
         }
@@ -74,14 +79,9 @@ const connectedCountAtom = atom((get) => {
     return count;
 });
 
-function getWorkspaceConnection(workspace: Workspace): string {
-    return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
-}
-
 // Open a workspace for a target — a local folder path (e.g. ~/Documents/proj)
 // OR a connection (user@host) — creating + seeding the IDE layout if needed,
-// then switch the window to it. A workspace is a root folder on a connection,
-// so the same connection can back many folders.
+// then switch the window to it.
 function openTargetWorkspace(target: string) {
     fireAndForget(async () => {
         const workspaceId = await RpcApi.ClusterdeckOpenTargetCommand(TabRpcClient, target);
@@ -91,12 +91,12 @@ function openTargetWorkspace(target: string) {
     });
 }
 
-// Open the nth connection in rail order (1-based) — used by Cmd+1..9.
+// Switch to the nth workspace in rail order (1-based) — used by Cmd+1..9.
 export function openRailConnectionByIndex(index: number) {
-    const conns = globalStore.get(railConnectionsAtom);
-    const conn = conns[index - 1];
-    if (conn != null) {
-        openTargetWorkspace(conn);
+    const workspaces = globalStore.get(railWorkspacesAtom);
+    const ws = workspaces[index - 1];
+    if (ws != null && globalStore.get(atoms.workspace)?.oid !== ws.oid) {
+        getApi().switchWorkspace(ws.oid);
     }
 }
 
@@ -132,9 +132,8 @@ function openAddMenu(e: React.MouseEvent) {
     ContextMenuModel.getInstance().showContextMenu(menu, e);
 }
 
-// The rail "+" modal — one free-form input: a local folder path or a connection.
-// Opening a remote target triggers Wave's normal connect/auth flow when the
-// blocks mount.
+// The rail "+" modal — an ssh connection (user@host). Opening it triggers Wave's
+// normal connect/auth flow when the blocks mount.
 const AddConnectionModal = memo(() => {
     const [open, setOpen] = useAtom(addConnModalOpenAtom);
     const [value, setValue] = useState("");
@@ -182,21 +181,30 @@ function hotkeyLabel(num: number): string {
     return isMacOS() ? `⌘${num}` : `Alt+${num}`;
 }
 
-const RailItem = memo(({ conn, hotkeyNum }: { conn: string; hotkeyNum: number }) => {
+function workspaceIcon(workspace: Workspace, conn: string): string {
+    if (workspace.icon && workspace.icon != "custom@wave-logo-solid") {
+        return workspace.icon;
+    }
+    return isLocalConn(conn) ? "folder" : "server";
+}
+
+const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyNum: number }) => {
     const activeWorkspace = useAtomValue(atoms.workspace);
     const collapsed = useAtomValue(railCollapsedAtom);
+    const conn = getWorkspaceConnection(workspace);
     const connStatus = useAtomValue(getConnStatusAtom(conn));
     const termCount = useAtomValue(activeTermCountAtom);
 
-    const local = isLocalConn(conn);
-    const activeConn = getWorkspaceConnection(activeWorkspace);
-    const isActive = local ? isLocalConn(activeConn) : activeConn === conn;
-    const isConnected = !local && !!connStatus?.connected;
-    const iconName = local ? "laptop" : "server";
-    const label = local ? "Local" : railDisplayName(conn);
-    const title = local ? "Local" : conn;
+    const isActive = activeWorkspace?.oid === workspace.oid;
+    const isConnected = !isLocalConn(conn) && !!connStatus?.connected;
+    const iconName = workspaceIcon(workspace, conn);
+    const title = conn && !isLocalConn(conn) ? `${workspace.name} (${conn})` : workspace.name;
 
-    const onClick = useCallback(() => openTargetWorkspace(conn), [conn]);
+    const onClick = useCallback(() => {
+        if (globalStore.get(atoms.workspace)?.oid !== workspace.oid) {
+            getApi().switchWorkspace(workspace.oid);
+        }
+    }, [workspace.oid]);
 
     return (
         <div className={clsx("rail-item", { active: isActive })} onClick={onClick} title={title}>
@@ -205,7 +213,7 @@ const RailItem = memo(({ conn, hotkeyNum }: { conn: string; hotkeyNum: number })
                 <i className={makeIconClass(iconName, true)} />
                 {!collapsed && (
                     <>
-                        <span className="label">{label}</span>
+                        <span className="label">{workspace.name}</span>
                         {hotkeyNum != null && <span className="hotkey">{hotkeyLabel(hotkeyNum)}</span>}
                     </>
                 )}
@@ -221,9 +229,33 @@ const RailItem = memo(({ conn, hotkeyNum }: { conn: string; hotkeyNum: number })
 RailItem.displayName = "RailItem";
 
 const ConnectionsRail = memo(() => {
-    const connections = useAtomValue(railConnectionsAtom);
+    const workspaces = useAtomValue(railWorkspacesAtom);
+    const setWorkspaces = useSetAtom(railWorkspacesAtom);
     const [collapsed, setCollapsed] = useAtom(railCollapsedAtom);
     const connectedCount = useAtomValue(connectedCountAtom);
+
+    const updateWorkspaces = useCallback(async () => {
+        const list = await WorkspaceService.ListWorkspaces();
+        if (!list) {
+            return;
+        }
+        const result: Workspace[] = [];
+        for (const entry of list) {
+            const ws = await WorkspaceService.GetWorkspace(entry.workspaceid);
+            if (ws && isClusterdeckWorkspace(ws)) {
+                result.push(ws);
+            }
+        }
+        setWorkspaces(result);
+    }, [setWorkspaces]);
+
+    useEffect(() => {
+        fireAndForget(updateWorkspaces);
+        return waveEventSubscribeSingle({
+            eventType: "workspace:update",
+            handler: () => fireAndForget(updateWorkspaces),
+        });
+    }, [updateWorkspaces]);
 
     return (
         <div className={clsx("cd-connections-rail", { collapsed })}>
@@ -252,8 +284,8 @@ const ConnectionsRail = memo(() => {
                 </div>
             </div>
             <OverlayScrollbarsComponent className="rail-list" options={{ scrollbars: { autoHide: "leave" } }}>
-                {connections.map((conn, i) => (
-                    <RailItem key={conn} conn={conn} hotkeyNum={i < 9 ? i + 1 : null} />
+                {workspaces.map((ws, i) => (
+                    <RailItem key={ws.oid} workspace={ws} hotkeyNum={i < 9 ? i + 1 : null} />
                 ))}
             </OverlayScrollbarsComponent>
             <div className="rail-footer" title={`${connectedCount} connected`}>

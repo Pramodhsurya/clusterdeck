@@ -69,9 +69,8 @@ const MacOSHeader = memo(() => {
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             >
                 <VTabBarAIButton />
-                <Tooltip content="Workspace Switcher" placement="bottom" hideOnClick divClassName="flex items-center">
-                    <WorkspaceSwitcher />
-                </Tooltip>
+                {/* Clusterdeck: Wave's native workspace switcher is hidden — the
+                    connections rail is the single workspace switcher. */}
                 <UpdateStatusBanner />
             </div>
         </>
