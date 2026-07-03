@@ -18,20 +18,44 @@ import (
 // without an import cycle.)
 const ClusterdeckConnectionMetaKey = "clusterdeck:connection"
 
+// ClusterdeckRootDirMetaKey records the root folder a connection workspace is
+// opened at. A workspace is (connection, rootDir): the same connection (e.g.
+// "local") can back many workspaces rooted at different folders. Empty means the
+// connection's home (~).
+const ClusterdeckRootDirMetaKey = "clusterdeck:rootdir"
+
+func getWorkspaceForTab(ctx context.Context, tabId string) *waveobj.Workspace {
+	workspaceId, err := wstore.DBFindWorkspaceForTabId(ctx, tabId)
+	if err != nil || workspaceId == "" {
+		return nil
+	}
+	ws, err := wstore.DBGet[*waveobj.Workspace](ctx, workspaceId)
+	if err != nil {
+		return nil
+	}
+	return ws
+}
+
 // GetWorkspaceConnectionForTab returns the workspace-level connection for the
 // workspace containing the given tab, or "" if the workspace is not a
 // connection workspace (or on any lookup error — callers treat that as
 // unlocked).
 func GetWorkspaceConnectionForTab(ctx context.Context, tabId string) string {
-	workspaceId, err := wstore.DBFindWorkspaceForTabId(ctx, tabId)
-	if err != nil || workspaceId == "" {
-		return ""
-	}
-	ws, err := wstore.DBGet[*waveobj.Workspace](ctx, workspaceId)
-	if err != nil || ws == nil {
+	ws := getWorkspaceForTab(ctx, tabId)
+	if ws == nil {
 		return ""
 	}
 	return ws.Meta.GetString(ClusterdeckConnectionMetaKey, "")
+}
+
+// GetWorkspaceRootDirForTab returns the root folder of the workspace containing
+// the given tab, or "" (meaning the connection's home).
+func GetWorkspaceRootDirForTab(ctx context.Context, tabId string) string {
+	ws := getWorkspaceForTab(ctx, tabId)
+	if ws == nil {
+		return ""
+	}
+	return ws.Meta.GetString(ClusterdeckRootDirMetaKey, "")
 }
 
 // ClusterdeckZoneMetaKey tags a seeded block with its role in the IDE layout
@@ -50,15 +74,18 @@ const (
 // terminal below it. Every block inherits the workspace connection (see
 // CreateBlockWithTelemetry), so explorer, editor, and terminal all target the
 // same host — the "connection = workspace" model.
-func GetClusterdeckLayout() PortableLayout {
+func GetClusterdeckLayout(rootDir string) PortableLayout {
+	if rootDir == "" {
+		rootDir = "~"
+	}
 	explorerSize := uint(3)
 	terminalSize := uint(6)
 	return PortableLayout{
-		// Explorer — remote directory tree rooted at the connection's home dir.
+		// Explorer — directory tree rooted at the workspace folder.
 		{IndexArr: []int{0}, Size: &explorerSize, BlockDef: &waveobj.BlockDef{
 			Meta: waveobj.MetaMapType{
 				waveobj.MetaKey_View:   "preview",
-				waveobj.MetaKey_File:   "~",
+				waveobj.MetaKey_File:   rootDir,
 				ClusterdeckZoneMetaKey: ClusterdeckZone_Explorer,
 			},
 		}},
@@ -69,47 +96,50 @@ func GetClusterdeckLayout() PortableLayout {
 				ClusterdeckZoneMetaKey: ClusterdeckZone_Editor,
 			},
 		}},
-		// Terminal — shell on the workspace connection; focused on open.
+		// Terminal — shell on the workspace connection, started in the workspace
+		// folder; focused on open.
 		{IndexArr: []int{1, 1}, Size: &terminalSize, BlockDef: &waveobj.BlockDef{
 			Meta: waveobj.MetaMapType{
 				waveobj.MetaKey_View:       "term",
 				waveobj.MetaKey_Controller: "shell",
+				waveobj.MetaKey_CmdCwd:     rootDir,
 			},
 		}, Focused: true},
 	}
 }
 
-// SeedClusterdeckLayoutForTab applies the default IDE layout to the given tab.
-// Used to seed a connection workspace's initial tab and to implement "reset
-// layout to default". ApplyPortableLayout clears the tab first, so this is safe
-// to call on an already-populated tab.
+// SeedClusterdeckLayoutForTab applies the default IDE layout to the given tab,
+// rooted at its workspace folder. Used to seed a connection workspace's initial
+// tab and to implement "reset layout to default". ApplyPortableLayout clears the
+// tab first, so this is safe to call on an already-populated tab.
 func SeedClusterdeckLayoutForTab(ctx context.Context, tabId string) error {
-	return ApplyPortableLayout(ctx, tabId, GetClusterdeckLayout(), false)
+	rootDir := GetWorkspaceRootDirForTab(ctx, tabId)
+	return ApplyPortableLayout(ctx, tabId, GetClusterdeckLayout(rootDir), false)
 }
 
-// FindConnectionWorkspace returns the id of the connection workspace bound to
-// connName, or "" if none exists.
-func FindConnectionWorkspace(ctx context.Context, connName string) (string, error) {
+// FindConnectionWorkspace returns the id of the workspace for (connName,
+// rootDir), or "" if none exists. A connection can back many workspaces rooted
+// at different folders, so both must match.
+func FindConnectionWorkspace(ctx context.Context, connName, rootDir string) (string, error) {
 	workspaces, err := wstore.DBGetAllObjsByType[*waveobj.Workspace](ctx, waveobj.OType_Workspace)
 	if err != nil {
 		return "", err
 	}
 	for _, ws := range workspaces {
-		if ws.Meta.GetString(ClusterdeckConnectionMetaKey, "") == connName {
+		if ws.Meta.GetString(ClusterdeckConnectionMetaKey, "") == connName &&
+			ws.Meta.GetString(ClusterdeckRootDirMetaKey, "") == rootDir {
 			return ws.OID, nil
 		}
 	}
 	return "", nil
 }
 
-// EnsureConnectionWorkspace returns the id of the connection workspace bound to
-// connName, creating and seeding it (default IDE layout) if one does not exist.
-// `created` reports whether a new workspace was made. Blocks in the workspace
-// inherit connName; they don't connect until mounted, so this opens no
-// connection. This is the single primitive behind both startup sync and the
-// rail's "add connection" action ("connection = workspace").
-func EnsureConnectionWorkspace(ctx context.Context, connName, name, icon, color string) (workspaceId string, created bool, err error) {
-	existingId, err := FindConnectionWorkspace(ctx, connName)
+// EnsureConnectionWorkspace returns the id of the workspace for (connName,
+// rootDir), creating and seeding it (IDE layout rooted at rootDir) if one does
+// not exist. `created` reports whether a new workspace was made. Blocks inherit
+// connName; they don't connect until mounted, so this opens no connection.
+func EnsureConnectionWorkspace(ctx context.Context, connName, rootDir, name, icon, color string) (workspaceId string, created bool, err error) {
+	existingId, err := FindConnectionWorkspace(ctx, connName, rootDir)
 	if err != nil {
 		return "", false, err
 	}
@@ -124,6 +154,9 @@ func EnsureConnectionWorkspace(ctx context.Context, connName, name, icon, color 
 		ws.Meta = waveobj.MetaMapType{}
 	}
 	ws.Meta[ClusterdeckConnectionMetaKey] = connName
+	if rootDir != "" {
+		ws.Meta[ClusterdeckRootDirMetaKey] = rootDir
+	}
 	if err := wstore.DBUpdate(ctx, ws); err != nil {
 		return "", false, fmt.Errorf("error tagging connection workspace %s: %w", ws.OID, err)
 	}

@@ -101,9 +101,9 @@ func CheckGoVersionCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (*wshrpc.Com
 	return resp, err
 }
 
-// command "clusterdeckensureconnworkspace", wshserver.ClusterdeckEnsureConnWorkspaceCommand
-func ClusterdeckEnsureConnWorkspaceCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) (string, error) {
-	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckensureconnworkspace", data, opts)
+// command "clusterdeckopentarget", wshserver.ClusterdeckOpenTargetCommand
+func ClusterdeckOpenTargetCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) (string, error) {
+	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckopentarget", data, opts)
 	return resp, err
 }
 

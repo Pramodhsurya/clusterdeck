@@ -5,7 +5,6 @@
 // collapsible left rail. Connection = workspace: clicking a row switches the
 // whole window to that connection's workspace.
 
-import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
@@ -69,57 +68,22 @@ function getWorkspaceConnection(workspace: Workspace): string {
     return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
 }
 
-function railDisplayName(conn: string): string {
-    const at = conn.lastIndexOf("@");
-    return at >= 0 ? conn.slice(at + 1) : conn;
-}
-
-function isLocalConn(conn: string): boolean {
-    return conn === "" || conn === "local" || conn.startsWith("local:");
-}
-
-// Open the connection's workspace (create + seed the IDE layout if missing),
-// then switch the window to it. Connection = workspace.
-function openConnectionWorkspace(conn: string) {
+// Open a workspace for a free-form target — a local folder path (e.g.
+// ~/Documents/proj) OR a connection (user@host) — creating + seeding the IDE
+// layout if needed, then switch the window to it. A workspace is a root folder
+// on a connection, so the same connection can back many folders.
+function openTargetWorkspace(target: string) {
     fireAndForget(async () => {
-        const workspaceId = await RpcApi.ClusterdeckEnsureConnWorkspaceCommand(TabRpcClient, conn);
+        const workspaceId = await RpcApi.ClusterdeckOpenTargetCommand(TabRpcClient, target);
         if (workspaceId) {
             getApi().switchWorkspace(workspaceId);
         }
     });
 }
 
-// Rail "+" — pick any connection (Local, or a saved/ssh host) and open its
-// connection workspace. Selecting an existing one just switches to it.
-async function openAddConnectionMenu(e: React.MouseEvent) {
-    let conns: string[] = [];
-    try {
-        conns = (await RpcApi.ConnListCommand(TabRpcClient)) ?? [];
-    } catch (err) {
-        console.error("clusterdeck: failed to list connections", err);
-    }
-    const seen = new Set<string>();
-    const remotes = conns.filter((c) => {
-        if (isLocalConn(c) || seen.has(c)) {
-            return false;
-        }
-        seen.add(c);
-        return true;
-    });
-    const menu: ContextMenuItem[] = [{ label: "Local", click: () => openConnectionWorkspace("local") }];
-    if (remotes.length > 0) {
-        menu.push({ type: "separator" });
-        for (const conn of remotes) {
-            menu.push({ label: railDisplayName(conn), click: () => openConnectionWorkspace(conn) });
-        }
-    }
-    menu.push({ type: "separator" }, { label: "New connection…", click: () => globalStore.set(addConnModalOpenAtom, true) });
-    ContextMenuModel.getInstance().showContextMenu(menu, e);
-}
-
-// Modal to add a brand-new connection by typing user@host (or a Wave connection
-// string). Opening its workspace triggers Wave's normal connect/auth flow when
-// the blocks mount.
+// The rail "+" modal — one free-form input: a local folder path or a connection.
+// Opening a remote target triggers Wave's normal connect/auth flow when the
+// blocks mount.
 const AddConnectionModal = memo(() => {
     const [open, setOpen] = useAtom(addConnModalOpenAtom);
     const [value, setValue] = useState("");
@@ -131,24 +95,24 @@ const AddConnectionModal = memo(() => {
         setOpen(false);
     };
     const submit = () => {
-        const conn = value.trim();
-        if (conn != "") {
-            openConnectionWorkspace(conn);
+        const target = value.trim();
+        if (target != "") {
+            openTargetWorkspace(target);
         }
         close();
     };
     return (
         <WaveModal
-            title="New Connection"
-            description="Enter a connection, e.g. user@host. Its workspace opens with the Clusterdeck layout."
-            buttonLabel="Connect"
+            title="Open Folder or Connection"
+            description="Enter a local folder (e.g. ~/Documents/project) or a connection (e.g. user@host). It opens as a workspace with the Clusterdeck layout."
+            buttonLabel="Open"
             onSubmit={submit}
             onCancel={close}
         >
             <Input
                 value={value}
                 onChange={setValue}
-                placeholder="user@host"
+                placeholder="~/path/to/folder  or  user@host"
                 autoFocus={true}
                 onKeyDown={(e) => {
                     if (e.key === "Enter") {
@@ -251,8 +215,8 @@ const ConnectionsRail = memo(() => {
                     {!collapsed && (
                         <i
                             className={makeIconClass("plus", true)}
-                            title="Add connection"
-                            onClick={(e) => fireAndForget(() => openAddConnectionMenu(e))}
+                            title="Open folder or connection"
+                            onClick={() => globalStore.set(addConnModalOpenAtom, true)}
                         />
                     )}
                     <i

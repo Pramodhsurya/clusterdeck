@@ -252,9 +252,9 @@ func CreateTab(ctx context.Context, workspaceId string, tabName string, activate
 	if !isInitialLaunch {
 		layout := GetNewTabLayout()
 		// Clusterdeck: tabs in a connection workspace seed the IDE layout (§3.4)
-		// — explorer + editor + terminal — instead of a bare terminal.
+		// — explorer + editor + terminal — rooted at the workspace folder.
 		if GetWorkspaceConnectionForTab(ctx, tab.OID) != "" {
-			layout = GetClusterdeckLayout()
+			layout = GetClusterdeckLayout(GetWorkspaceRootDirForTab(ctx, tab.OID))
 		}
 		err = ApplyPortableLayout(ctx, tab.OID, layout, true)
 		if err != nil {

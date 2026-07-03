@@ -103,6 +103,28 @@ Apache-2.0 §4(b). It is updated as changes land.
   to type a new `user@host`; its connection workspace is created and opened
   (Wave's normal connect/auth flow runs when the blocks mount).
 
+### feat/folder-workspaces — workspace = folder on a connection (2026-07-03)
+
+Reshaped the model so a workspace is a **root folder on a connection**, added
+free-form via the rail "+", with nothing auto-seeded.
+
+- `pkg/wcore/clusterdeck.go`: added `clusterdeck:rootdir` workspace meta +
+  `GetWorkspaceRootDirForTab`. `GetClusterdeckLayout(rootDir)` roots the explorer
+  (`file`) and terminal (`cmd:cwd`) at the folder. `EnsureConnectionWorkspace` /
+  `FindConnectionWorkspace` now key on (connection, rootDir), so one connection
+  (e.g. `local`) can back many folder workspaces.
+- `pkg/clusterdeck/sshsync.go`: replaced startup auto-seed with `ClassifyTarget`
+  — interprets a free-form target as a local folder path (leading `/`, `~`, `.`,
+  or an existing dir) rooted on `local`, else a remote connection. Removed the
+  startup sync (`cmd/server/main-server.go` no longer seeds anything).
+- `ClusterdeckOpenTargetCommand(target) -> workspaceId` (replaces
+  `ClusterdeckEnsureConnWorkspaceCommand`): opens the workspace for a folder or
+  connection.
+- `frontend/app/clusterdeck/connectionsrail.tsx`: the rail "+" now opens one
+  free-form modal ("Open Folder or Connection") — type a local path or
+  `user@host`; it opens as a workspace rooted there. Dropped the connection
+  context-menu picker.
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold
