@@ -182,6 +182,12 @@ func (ws *WshServer) ClusterdeckResetLayoutCommand(ctx context.Context, tabId st
 // rail's "+" — a workspace is a root folder on a connection.
 func (ws *WshServer) ClusterdeckOpenTargetCommand(ctx context.Context, target string) (string, error) {
 	connName, rootDir, name, icon := clusterdeck.ClassifyTarget(target)
+	// Register a remote connection in connections.json so it appears in the rail.
+	if connName != clusterdeck.LocalConnName {
+		if err := clusterdeck.EnsureConnectionRegistered(connName); err != nil {
+			log.Printf("clusterdeck: could not register connection %q: %v\n", connName, err)
+		}
+	}
 	workspaceId, _, err := wcore.EnsureConnectionWorkspace(ctx, connName, rootDir, name, icon, clusterdeck.ConnWorkspaceColor)
 	if err != nil {
 		return "", fmt.Errorf("error opening target workspace: %w", err)
