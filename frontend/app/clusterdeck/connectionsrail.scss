@@ -136,6 +136,12 @@
                 background-color: var(--cd-accent);
             }
 
+            // local/folder workspaces: always available (subtle accent)
+            &.available {
+                background-color: var(--cd-accent);
+                opacity: 0.55;
+            }
+
             &.placeholder {
                 background-color: transparent;
             }

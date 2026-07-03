@@ -67,6 +67,7 @@ export interface TreeViewProps {
     width?: number | string;
     hideDirIcons?: boolean;
     singleClickOpen?: boolean;
+    activeId?: string;
     height?: number | string;
     className?: string;
     onOpenFile?: (id: string, node: TreeNodeData) => void;
@@ -222,6 +223,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         className,
         hideDirIcons = false,
         singleClickOpen = false,
+        activeId,
         onOpenFile,
         onSelectionChange,
     } = props;
@@ -285,6 +287,14 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         }),
         [idToIndex, virtualizer]
     );
+
+    // Follow an externally-driven active node (e.g. the file open in the editor).
+    useEffect(() => {
+        if (activeId != null && nodesById.has(activeId)) {
+            setSelectedId(activeId);
+            scrollToId(activeId);
+        }
+    }, [activeId, nodesById]);
 
     const loadChildren = async (id: string) => {
         const currentNode = nodesById.get(id);

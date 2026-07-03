@@ -72,7 +72,7 @@ const ClusterdeckWelcomeView = memo(() => {
                     Number(b.meta?.[ClusterdeckLastOpenedMetaKey] ?? 0) -
                     Number(a.meta?.[ClusterdeckLastOpenedMetaKey] ?? 0)
             );
-            setRecent(wss.slice(0, 5));
+            setRecent(wss.slice(0, 8));
         });
     }, []);
 
@@ -98,7 +98,11 @@ const ClusterdeckWelcomeView = memo(() => {
                     <div className="cd-welcome-col">
                         <div className="cd-welcome-heading">Recent</div>
                         {recent.length === 0 ? (
-                            <div className="cd-welcome-empty">No recent workspaces yet.</div>
+                            <div className="cd-welcome-empty">
+                                No recent workspaces yet.
+                                <br />
+                                Use <b>Open Folder…</b> or <b>New Connection…</b> to get started.
+                            </div>
                         ) : (
                             recent.map((ws) => (
                                 <div
