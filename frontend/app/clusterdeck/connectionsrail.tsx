@@ -287,11 +287,6 @@ const ConnectionsRail = memo(() => {
             <div className="rail-header">
                 {!collapsed && <span className="rail-title">Connections</span>}
                 <div className="rail-actions">
-                    <i
-                        className={makeIconClass("house", true)}
-                        title="Welcome / Home"
-                        onClick={() => openHome()}
-                    />
                     {!collapsed && (
                         <i
                             className={makeIconClass("plus", true)}
@@ -314,6 +309,13 @@ const ConnectionsRail = memo(() => {
                 </div>
             </div>
             <OverlayScrollbarsComponent className="rail-list" options={{ scrollbars: { autoHide: "leave" } }}>
+                <div className="rail-item rail-welcome" onClick={() => openHome()} title="Welcome">
+                    <div className="rail-item-row">
+                        <span className="status-dot placeholder" />
+                        <i className={makeIconClass("house", true)} />
+                        {!collapsed && <span className="label">Welcome</span>}
+                    </div>
+                </div>
                 {workspaces.map((ws, i) => (
                     <RailItem key={ws.oid} workspace={ws} hotkeyNum={i < 9 ? i + 1 : null} />
                 ))}
