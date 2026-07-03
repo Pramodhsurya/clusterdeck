@@ -57,7 +57,20 @@ Apache-2.0 §4(b). It is updated as changes land.
   the tab context menu (`frontend/app/tab/tabcontextmenu.ts`), shown only for
   connection workspaces.
 
+### feat/explorer-editor-routing (2026-07-03)
 
+- `frontend/app/clusterdeck/connlock.ts`: exported the `clusterdeck:zone` tag
+  constants (explorer/editor) shared by the layout seed and the routing.
+- `frontend/app/view/preview/preview-model.tsx`: added `handleFileActivate(path,
+  isDir)` + `findClusterdeckEditorBlockId()`. In the seeded explorer block, a
+  file activation sets the `file` meta on the sibling editor-zone block (and
+  focuses it) instead of navigating in-place. Directories still navigate the
+  explorer; non-explorer blocks and the no-editor-block case fall back to the
+  upstream in-place behavior.
+- `frontend/app/view/preview/preview-directory.tsx`: route the double-click and
+  Enter file-open handlers through `handleFileActivate`.
+
+### Planned reshaping (not yet implemented)
 
 The fork will reshape Wave into a multi-cluster SSH workspace ("connection = workspace"):
 

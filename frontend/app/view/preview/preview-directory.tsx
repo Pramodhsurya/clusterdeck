@@ -530,7 +530,7 @@ function TableRow({ model, row, focusIndex, setFocusIndex, setSearch, idx, handl
             data-rowindex={idx}
             onDoubleClick={() => {
                 const newFileName = row.getValue("path") as string;
-                model.goHistory(newFileName);
+                model.handleFileActivate(newFileName, row.original.isdir);
                 setSearch("");
                 globalStore.set(model.directorySearchActive, false);
             }}
@@ -662,7 +662,8 @@ function DirectoryPreview({ model }: DirectoryPreviewProps) {
                 if (filteredData.length == 0) {
                     return;
                 }
-                model.goHistory(selectedPath);
+                const selectedEntry = filteredData.find((f) => (f.path as string) === selectedPath);
+                model.handleFileActivate(selectedPath, selectedEntry?.isdir ?? false);
                 setSearchText("");
                 globalStore.set(model.directorySearchActive, false);
                 return true;
