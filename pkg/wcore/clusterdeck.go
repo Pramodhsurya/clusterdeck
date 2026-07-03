@@ -90,10 +90,11 @@ func GetClusterdeckLayout(rootDir string) PortableLayout {
 				ClusterdeckZoneMetaKey: ClusterdeckZone_Explorer,
 			},
 		}},
-		// Editor — designated file editor; explorer clicks open files here (§3.5).
+		// Editor — designated file editor with tabs (change #6 X#); explorer
+		// clicks open files here (§3.5). Custom "cdeditor" view wraps the preview.
 		{IndexArr: []int{1}, BlockDef: &waveobj.BlockDef{
 			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View:   "preview",
+				waveobj.MetaKey_View:   "cdeditor",
 				ClusterdeckZoneMetaKey: ClusterdeckZone_Editor,
 			},
 		}},
