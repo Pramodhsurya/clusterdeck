@@ -92,12 +92,14 @@ function openFolderPicker() {
     });
 }
 
-// Open connections.json in the OS default editor (via the config dir).
+// Open connections.json in the OS default editor (backend ensures it exists).
 function openConnectionsConfig() {
-    const configDir = getApi().getConfigDir();
-    if (configDir) {
-        getApi().openNativePath(`${configDir}/connections.json`);
-    }
+    fireAndForget(async () => {
+        const path = await RpcApi.ClusterdeckConnectionsConfigPathCommand(TabRpcClient);
+        if (path) {
+            getApi().openNativePath(path);
+        }
+    });
 }
 
 // The rail "+" — a two-option menu: pick a local folder, or add an ssh connection.
