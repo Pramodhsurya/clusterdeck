@@ -165,6 +165,16 @@ func (ws *WshServer) UpdateTabNameCommand(ctx context.Context, tabId string, new
 	return nil
 }
 
+// ClusterdeckResetLayoutCommand re-seeds the tab with the default Clusterdeck
+// IDE layout (§3.4), discarding the current arrangement. ApplyPortableLayout
+// clears the tab first, so this replaces whatever blocks are present.
+func (ws *WshServer) ClusterdeckResetLayoutCommand(ctx context.Context, tabId string) error {
+	if err := wcore.SeedClusterdeckLayoutForTab(ctx, tabId); err != nil {
+		return fmt.Errorf("error resetting clusterdeck layout: %w", err)
+	}
+	return nil
+}
+
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {
 	oref := waveobj.ORef{OType: waveobj.OType_Workspace, OID: workspaceId}
 	err := wcore.UpdateWorkspaceTabIds(ctx, workspaceId, tabIds)
