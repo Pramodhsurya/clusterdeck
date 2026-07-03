@@ -1,7 +1,9 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { getOrefMetaKeyAtom, globalStore, recordTEvent } from "@/app/store/global";
+import { ClusterdeckConnectionMetaKey } from "@/app/clusterdeck/connlock";
+import { atoms, getOrefMetaKeyAtom, globalStore, recordTEvent } from "@/app/store/global";
+import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { fireAndForget } from "@/util/util";
 import { makeORef } from "../store/wos";
@@ -51,6 +53,18 @@ export function buildTabContextMenu(
         },
         { type: "separator" }
     );
+    // Clusterdeck: connection workspaces can reset their tab to the default IDE
+    // layout (§3.4 — explorer + editor + terminal).
+    const activeWorkspace = globalStore.get(atoms.workspace);
+    if (activeWorkspace?.meta?.[ClusterdeckConnectionMetaKey]) {
+        menu.push(
+            {
+                label: "Reset Layout to Default",
+                click: () => fireAndForget(() => RpcApi.ClusterdeckResetLayoutCommand(TabRpcClient, id)),
+            },
+            { type: "separator" }
+        );
+    }
     const tabORef = makeORef("tab", id);
     const currentFlagColor = globalStore.get(getOrefMetaKeyAtom(tabORef, "tab:flagcolor")) ?? null;
     const flagSubmenu: ContextMenuItem[] = [

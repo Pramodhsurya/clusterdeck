@@ -50,6 +50,12 @@ Apache-2.0 §4(b). It is updated as changes land.
 - `pkg/clusterdeck/sshsync.go`: after tagging a new connection workspace, seed its
   initial tab with the IDE layout (blocks don't connect until mounted, so no SSH
   connection is opened at startup).
+- "Reset layout to default": added `ClusterdeckResetLayoutCommand(tabId)` to the
+  wshrpc interface (`pkg/wshrpc/wshrpctypes.go`) + handler
+  (`pkg/wshrpc/wshserver/wshserver.go`); regenerated bindings
+  (`wshclientapi.ts`, `wshclient.go`). Added a "Reset Layout to Default" item to
+  the tab context menu (`frontend/app/tab/tabcontextmenu.ts`), shown only for
+  connection workspaces.
 
 
 
