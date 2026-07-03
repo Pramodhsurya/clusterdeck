@@ -144,6 +144,20 @@ free-form via the rail "+", with nothing auto-seeded.
   plumbing. Exported `openRailConnectionByIndex` for the Cmd+1..9 hotkeys.
 - `frontend/app/store/keymodel.ts`: Cmd+1..9 opens the nth rail connection.
 
+### feat/tree-explorer — change #6 Phase 1 (2026-07-03)
+
+- Added an isolated Clusterdeck explorer block view (`cdexplorer`), leaving
+  Wave's directory view untouched:
+  - `frontend/app/clusterdeck/explorer.tsx` (+ `.scss`): `ClusterdeckExplorerModel`
+    (a `ViewModel`) + a VS Code–style tree built on Wave's `TreeView`. Lists the
+    workspace folder over SFTP (`FileListCommand`), lazy-loads subfolders on
+    expand, file-type icons, a folder header + refresh (T1–T8). File clicks route
+    into the editor-zone block (§3.5); folders expand/collapse.
+  - `frontend/app/block/blockregistry.ts`: registered `cdexplorer`.
+  - `pkg/wcore/clusterdeck.go`: the seeded explorer block now uses the
+    `cdexplorer` view instead of `preview`.
+- OPEN EDITORS + editor tabs (E#/X#) and git decorations (G#) remain later phases.
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold

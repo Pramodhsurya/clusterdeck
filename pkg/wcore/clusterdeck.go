@@ -81,10 +81,11 @@ func GetClusterdeckLayout(rootDir string) PortableLayout {
 	explorerSize := uint(3)
 	terminalSize := uint(6)
 	return PortableLayout{
-		// Explorer — directory tree rooted at the workspace folder.
+		// Explorer — VS Code–style file tree rooted at the workspace folder
+		// (change #6). Custom "cdexplorer" view; reads file/connection from meta.
 		{IndexArr: []int{0}, Size: &explorerSize, BlockDef: &waveobj.BlockDef{
 			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View:   "preview",
+				waveobj.MetaKey_View:   "cdexplorer",
 				waveobj.MetaKey_File:   rootDir,
 				ClusterdeckZoneMetaKey: ClusterdeckZone_Explorer,
 			},
