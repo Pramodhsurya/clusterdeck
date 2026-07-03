@@ -7,6 +7,7 @@
 // replaces Wave's native workspace switcher.
 
 import { ContextMenuModel } from "@/app/store/contextmenu";
+import { WorkspaceEditor } from "@/app/tab/workspaceeditor";
 import { globalStore } from "@/app/store/jotaiStore";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
@@ -210,80 +211,56 @@ function hotkeyLabel(num: number): string {
     return isMacOS() ? `⌘${num}` : `Alt+${num}`;
 }
 
-const WorkspaceColors: { label: string; value: string }[] = [
-    { label: "Blue", value: "#429DFF" },
-    { label: "Green", value: "#58C142" },
-    { label: "Teal", value: "#00FFDB" },
-    { label: "Purple", value: "#BF55EC" },
-    { label: "Red", value: "#FF453A" },
-    { label: "Orange", value: "#FF9500" },
-    { label: "Yellow", value: "#FFE900" },
-];
+// Right-click a rail workspace to edit it (name / color / icon / delete) using
+// the same editor UI as Wave's native switcher, shown in a popup at the cursor.
+const editTargetAtom = atom(null as { workspace: Workspace; x: number; y: number } | null);
 
-const renameTargetAtom = atom(null as Workspace | null);
-
-// Right-click menu for a rail workspace — Open, rename, color, delete (cloned
-// from Wave's native workspace switcher).
 function showWorkspaceMenu(e: React.MouseEvent, ws: Workspace) {
     e.preventDefault();
-    const menu: ContextMenuItem[] = [
-        { label: "Open", click: () => switchToWorkspace(ws.oid) },
-        { type: "separator" },
-        { label: "Rename…", click: () => globalStore.set(renameTargetAtom, ws) },
-        {
-            label: "Change Color",
-            type: "submenu",
-            submenu: WorkspaceColors.map((c) => ({
-                label: c.label,
-                type: "checkbox" as const,
-                checked: ws.color === c.value,
-                click: () =>
-                    fireAndForget(() => WorkspaceService.UpdateWorkspace(ws.oid, ws.name, ws.icon, c.value, false)),
-            })),
-        },
-        { type: "separator" },
-        { label: "Delete Workspace", click: () => getApi().deleteWorkspace(ws.oid) },
-    ];
-    ContextMenuModel.getInstance().showContextMenu(menu, e);
+    e.stopPropagation();
+    const x = Math.max(8, Math.min(e.clientX, window.innerWidth - 250));
+    const y = Math.max(8, Math.min(e.clientY, window.innerHeight - 320));
+    globalStore.set(editTargetAtom, { workspace: ws, x, y });
 }
 
-const RenameWorkspaceModal = memo(() => {
-    const [target, setTarget] = useAtom(renameTargetAtom);
-    const [value, setValue] = useState("");
+const WorkspaceEditorPopup = memo(() => {
+    const [target, setTarget] = useAtom(editTargetAtom);
+    const [ws, setWs] = useState<Workspace | null>(null);
     useEffect(() => {
-        if (target) {
-            setValue(target.name ?? "");
-        }
+        setWs(target?.workspace ?? null);
     }, [target]);
-    if (!target) {
+    if (target == null || ws == null) {
         return null;
     }
     const close = () => setTarget(null);
-    const submit = () => {
-        const name = value.trim();
-        if (name) {
-            fireAndForget(() => WorkspaceService.UpdateWorkspace(target.oid, name, target.icon, target.color, false));
-        }
-        close();
+    const update = (next: Workspace) => {
+        setWs(next);
+        fireAndForget(() =>
+            WorkspaceService.UpdateWorkspace(next.oid, next.name ?? "", next.icon ?? "", next.color ?? "", false)
+        );
     };
     return (
-        <WaveModal title="Rename Workspace" buttonLabel="Rename" onSubmit={submit} onCancel={close}>
-            <Input
-                value={value}
-                onChange={setValue}
-                autoFocus={true}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                        submit();
-                    } else if (e.key === "Escape") {
+        <>
+            <div className="cd-editor-backdrop" onClick={close} />
+            <div className="cd-editor-popup" style={{ top: target.y, left: target.x }} onClick={(e) => e.stopPropagation()}>
+                <WorkspaceEditor
+                    title={ws.name ?? ""}
+                    icon={ws.icon ?? ""}
+                    color={ws.color ?? ""}
+                    focusInput={true}
+                    onTitleChange={(t) => update({ ...ws, name: t })}
+                    onColorChange={(c) => update({ ...ws, color: c })}
+                    onIconChange={(i) => update({ ...ws, icon: i })}
+                    onDeleteWorkspace={() => {
+                        getApi().deleteWorkspace(ws.oid);
                         close();
-                    }
-                }}
-            />
-        </WaveModal>
+                    }}
+                />
+            </div>
+        </>
     );
 });
-RenameWorkspaceModal.displayName = "RenameWorkspaceModal";
+WorkspaceEditorPopup.displayName = "WorkspaceEditorPopup";
 
 function workspaceIcon(workspace: Workspace, conn: string): string {
     if (workspace.icon && workspace.icon != "custom@wave-logo-solid") {
@@ -409,7 +386,7 @@ const ConnectionsRail = memo(() => {
                 )}
             </div>
             <AddConnectionModal />
-            <RenameWorkspaceModal />
+            <WorkspaceEditorPopup />
         </div>
     );
 });
