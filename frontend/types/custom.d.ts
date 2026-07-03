@@ -123,6 +123,7 @@ declare global {
         sendLog: (log: string) => void; // fe-log
         onQuicklook: (filePath: string) => void; // quicklook
         openNativePath(filePath: string): void; // open-native-path
+        selectDirectory: () => Promise<string>; // get-directory
         captureScreenshot(rect: Electron.Rectangle): Promise<string>; // capture-screenshot
         setKeyboardChordMode: () => void; // set-keyboard-chord-mode
         clearWebviewStorage: (webContentsId: number) => Promise<void>; // clear-webview-storage

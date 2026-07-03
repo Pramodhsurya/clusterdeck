@@ -125,6 +125,16 @@ free-form via the rail "+", with nothing auto-seeded.
   `user@host`; it opens as a workspace rooted there. Dropped the connection
   context-menu picker.
 
+### feat/rail-add-menu — Open Folder picker, New Connection, gear (2026-07-03)
+
+- Native folder picker: `emain/emain-ipc.ts` `get-directory` IPC
+  (`dialog.showOpenDialog` openDirectory) + `emain/preload.ts` `selectDirectory`
+  + `frontend/types/custom.d.ts` type.
+- `frontend/app/clusterdeck/connectionsrail.tsx`: the rail "+" is now a two-item
+  menu — **Open Folder…** (native picker → open that folder as a workspace) and
+  **New Connection…** (ssh `user@host` modal). Added a **gear** icon next to "+"
+  that opens `connections.json` (via `getConfigDir()` + `openNativePath`).
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold

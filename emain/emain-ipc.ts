@@ -508,6 +508,19 @@ export function initIpcHandlers() {
         event.sender.reloadIgnoringCache();
     });
 
+    // Clusterdeck: native folder picker for the rail's "Open Folder" action.
+    electron.ipcMain.handle("get-directory", async (event) => {
+        const ww = electron.BrowserWindow.fromWebContents(event.sender);
+        const result = await electron.dialog.showOpenDialog(ww, {
+            title: "Open Folder",
+            properties: ["openDirectory", "createDirectory"],
+        });
+        if (result.canceled || result.filePaths.length === 0) {
+            return "";
+        }
+        return result.filePaths[0];
+    });
+
     electron.ipcMain.handle("save-text-file", async (event, fileName: string, content: string) => {
         const ww = electron.BrowserWindow.fromWebContents(event.sender);
         if (ww == null) {
