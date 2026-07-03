@@ -18,6 +18,15 @@ Apache-2.0 §4(b). It is updated as changes land.
 - Added `docs/clusterdeck/` containing the Clusterdeck design spec, fork plan, and UI mockup.
 - Added this `CHANGES.md`.
 
+### feat/ssh-config-workspaces (2026-07-02)
+
+- Added `pkg/clusterdeck/` (new package): `sshsync.go` reconciles the hosts in
+  `~/.ssh/config` / `/etc/ssh/config` into auto-saved connection workspaces
+  (name = bare host, icon `server-2`, Clusterdeck blue, workspace meta
+  `clusterdeck:connection` = normalized connection). Add-only; reuses Wave's
+  existing ssh-config resolution (`conncontroller.GetConnectionsFromConfig`).
+- `cmd/server/main-server.go`: one hook line + import to run the sync at startup.
+
 ### Planned reshaping (not yet implemented)
 
 The fork will reshape Wave into a multi-cluster SSH workspace ("connection = workspace"):
