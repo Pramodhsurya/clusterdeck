@@ -21,6 +21,7 @@ import {
     replaceBlock,
     WOS,
 } from "@/app/store/global";
+import { WorkspaceService } from "@/app/store/services";
 import { getActiveTabModel } from "@/app/store/tab-model";
 import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
 import { deleteLayoutModelForTab, getLayoutModelForStaticTab, NavigateDirection } from "@/layout/index";
@@ -279,6 +280,23 @@ function switchBlockInDirection(direction: NavigateDirection) {
 
 function getAllTabs(ws: Workspace): string[] {
     return ws.tabids ?? [];
+}
+
+// Clusterdeck: switch to the nth workspace in rail order (1-based, matches
+// the hotkey labels in the connections rail)
+function switchWorkspaceAbs(index: number) {
+    fireAndForget(async () => {
+        const list = await WorkspaceService.ListWorkspaces();
+        if (!list || index > list.length) {
+            return;
+        }
+        const entry = list[index - 1];
+        const curWs = globalStore.get(atoms.workspace);
+        if (entry.workspaceid === curWs?.oid) {
+            return;
+        }
+        getApi().switchWorkspace(entry.workspaceid);
+    });
 }
 
 function switchTabAbs(index: number) {
@@ -674,8 +692,10 @@ function registerGlobalKeys() {
         return true;
     });
     for (let idx = 1; idx <= 9; idx++) {
+        // Clusterdeck: Cmd+1..9 switches connection workspaces (rail order);
+        // tabs remain on Cmd+[ / Cmd+]
         globalKeyMap.set(`Cmd:${idx}`, () => {
-            switchTabAbs(idx);
+            switchWorkspaceAbs(idx);
             return true;
         });
         globalKeyMap.set(`Ctrl:Shift:c{Digit${idx}}`, () => {

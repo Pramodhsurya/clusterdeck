@@ -26,6 +26,15 @@ Apache-2.0 §4(b). It is updated as changes land.
   `clusterdeck:connection` = normalized connection). Add-only; reuses Wave's
   existing ssh-config resolution (`conncontroller.GetConnectionsFromConfig`).
 - `cmd/server/main-server.go`: one hook line + import to run the sync at startup.
+### feat/connections-rail (2026-07-02)
+
+- Added `frontend/app/clusterdeck/` (new dir): `connectionsrail.tsx/.scss` — the
+  SHELL CONNECTIONS rail (full-height, collapsible; status dots, Cmd+1..9 hotkey
+  labels, active-row terminal-count subline, connected-count footer). Defines the
+  single Clusterdeck accent token `--cd-accent`.
+- `frontend/app/workspace/workspace.tsx`: mount the rail (2 lines).
+- `frontend/app/store/keymodel.ts`: Cmd+1..9 switches workspaces in rail order
+  (was: tab switching; tabs remain on Cmd+[ / Cmd+]).
 
 ### Planned reshaping (not yet implemented)
 
