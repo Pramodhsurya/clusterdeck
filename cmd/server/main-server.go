@@ -576,7 +576,7 @@ func main() {
 	blocklogger.InitBlockLogger()
 	jobcontroller.InitJobController()
 	blockcontroller.InitBlockController()
-	clusterdeck.GoSyncSshConfigWorkspaces()
+	clusterdeck.GoSyncConnectionWorkspaces()
 	err = wcore.InitBadgeStore()
 	if err != nil {
 		log.Printf("error initializing badge store: %v\n", err)
