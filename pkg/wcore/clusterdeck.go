@@ -118,6 +118,60 @@ func SeedClusterdeckLayoutForTab(ctx context.Context, tabId string) error {
 	return ApplyPortableLayout(ctx, tabId, GetClusterdeckLayout(rootDir), false)
 }
 
+// ClusterdeckHomeMetaKey marks the single Welcome/home workspace.
+const ClusterdeckHomeMetaKey = "clusterdeck:home"
+
+// ClusterdeckLastOpenedMetaKey records when a workspace was last opened, so the
+// Welcome page can show a "Recent" list.
+const ClusterdeckLastOpenedMetaKey = "clusterdeck:lastopened"
+
+// GetClusterdeckWelcomeLayout is the layout of the home workspace: a single
+// full-screen Welcome page (Recent + Open Folder / New Connection).
+func GetClusterdeckWelcomeLayout() PortableLayout {
+	return PortableLayout{
+		{IndexArr: []int{0}, BlockDef: &waveobj.BlockDef{
+			Meta: waveobj.MetaMapType{
+				waveobj.MetaKey_View: "cdwelcome",
+			},
+		}, Focused: true},
+	}
+}
+
+// EnsureHomeWorkspace returns the id of the Welcome/home workspace, creating and
+// seeding it (a single Welcome block) if it does not exist.
+func EnsureHomeWorkspace(ctx context.Context) (string, error) {
+	workspaces, err := wstore.DBGetAllObjsByType[*waveobj.Workspace](ctx, waveobj.OType_Workspace)
+	if err != nil {
+		return "", err
+	}
+	for _, ws := range workspaces {
+		if ws.Meta.GetString(ClusterdeckHomeMetaKey, "") != "" {
+			return ws.OID, nil
+		}
+	}
+	ws, err := CreateWorkspace(ctx, "Welcome", "house", "#429DFF", false, false)
+	if err != nil {
+		return "", fmt.Errorf("error creating home workspace: %w", err)
+	}
+	if ws.Meta == nil {
+		ws.Meta = waveobj.MetaMapType{}
+	}
+	ws.Meta[ClusterdeckHomeMetaKey] = "1"
+	if err := wstore.DBUpdate(ctx, ws); err != nil {
+		return "", fmt.Errorf("error tagging home workspace: %w", err)
+	}
+	tabId := ws.ActiveTabId
+	if tabId == "" && len(ws.TabIds) > 0 {
+		tabId = ws.TabIds[0]
+	}
+	if tabId != "" {
+		if err := ApplyPortableLayout(ctx, tabId, GetClusterdeckWelcomeLayout(), false); err != nil {
+			log.Printf("clusterdeck: error seeding welcome layout: %v\n", err)
+		}
+	}
+	return ws.OID, nil
+}
+
 // FindConnectionWorkspace returns the id of the workspace for (connName,
 // rootDir), or "" if none exists. A connection can back many workspaces rooted
 // at different folders, so both must match.

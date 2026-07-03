@@ -107,6 +107,12 @@ func ClusterdeckConnectionsConfigPathCommand(w *wshutil.WshRpc, opts *wshrpc.Rpc
 	return resp, err
 }
 
+// command "clusterdeckopenhome", wshserver.ClusterdeckOpenHomeCommand
+func ClusterdeckOpenHomeCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (string, error) {
+	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckopenhome", nil, opts)
+	return resp, err
+}
+
 // command "clusterdeckopentarget", wshserver.ClusterdeckOpenTargetCommand
 func ClusterdeckOpenTargetCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) (string, error) {
 	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckopentarget", data, opts)

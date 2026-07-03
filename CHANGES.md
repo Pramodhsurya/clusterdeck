@@ -168,6 +168,20 @@ free-form via the rail "+", with nothing auto-seeded.
 - `frontend/app/tab/tabbar.tsx` + `vtabbar.tsx`: hid Wave's native workspace
   switcher — the connections rail is now the single switcher (no duplicate).
 
+### feat/welcome-home (2026-07-03)
+
+- Added a VS Code–style Welcome page (new `cdwelcome` block view):
+  - `frontend/app/clusterdeck/welcome.tsx` (+ `.scss`): Start actions (Open
+    Folder / New Connection) + a Recent list (last 5 workspaces by
+    `clusterdeck:lastopened`). Registered in `blockregistry.ts`.
+  - `pkg/wcore/layout.go`: `GetStarterLayout` now returns the Welcome layout, so
+    the app starts on Welcome instead of Wave's term+sysinfo+web+preview.
+  - `pkg/wcore/clusterdeck.go`: `EnsureHomeWorkspace` + `GetClusterdeckWelcomeLayout`
+    (a single Welcome block); `clusterdeck:home` / `clusterdeck:lastopened` meta.
+  - `ClusterdeckOpenHomeCommand` RPC + a **home** button in the rail header.
+  - `OpenTarget` records `clusterdeck:lastopened`; rail/recent clicks route
+    through `switchToWorkspace`, which also records recency.
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold

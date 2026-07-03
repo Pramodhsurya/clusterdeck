@@ -192,6 +192,19 @@ func (ws *WshServer) ClusterdeckOpenTargetCommand(ctx context.Context, target st
 	if err != nil {
 		return "", fmt.Errorf("error opening target workspace: %w", err)
 	}
+	// Record recency for the Welcome "Recent" list.
+	wstore.UpdateObjectMeta(ctx, waveobj.ORef{OType: waveobj.OType_Workspace, OID: workspaceId},
+		waveobj.MetaMapType{wcore.ClusterdeckLastOpenedMetaKey: time.Now().UnixMilli()}, false)
+	return workspaceId, nil
+}
+
+// ClusterdeckOpenHomeCommand returns the id of the Welcome/home workspace
+// (creating it if needed), for the rail's home button.
+func (ws *WshServer) ClusterdeckOpenHomeCommand(ctx context.Context) (string, error) {
+	workspaceId, err := wcore.EnsureHomeWorkspace(ctx)
+	if err != nil {
+		return "", fmt.Errorf("error opening home workspace: %w", err)
+	}
 	return workspaceId, nil
 }
 
