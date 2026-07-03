@@ -452,6 +452,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                         hideDirIcons={true}
                         singleClickOpen={true}
                         activeId={openFile ?? undefined}
+                        persistKey={`${model.blockId}:${connection}:${rootPath}`}
                         width="100%"
                         minWidth={0}
                         maxWidth={100000}
