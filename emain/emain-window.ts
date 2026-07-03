@@ -829,9 +829,9 @@ ipcMain.on("delete-workspace", (event, workspaceId) => {
 
         const choice = dialog.showMessageBoxSync(this, {
             type: "question",
-            buttons: ["Cancel", "Delete Workspace"],
-            title: "Confirm",
-            message: `Deleting workspace will also delete its contents.\n\nContinue?`,
+            buttons: ["Cancel", "Remove Workspace"],
+            title: "Remove Workspace",
+            message: `Remove this workspace from the connections list?\n\nThis closes its tabs and layout. Your files on disk are not deleted.`,
         });
         if (choice === 0) {
             console.log("user cancelled workspace delete", workspaceId, ww?.waveWindowId);
