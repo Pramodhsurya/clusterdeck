@@ -65,6 +65,7 @@ export interface TreeViewProps {
     minWidth?: number;
     maxWidth?: number;
     width?: number | string;
+    hideDirIcons?: boolean;
     height?: number | string;
     className?: string;
     onOpenFile?: (id: string, node: TreeNodeData) => void;
@@ -218,6 +219,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         width = "100%",
         height = 360,
         className,
+        hideDirIcons = false,
         onOpenFile,
         onSelectionChange,
     } = props;
@@ -495,15 +497,22 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                 </div>
                                 {row.kind === "node" ? (
                                     <>
-                                        <i
-                                            className={makeIconClass(getNodeIcon(row.node, row.isExpanded), true)}
-                                            style={{
-                                                color:
-                                                    row.node.notfound || row.node.staterror
-                                                        ? "var(--color-error)"
-                                                        : (row.node.iconColor ?? "inherit"),
-                                            }}
-                                        />
+                                        {hideDirIcons && row.node.isDirectory ? (
+                                            <span className="inline-block h-4 w-4" />
+                                        ) : (
+                                            <i
+                                                className={makeIconClass(
+                                                    getNodeIcon(row.node, row.isExpanded),
+                                                    true
+                                                )}
+                                                style={{
+                                                    color:
+                                                        row.node.notfound || row.node.staterror
+                                                            ? "var(--color-error)"
+                                                            : (row.node.iconColor ?? "inherit"),
+                                                }}
+                                            />
+                                        )}
                                         <span
                                             className={clsx("ml-2 pr-3", row.node.isReadonly && "text-muted")}
                                             title={row.label}
