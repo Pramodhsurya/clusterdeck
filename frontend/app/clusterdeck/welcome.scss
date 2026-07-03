@@ -51,15 +51,16 @@
     .cd-welcome-action {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 5px 0;
+        gap: 10px;
+        padding: 7px 0;
         color: var(--cd-accent);
         cursor: pointer;
-        font-size: 13px;
+        font-size: 14px;
 
         i {
-            width: 16px;
+            width: 18px;
             text-align: center;
+            font-size: 15px;
             opacity: 0.9;
         }
 
@@ -71,10 +72,10 @@
     .cd-welcome-recent {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 4px 0;
+        gap: 9px;
+        padding: 6px 0;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 14px;
 
         > i {
             width: 15px;
@@ -100,7 +101,13 @@
     }
 
     .cd-welcome-empty {
-        font-size: 12px;
+        font-size: 13px;
+        line-height: 1.7;
         color: var(--secondary-text-color);
+
+        b {
+            color: var(--cd-accent);
+            font-weight: 500;
+        }
     }
 }

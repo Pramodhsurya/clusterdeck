@@ -277,7 +277,8 @@ const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyN
     const termCount = useAtomValue(activeTermCountAtom);
 
     const isActive = activeWorkspace?.oid === workspace.oid;
-    const isConnected = !isLocalConn(conn) && !!connStatus?.connected;
+    const local = isLocalConn(conn);
+    const isConnected = !local && !!connStatus?.connected;
     const iconName = workspaceIcon(workspace, conn);
     const title = conn && !isLocalConn(conn) ? `${workspace.name} (${conn})` : workspace.name;
 
@@ -291,7 +292,7 @@ const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyN
             title={title}
         >
             <div className="rail-item-row">
-                <span className={clsx("status-dot", { connected: isConnected })} />
+                <span className={clsx("status-dot", { connected: isConnected, available: local })} />
                 <i className={makeIconClass(iconName, true)} />
                 {!collapsed && (
                     <>

@@ -149,6 +149,7 @@ class ClusterdeckExplorerModel implements ViewModel {
     connectionAtom: jotai.Atom<string>;
     rootPathAtom: jotai.Atom<string>;
     collapsedAtom: jotai.Atom<boolean>;
+    openFileAtom: jotai.Atom<string | null>;
     refreshVersion = jotai.atom(0);
 
     constructor({ blockId, nodeModel, tabModel, waveEnv }: ViewModelInitType) {
@@ -162,6 +163,26 @@ class ClusterdeckExplorerModel implements ViewModel {
         this.connectionAtom = jotai.atom((get) => (get(this.blockAtom)?.meta?.connection as string) ?? "local");
         this.rootPathAtom = jotai.atom((get) => (get(this.blockAtom)?.meta?.file as string) || "~");
         this.collapsedAtom = jotai.atom((get) => !!get(this.blockAtom)?.meta?.["clusterdeck:explorercollapsed"]);
+        // The file open in the designated editor block, for tree highlighting (T5).
+        this.openFileAtom = jotai.atom((get) => {
+            const tabId = this.tabModel?.tabId;
+            if (tabId == null) {
+                return null;
+            }
+            const tab = get(this.env.wos.getWaveObjectAtom<Tab>(WOS.makeORef("tab", tabId)));
+            const editorId = tab?.blockids?.find((bid) => {
+                if (bid === this.blockId) {
+                    return false;
+                }
+                const m = get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", bid)))?.meta;
+                return m?.[ClusterdeckZoneMetaKey] === ClusterdeckZone_Editor;
+            });
+            if (editorId == null) {
+                return null;
+            }
+            const editorMeta = get(this.env.wos.getWaveObjectAtom<Block>(WOS.makeORef("block", editorId)))?.meta;
+            return (editorMeta?.file as string) ?? null;
+        });
     }
 
     get viewComponent(): ViewComponent {
@@ -255,6 +276,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
     const connection = useAtomValue(model.connectionAtom);
     const rootPath = useAtomValue(model.rootPathAtom);
     const refreshVersion = useAtomValue(model.refreshVersion);
+    const openFile = useAtomValue(model.openFileAtom);
     const [rootIds, setRootIds] = useState<string[]>([]);
     const [initialNodes, setInitialNodes] = useState<Record<string, TreeNodeData>>({});
     const [error, setError] = useState<string>(null);
@@ -348,6 +370,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                         onOpenFile={onOpenFile}
                         hideDirIcons={true}
                         singleClickOpen={true}
+                        activeId={openFile ?? undefined}
                         width="100%"
                         minWidth={0}
                         maxWidth={100000}
