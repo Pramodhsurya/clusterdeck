@@ -28,6 +28,7 @@ import (
 	"github.com/wavetermdev/waveterm/pkg/blockcontroller"
 	"github.com/wavetermdev/waveterm/pkg/blocklogger"
 	"github.com/wavetermdev/waveterm/pkg/buildercontroller"
+	"github.com/wavetermdev/waveterm/pkg/clusterdeck"
 	"github.com/wavetermdev/waveterm/pkg/filebackup"
 	"github.com/wavetermdev/waveterm/pkg/filestore"
 	"github.com/wavetermdev/waveterm/pkg/genconn"
@@ -173,6 +174,23 @@ func (ws *WshServer) ClusterdeckResetLayoutCommand(ctx context.Context, tabId st
 		return fmt.Errorf("error resetting clusterdeck layout: %w", err)
 	}
 	return nil
+}
+
+// ClusterdeckEnsureConnWorkspaceCommand returns the id of the connection
+// workspace for connName, creating and seeding it (default IDE layout) if it
+// does not exist. Used by the rail's "add connection" action to make any
+// connection's workspace available on demand (connection = workspace).
+func (ws *WshServer) ClusterdeckEnsureConnWorkspaceCommand(ctx context.Context, connName string) (string, error) {
+	workspaceId, _, err := wcore.EnsureConnectionWorkspace(
+		ctx, connName,
+		clusterdeck.WorkspaceNameForConn(connName),
+		clusterdeck.WorkspaceIconForConn(connName),
+		clusterdeck.ConnWorkspaceColor,
+	)
+	if err != nil {
+		return "", fmt.Errorf("error ensuring connection workspace: %w", err)
+	}
+	return workspaceId, nil
 }
 
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {

@@ -5,6 +5,8 @@ package wcore
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	"github.com/wavetermdev/waveterm/pkg/waveobj"
 	"github.com/wavetermdev/waveterm/pkg/wstore"
@@ -83,4 +85,56 @@ func GetClusterdeckLayout() PortableLayout {
 // to call on an already-populated tab.
 func SeedClusterdeckLayoutForTab(ctx context.Context, tabId string) error {
 	return ApplyPortableLayout(ctx, tabId, GetClusterdeckLayout(), false)
+}
+
+// FindConnectionWorkspace returns the id of the connection workspace bound to
+// connName, or "" if none exists.
+func FindConnectionWorkspace(ctx context.Context, connName string) (string, error) {
+	workspaces, err := wstore.DBGetAllObjsByType[*waveobj.Workspace](ctx, waveobj.OType_Workspace)
+	if err != nil {
+		return "", err
+	}
+	for _, ws := range workspaces {
+		if ws.Meta.GetString(ClusterdeckConnectionMetaKey, "") == connName {
+			return ws.OID, nil
+		}
+	}
+	return "", nil
+}
+
+// EnsureConnectionWorkspace returns the id of the connection workspace bound to
+// connName, creating and seeding it (default IDE layout) if one does not exist.
+// `created` reports whether a new workspace was made. Blocks in the workspace
+// inherit connName; they don't connect until mounted, so this opens no
+// connection. This is the single primitive behind both startup sync and the
+// rail's "add connection" action ("connection = workspace").
+func EnsureConnectionWorkspace(ctx context.Context, connName, name, icon, color string) (workspaceId string, created bool, err error) {
+	existingId, err := FindConnectionWorkspace(ctx, connName)
+	if err != nil {
+		return "", false, err
+	}
+	if existingId != "" {
+		return existingId, false, nil
+	}
+	ws, err := CreateWorkspace(ctx, name, icon, color, false, false)
+	if err != nil {
+		return "", false, fmt.Errorf("error creating connection workspace for %q: %w", connName, err)
+	}
+	if ws.Meta == nil {
+		ws.Meta = waveobj.MetaMapType{}
+	}
+	ws.Meta[ClusterdeckConnectionMetaKey] = connName
+	if err := wstore.DBUpdate(ctx, ws); err != nil {
+		return "", false, fmt.Errorf("error tagging connection workspace %s: %w", ws.OID, err)
+	}
+	tabId := ws.ActiveTabId
+	if tabId == "" && len(ws.TabIds) > 0 {
+		tabId = ws.TabIds[0]
+	}
+	if tabId != "" {
+		if err := SeedClusterdeckLayoutForTab(ctx, tabId); err != nil {
+			log.Printf("clusterdeck: error seeding layout for workspace %s: %v\n", ws.OID, err)
+		}
+	}
+	return ws.OID, true, nil
 }

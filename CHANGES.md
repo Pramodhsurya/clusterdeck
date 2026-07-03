@@ -80,6 +80,26 @@ Apache-2.0 §4(b). It is updated as changes land.
   `ensureConnectionWorkspace`; the sync no longer early-returns on an empty ssh
   config, so the Local workspace is always ensured.
 
+### feat/connection-workspaces — all connections + rail picker (2026-07-03)
+
+- `pkg/wcore/clusterdeck.go`: added `EnsureConnectionWorkspace` /
+  `FindConnectionWorkspace` — the single primitive that returns (creating +
+  seeding the IDE layout if needed) the workspace bound to a connection. Shared
+  by startup sync and the rail's add action.
+- `pkg/clusterdeck/sshsync.go`: `SyncConnectionWorkspaces` now seeds a workspace
+  for **every** connection Wave knows (`conncontroller.GetConnectionsList()` —
+  active + saved-internal + ssh config) plus Local, not just ssh-config hosts.
+  Added `WorkspaceNameForConn` / `WorkspaceIconForConn` / `DisplayName` helpers.
+  Renamed the startup entrypoint to `GoSyncConnectionWorkspaces`
+  (`cmd/server/main-server.go` updated).
+- `ClusterdeckEnsureConnWorkspaceCommand(connName) -> workspaceId`: new wshrpc
+  command (interface + handler + regenerated bindings) so the rail can open any
+  connection's workspace on demand.
+- `frontend/app/clusterdeck/connectionsrail.tsx`: the rail "+" now opens a
+  connection picker (Local + every known connection via `ConnListCommand`);
+  choosing one ensures its connection workspace and switches to it (was:
+  `createWorkspace()`, which made a plain untagged workspace).
+
 ### Dev experience (2026-07-03)
 
 - `emain/emain-window.ts`: raised `DevInitTimeoutMs` 5000 → 30000. On a cold

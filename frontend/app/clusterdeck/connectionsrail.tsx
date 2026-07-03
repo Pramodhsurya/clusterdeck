@@ -5,7 +5,10 @@
 // collapsible left rail. Connection = workspace: clicking a row switches the
 // whole window to that connection's workspace.
 
+import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
+import { RpcApi } from "@/app/store/wshclientapi";
+import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { atoms, getApi, getConnStatusAtom, WOS } from "@/store/global";
 import { WorkspaceService } from "@/store/services";
 import { waveEventSubscribeSingle } from "@/store/wps";
@@ -61,6 +64,53 @@ const connectedCountAtom = atom((get) => {
 
 function getWorkspaceConnection(workspace: Workspace): string {
     return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
+}
+
+function railDisplayName(conn: string): string {
+    const at = conn.lastIndexOf("@");
+    return at >= 0 ? conn.slice(at + 1) : conn;
+}
+
+function isLocalConn(conn: string): boolean {
+    return conn === "" || conn === "local" || conn.startsWith("local:");
+}
+
+// Open the connection's workspace (create + seed the IDE layout if missing),
+// then switch the window to it. Connection = workspace.
+function openConnectionWorkspace(conn: string) {
+    fireAndForget(async () => {
+        const workspaceId = await RpcApi.ClusterdeckEnsureConnWorkspaceCommand(TabRpcClient, conn);
+        if (workspaceId) {
+            getApi().switchWorkspace(workspaceId);
+        }
+    });
+}
+
+// Rail "+" — pick any connection (Local, or a saved/ssh host) and open its
+// connection workspace. Selecting an existing one just switches to it.
+async function openAddConnectionMenu(e: React.MouseEvent) {
+    let conns: string[] = [];
+    try {
+        conns = (await RpcApi.ConnListCommand(TabRpcClient)) ?? [];
+    } catch (err) {
+        console.error("clusterdeck: failed to list connections", err);
+    }
+    const seen = new Set<string>();
+    const remotes = conns.filter((c) => {
+        if (isLocalConn(c) || seen.has(c)) {
+            return false;
+        }
+        seen.add(c);
+        return true;
+    });
+    const menu: ContextMenuItem[] = [{ label: "Local", click: () => openConnectionWorkspace("local") }];
+    if (remotes.length > 0) {
+        menu.push({ type: "separator" });
+        for (const conn of remotes) {
+            menu.push({ label: railDisplayName(conn), click: () => openConnectionWorkspace(conn) });
+        }
+    }
+    ContextMenuModel.getInstance().showContextMenu(menu, e);
 }
 
 function hotkeyLabel(num: number): string {
@@ -151,8 +201,8 @@ const ConnectionsRail = memo(() => {
                     {!collapsed && (
                         <i
                             className={makeIconClass("plus", true)}
-                            title="Add connection workspace"
-                            onClick={() => getApi().createWorkspace()}
+                            title="Add connection"
+                            onClick={(e) => fireAndForget(() => openAddConnectionMenu(e))}
                         />
                     )}
                     <i
