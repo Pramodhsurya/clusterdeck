@@ -210,6 +210,81 @@ function hotkeyLabel(num: number): string {
     return isMacOS() ? `⌘${num}` : `Alt+${num}`;
 }
 
+const WorkspaceColors: { label: string; value: string }[] = [
+    { label: "Blue", value: "#429DFF" },
+    { label: "Green", value: "#58C142" },
+    { label: "Teal", value: "#00FFDB" },
+    { label: "Purple", value: "#BF55EC" },
+    { label: "Red", value: "#FF453A" },
+    { label: "Orange", value: "#FF9500" },
+    { label: "Yellow", value: "#FFE900" },
+];
+
+const renameTargetAtom = atom(null as Workspace | null);
+
+// Right-click menu for a rail workspace — Open, rename, color, delete (cloned
+// from Wave's native workspace switcher).
+function showWorkspaceMenu(e: React.MouseEvent, ws: Workspace) {
+    e.preventDefault();
+    const menu: ContextMenuItem[] = [
+        { label: "Open", click: () => switchToWorkspace(ws.oid) },
+        { type: "separator" },
+        { label: "Rename…", click: () => globalStore.set(renameTargetAtom, ws) },
+        {
+            label: "Change Color",
+            type: "submenu",
+            submenu: WorkspaceColors.map((c) => ({
+                label: c.label,
+                type: "checkbox" as const,
+                checked: ws.color === c.value,
+                click: () =>
+                    fireAndForget(() => WorkspaceService.UpdateWorkspace(ws.oid, ws.name, ws.icon, c.value, false)),
+            })),
+        },
+        { type: "separator" },
+        { label: "Delete Workspace", click: () => getApi().deleteWorkspace(ws.oid) },
+    ];
+    ContextMenuModel.getInstance().showContextMenu(menu, e);
+}
+
+const RenameWorkspaceModal = memo(() => {
+    const [target, setTarget] = useAtom(renameTargetAtom);
+    const [value, setValue] = useState("");
+    useEffect(() => {
+        if (target) {
+            setValue(target.name ?? "");
+        }
+    }, [target]);
+    if (!target) {
+        return null;
+    }
+    const close = () => setTarget(null);
+    const submit = () => {
+        const name = value.trim();
+        if (name) {
+            fireAndForget(() => WorkspaceService.UpdateWorkspace(target.oid, name, target.icon, target.color, false));
+        }
+        close();
+    };
+    return (
+        <WaveModal title="Rename Workspace" buttonLabel="Rename" onSubmit={submit} onCancel={close}>
+            <Input
+                value={value}
+                onChange={setValue}
+                autoFocus={true}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        submit();
+                    } else if (e.key === "Escape") {
+                        close();
+                    }
+                }}
+            />
+        </WaveModal>
+    );
+});
+RenameWorkspaceModal.displayName = "RenameWorkspaceModal";
+
 function workspaceIcon(workspace: Workspace, conn: string): string {
     if (workspace.icon && workspace.icon != "custom@wave-logo-solid") {
         return workspace.icon;
@@ -232,7 +307,12 @@ const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyN
     const onClick = useCallback(() => switchToWorkspace(workspace.oid), [workspace.oid]);
 
     return (
-        <div className={clsx("rail-item", { active: isActive })} onClick={onClick} title={title}>
+        <div
+            className={clsx("rail-item", { active: isActive })}
+            onClick={onClick}
+            onContextMenu={(e) => showWorkspaceMenu(e, workspace)}
+            title={title}
+        >
             <div className="rail-item-row">
                 <span className={clsx("status-dot", { connected: isConnected })} />
                 <i className={makeIconClass(iconName, true)} />
@@ -329,6 +409,7 @@ const ConnectionsRail = memo(() => {
                 )}
             </div>
             <AddConnectionModal />
+            <RenameWorkspaceModal />
         </div>
     );
 });

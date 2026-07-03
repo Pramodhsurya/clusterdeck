@@ -65,17 +65,23 @@ func looksLikeLocalPath(t string) bool {
 	return false
 }
 
-// cleanLocalPath normalizes a folder path. "~"-relative paths are kept in ~ form
-// (portable, resolved by the local connection); everything else is made
-// absolute.
+// cleanLocalPath normalizes a folder path to an absolute path so the same
+// folder always maps to the same workspace (~/X and /Users/you/X dedupe).
 func cleanLocalPath(t string) string {
-	if t == "~" || strings.HasPrefix(t, "~/") {
-		return strings.TrimRight(t, "/")
+	expanded := t
+	if t == "~" {
+		if home, err := os.UserHomeDir(); err == nil {
+			expanded = home
+		}
+	} else if strings.HasPrefix(t, "~/") {
+		if home, err := os.UserHomeDir(); err == nil {
+			expanded = filepath.Join(home, t[2:])
+		}
 	}
-	if abs, err := filepath.Abs(t); err == nil {
+	if abs, err := filepath.Abs(expanded); err == nil {
 		return abs
 	}
-	return t
+	return strings.TrimRight(expanded, "/")
 }
 
 // folderName is the rail label for a folder root (its basename).
