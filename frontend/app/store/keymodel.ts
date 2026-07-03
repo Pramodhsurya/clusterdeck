@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { WaveAIModel } from "@/app/aipanel/waveai-model";
+import { isConnLockedWorkspace } from "@/app/clusterdeck/connlock";
 import { FocusManager } from "@/app/store/focusManager";
 import {
     atoms,
@@ -648,6 +649,10 @@ function registerGlobalKeys() {
         return false;
     });
     globalKeyMap.set("Cmd:g", () => {
+        // Clusterdeck: connection is locked to the workspace; no per-block switching
+        if (isConnLockedWorkspace()) {
+            return true;
+        }
         const bcm = getBlockComponentModel(getFocusedBlockInStaticTab());
         if (bcm.openSwitchConnection != null) {
             recordTEvent("action:other", { "action:type": "conndropdown", "action:initiator": "keyboard" });

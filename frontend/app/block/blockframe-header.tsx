@@ -9,6 +9,7 @@ import {
     renderHeaderElements,
 } from "@/app/block/blockutil";
 import { ConnectionButton } from "@/app/block/connectionbutton";
+import { workspaceConnLockedAtom } from "@/app/clusterdeck/connlock";
 import { DurableSessionFlyover } from "@/app/block/durable-session-flyover";
 import { getBlockBadgeAtom } from "@/app/store/badge";
 import {
@@ -230,6 +231,8 @@ const BlockFrame_Header = ({
     const magnified = jotai.useAtomValue(nodeModel.isMagnified);
     const prevMagifiedState = React.useRef(magnified);
     const manageConnection = util.useAtomValueSafe(viewModel?.manageConnection);
+    // Clusterdeck: no per-block connection picker in connection workspaces
+    const connLocked = jotai.useAtomValue(workspaceConnLockedAtom);
     const iconColor = jotai.useAtomValue(waveEnv.getBlockMetaKeyAtom(nodeModel.blockId, "icon:color"));
     const dragHandleRef = preview ? null : nodeModel.dragHandleRef;
     const isTerminalBlock = metaView === "term";
@@ -262,7 +265,7 @@ const BlockFrame_Header = ({
                     </div>
                 </>
             )}
-            {manageConnection && (
+            {manageConnection && !connLocked && (
                 <ConnectionButton
                     ref={connBtnRef}
                     key="connbutton"

@@ -81,6 +81,13 @@ func CreateBlockWithTelemetry(ctx context.Context, tabId string, blockDef *waveo
 	if blockDef.Meta == nil || blockDef.Meta.GetString(waveobj.MetaKey_View, "") == "" {
 		return nil, fmt.Errorf("no view provided for new block")
 	}
+	// Clusterdeck: blocks in a connection workspace inherit the workspace
+	// connection unless one is set explicitly (connection = workspace)
+	if blockDef.Meta.GetString(waveobj.MetaKey_Connection, "") == "" {
+		if conn := GetWorkspaceConnectionForTab(ctx, tabId); conn != "" {
+			blockDef.Meta[waveobj.MetaKey_Connection] = conn
+		}
+	}
 	blockData, err := createBlockObj(ctx, tabId, blockDef, rtOpts)
 	if err != nil {
 		return nil, fmt.Errorf("error creating block: %w", err)
