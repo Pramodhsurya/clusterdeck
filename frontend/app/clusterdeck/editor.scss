@@ -64,22 +64,7 @@
     .cd-editor-content {
         flex: 1 1 auto;
         min-height: 0;
+        display: flex;
         position: relative;
-
-        // All open panes stay mounted and full-size (so Monaco lays out even
-        // when hidden); only the active one is visible. Switching = instant.
-        .cd-editor-pane {
-            position: absolute;
-            inset: 0;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-            visibility: hidden;
-
-            &.visible {
-                visibility: visible;
-                z-index: 1;
-            }
-        }
     }
 }
