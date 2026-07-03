@@ -20,8 +20,18 @@ mikework/
 aiplans/
 manifests/
 .env
+.env.*
+!.env.example
 out
 .kilocode/package-lock.json
+
+# Secrets / credentials — never commit (see CLAUDE.md security rules)
+*.key
+*.pem
+*.p12
+*.keystore
+id_rsa
+id_ed25519
 
 # Yarn Modern
 .pnp.*
