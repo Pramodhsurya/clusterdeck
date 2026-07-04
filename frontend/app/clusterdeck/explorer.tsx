@@ -375,6 +375,43 @@ class ClusterdeckExplorerModel implements ViewModel {
             })
         );
     }
+
+    // Close every open file (OPEN EDITORS "close all").
+    closeAllEditorFiles() {
+        const e = this.editorMetaNow();
+        if (e == null) {
+            return;
+        }
+        fireAndForget(() =>
+            RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", e.editorId),
+                meta: { file: "", "clusterdeck:openfiles": [] } as MetaType,
+            })
+        );
+    }
+
+    // Create a new empty "untitled-N.txt" in the workspace root and open it in the
+    // editor (VS Code "new file" — the editor is file-backed, so this is a real file).
+    newUntitledFile() {
+        const e = this.editorMetaNow();
+        if (e == null) {
+            return;
+        }
+        const rootPath = globalStore.get(this.rootPathAtom).replace(/\/+$/, "");
+        const connection = globalStore.get(this.connectionAtom);
+        const openFiles = (e.meta?.["clusterdeck:openfiles"] as string[]) ?? [];
+        const taken = new Set(openFiles.map((f) => baseName(f)));
+        let n = 1;
+        while (taken.has(`untitled-${n}.txt`)) {
+            n++;
+        }
+        const fullPath = `${rootPath}/untitled-${n}.txt`;
+        fireAndForget(async () => {
+            await RpcApi.FileCreateCommand(TabRpcClient, { info: { path: formatRemoteUri(fullPath, connection) } });
+            this.openInEditor(fullPath);
+            this.refresh();
+        });
+    }
 }
 
 const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: ClusterdeckExplorerModel }) => {
@@ -463,6 +500,11 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                 <span className="cd-explorer-root">{header}</span>
                 <span className="cd-explorer-actions">
                     <i
+                        className={makeIconClass("file-circle-plus", false)}
+                        title="New file"
+                        onClick={() => model.newUntitledFile()}
+                    />
+                    <i
                         className={makeIconClass("arrows-rotate", false)}
                         title="Refresh"
                         onClick={() => model.refresh()}
@@ -476,7 +518,21 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
             </div>
             {openFiles.length > 0 && (
                 <div className="cd-open-editors">
-                    <div className="cd-open-editors-title">OPEN EDITORS</div>
+                    <div className="cd-open-editors-title">
+                        <span>OPEN EDITORS</span>
+                        <span className="cd-open-editors-actions">
+                            <i
+                                className={clsx(makeIconClass("file-circle-plus", true), "cd-open-editors-action")}
+                                title="New file"
+                                onClick={() => model.newUntitledFile()}
+                            />
+                            <i
+                                className={clsx(makeIconClass("xmark", true), "cd-open-editors-action")}
+                                title="Close all editors"
+                                onClick={() => model.closeAllEditorFiles()}
+                            />
+                        </span>
+                    </div>
                     {openFiles.map((f) => {
                         const style = fileStyle(baseName(f));
                         return (

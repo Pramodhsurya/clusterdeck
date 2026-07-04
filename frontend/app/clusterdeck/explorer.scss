@@ -67,10 +67,30 @@
         padding-bottom: 3px;
 
         .cd-open-editors-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             padding: 4px 8px 2px;
             font-size: 10px;
             letter-spacing: 0.04em;
             color: var(--secondary-text-color);
+
+            .cd-open-editors-actions {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+
+                .cd-open-editors-action {
+                    font-size: 12px;
+                    cursor: pointer;
+                    opacity: 0.7;
+                    color: var(--secondary-text-color);
+                    &:hover {
+                        opacity: 1;
+                        color: var(--main-text-color);
+                    }
+                }
+            }
         }
 
         .cd-open-editor {
