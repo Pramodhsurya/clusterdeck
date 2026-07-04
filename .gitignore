@@ -54,6 +54,3 @@ docsite/
 .superpowers
 docs/superpowers
 .claude
-# Local-only agent instructions — kept on this machine, never published
-CLAUDE.md
-**/CLAUDE.md
