@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clusterdeck — install</title>
+<style>
+  :root {
+    --accent: #429dff; --accent-2: #2f6bff;
+    --surface-0: #15171c; --surface-1: #1b1e24;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.13);
+    --text: #e9ecf1; --muted: #6a7280; --dim: #aeb4bf;
+    --green: #61c554; --warn: #e2c08d;
+    --mono: "SF Mono","JetBrains Mono",ui-monospace,monospace;
+    --sans: -apple-system,"Inter",system-ui,sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 44px 40px; background: #0c0d10; color: var(--text);
+    font-family: var(--sans); display: flex; flex-direction: column; align-items: center; gap: 20px;
+    background-image: radial-gradient(1100px 560px at 50% -12%, rgba(66,157,255,0.10), transparent 60%);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand .sq { width: 40px; height: 40px; border-radius: 11px; background: linear-gradient(160deg,#3a78ff,#2258e6);
+    display: grid; place-items: center; box-shadow: 0 6px 20px rgba(47,107,255,0.4); }
+  .brand .sq svg { width: 24px; height: 24px; }
+  .brand h1 { font-size: 22px; margin: 0; font-weight: 650; letter-spacing: -0.01em; }
+  .brand .tag { color: var(--muted); font-size: 13px; }
+
+  .term { width: 860px; max-width: 94vw; border: 0.5px solid var(--border-strong); border-radius: 11px;
+    overflow: hidden; background: var(--surface-0); box-shadow: 0 30px 80px rgba(0,0,0,0.55); }
+  .bar { display: flex; align-items: center; gap: 8px; padding: 9px 13px; background: var(--surface-1);
+    border-bottom: 0.5px solid var(--border); }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .bar .name { flex: 1; text-align: center; font-size: 12px; color: var(--dim); }
+  .body { padding: 16px 18px 20px; font-family: var(--mono); font-size: 13px; line-height: 1.85; }
+  .body > div { opacity: 0; animation: fadein 0.45s ease forwards; white-space: pre-wrap; }
+  .p { color: var(--accent); } .path { color: var(--text); } .br { color: var(--warn); }
+  .ok { color: var(--green); } .step { color: var(--accent); } .dimc { color: var(--muted); }
+  .cmd { color: var(--text); }
+  .cursor { display: inline-block; width: 8px; height: 15px; background: var(--text); vertical-align: -3px;
+    animation: blink 1.1s steps(1) infinite; }
+  @keyframes blink { 0%,50% { opacity: 1; } 51%,100% { opacity: 0; } }
+  @keyframes fadein { from { opacity: 0; transform: translateY(2px); } to { opacity: 1; transform: none; } }
+  /* one-time staggered fade-in; holds visible (forwards) */
+  .body > div:nth-child(1)  { animation-delay: 0.15s; }
+  .body > div:nth-child(2)  { animation-delay: 0.45s; }
+  .body > div:nth-child(3)  { animation-delay: 0.75s; }
+  .body > div:nth-child(4)  { animation-delay: 1.05s; }
+  .body > div:nth-child(5)  { animation-delay: 1.35s; }
+  .body > div:nth-child(6)  { animation-delay: 1.65s; }
+  .body > div:nth-child(7)  { animation-delay: 1.95s; }
+  .body > div:nth-child(8)  { animation-delay: 2.25s; }
+  .body > div:nth-child(9)  { animation-delay: 2.55s; }
+  .body > div:nth-child(10) { animation-delay: 2.85s; }
+  .body > div:nth-child(11) { animation-delay: 3.15s; }
+  .done { display: flex; align-items: center; gap: 9px; margin-top: 8px; }
+  .done .mini { width: 22px; height: 22px; border-radius: 6px; background: linear-gradient(160deg,#3a78ff,#2258e6);
+    display: grid; place-items: center; }
+  .done .mini svg { width: 13px; height: 13px; }
+
+  .caption { color: var(--muted); font-size: 12px; text-align: center; max-width: 860px; }
+  .caption b { color: var(--dim); font-weight: 600; }
+  .caption code { color: var(--dim); background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 4px; font-family: var(--mono); font-size: 11.5px; }
+</style>
+</head>
+<body>
+  <div class="brand">
+    <span class="sq"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6 L12 12 L6 18" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="13" y="15.4" width="6" height="2.4" rx="1.2" fill="#fff"/></svg></span>
+    <h1>Clusterdeck</h1>
+    <span class="tag">Install from source · macOS (Apple Silicon)</span>
+  </div>
+
+  <div class="term">
+    <div class="bar">
+      <span class="dot" style="background:#ED6A5E"></span>
+      <span class="dot" style="background:#F4BE4F"></span>
+      <span class="dot" style="background:#61C554"></span>
+      <span class="name">clusterdeck — install</span>
+    </div>
+    <div class="body">
+      <div><span class="p">~</span> <span class="br">$</span> <span class="cmd">git clone https://github.com/clusterdeck/clusterdeck.git</span></div>
+      <div class="dimc">Cloning into 'clusterdeck'…  <span class="ok">done.</span></div>
+      <div><span class="p">~/clusterdeck</span> <span class="br">$</span> <span class="cmd">task init</span></div>
+      <div><span class="step">▸</span> installing dependencies (node + go) …  <span class="ok">✓</span></div>
+      <div><span class="p">~/clusterdeck</span> <span class="br">$</span> <span class="cmd">task package -- --mac dir --arm64</span></div>
+      <div><span class="step">▸</span> building frontend …  <span class="ok">✓</span></div>
+      <div><span class="step">▸</span> building wavesrv (Go) …  <span class="ok">✓</span></div>
+      <div><span class="step">▸</span> packaging <span class="path">Clusterdeck.app</span> …  <span class="ok">✓</span>  <span class="dimc">→ make/mac-arm64/</span></div>
+      <div><span class="p">~/clusterdeck</span> <span class="br">$</span> <span class="cmd">cp -R make/mac-arm64/Clusterdeck.app ~/Applications/</span></div>
+      <div><span class="p">~/clusterdeck</span> <span class="br">$</span> <span class="cmd">open ~/Applications/Clusterdeck.app</span></div>
+      <div class="done"><span class="mini"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6 L12 12 L6 18" stroke="#fff" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="13" y="15.4" width="6" height="2.4" rx="1.2" fill="#fff"/></svg></span><span class="ok">Clusterdeck installed — launching…</span> <span class="cursor"></span></div>
+    </div>
+  </div>
+
+  <div class="caption">
+    <b>Install from the repo.</b> Prebuilt downloads aren't published yet — <code>task init</code> installs deps,
+    <code>task package</code> builds <code>Clusterdeck.app</code>, then copy it to <code>~/Applications</code>.
+    Full steps, Gatekeeper notes, and the dev workflow are in <b>INSTALL.md</b>.
+  </div>
+</body>
+</html>

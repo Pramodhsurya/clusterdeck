@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Clusterdeck — features</title>
+<style>
+  :root {
+    --accent: #429dff; --accent-bg: rgba(66,157,255,0.14);
+    --s0: #15171c; --s1: #1b1e24; --s2: #1f232a;
+    --border: rgba(255,255,255,0.07); --border-s: rgba(255,255,255,0.13);
+    --text: #e9ecf1; --sec: #aeb4bf; --muted: #6a7280; --warn: #e2c08d;
+    --green: #61c554; --gitmod: #e2c08d; --gitadd: #4fa6ff;
+    --mono: "SF Mono","JetBrains Mono",ui-monospace,monospace;
+    --sans: -apple-system,"Inter",system-ui,sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 40px; background: #0c0d10; color: var(--text); font-family: var(--sans);
+    background-image: radial-gradient(1200px 560px at 50% -10%, rgba(66,157,255,0.09), transparent 60%); }
+  .head { text-align: center; margin-bottom: 28px; }
+  .head .sq { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(160deg,#3a78ff,#2258e6);
+    display: inline-grid; place-items: center; box-shadow: 0 6px 20px rgba(47,107,255,0.4); vertical-align: middle; }
+  .head .sq svg { width: 26px; height: 26px; }
+  .head h1 { display: inline-block; margin: 0 0 0 12px; font-size: 24px; font-weight: 650; vertical-align: middle; }
+  .head p { color: var(--muted); font-size: 14px; margin: 10px 0 0; }
+
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; max-width: 1120px; margin: 0 auto; }
+  .card { background: var(--s1); border: 0.5px solid var(--border-s); border-radius: 12px; overflow: hidden;
+    display: flex; flex-direction: column; box-shadow: 0 16px 40px rgba(0,0,0,0.35); }
+  .mock { height: 168px; background: var(--s0); border-bottom: 0.5px solid var(--border); padding: 12px; overflow: hidden; position: relative; font-size: 12px; }
+  .meta { padding: 13px 15px 16px; }
+  .meta h3 { margin: 0 0 5px; font-size: 14.5px; font-weight: 620; }
+  .meta p { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--sec); }
+  .kbd { font-family: var(--mono); font-size: 10.5px; background: rgba(255,255,255,0.06); border-radius: 4px; padding: 1px 5px; color: var(--sec); }
+
+  /* shared bits */
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.on { background: var(--green); animation: pulse 2.4s infinite; }
+  .row { display: flex; align-items: center; gap: 7px; padding: 4px 6px; border-radius: 5px; color: var(--sec); }
+  .row.active { background: var(--accent-bg); color: var(--accent); }
+  .cursor { display: inline-block; width: 7px; height: 12px; background: var(--text); vertical-align: -2px; animation: blink 1.1s steps(1) infinite; }
+  .mono { font-family: var(--mono); }
+  @keyframes blink { 0%,50%{opacity:1;} 51%,100%{opacity:0;} }
+  @keyframes pulse { 0%{box-shadow:0 0 0 0 rgba(97,197,84,0.5);} 70%{box-shadow:0 0 0 5px rgba(97,197,84,0);} 100%{box-shadow:0 0 0 0 rgba(97,197,84,0);} }
+  @keyframes typing { 0%{width:0;} 45%{width:14ch;} 85%{width:14ch;} 100%{width:0;} }
+  .type { display:inline-block; overflow:hidden; white-space:nowrap; vertical-align:bottom; animation: typing 5s steps(14) infinite; }
+  .g { margin-left: auto; font-weight: 600; font-size: 10px; }
+  .hk { margin-left: auto; font-size: 9.5px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="head">
+    <span class="sq"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6 L12 12 L6 18" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="13" y="15.4" width="6" height="2.4" rx="1.2" fill="#fff"/></svg></span>
+    <h1>Clusterdeck</h1>
+    <p>Multi-cluster SSH workspaces — the connection <i>is</i> the workspace.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- 1. connections rail -->
+    <div class="card">
+      <div class="mock">
+        <div class="row"><span class="dot"></span>▤ Local · zsh<span class="hk">⌘1</span></div>
+        <div class="row active"><span class="dot on"></span>▣ spark-prod-01<span class="hk" style="color:var(--accent)">⌘2</span></div>
+        <div class="row"><span class="dot on"></span>▣ airflow-dev<span class="hk">⌘3</span></div>
+        <div class="row"><span class="dot on"></span>▣ druid-use1<span class="hk">⌘4</span></div>
+        <div class="row"><span class="dot"></span>▣ kafka-edge<span class="hk">⌘5</span></div>
+        <div class="row" style="color:var(--muted);font-size:10.5px;padding-top:8px;">⚟ 3 connected · wsh</div>
+      </div>
+      <div class="meta"><h3>Connection = workspace</h3><p>A collapsible rail of saved SSH connections with live status dots and <span class="kbd">⌘1–⌘n</span> hotkeys. Pick one and the whole window binds to it.</p></div>
+    </div>
+
+    <!-- 2. explorer + git -->
+    <div class="card">
+      <div class="mock">
+        <div class="row" style="color:var(--muted);font-size:10px;letter-spacing:.04em;">NNSERVER</div>
+        <div class="row"><span style="color:var(--accent)">◐</span> consumer.py</div>
+        <div class="row" style="padding-left:14px;">▸ ▤ src</div>
+        <div class="row active" style="padding-left:12px;"><span style="color:#4b8bbe">◐</span> consumer.py<span class="g" style="color:var(--gitmod)">M</span></div>
+        <div class="row" style="padding-left:16px;"><span style="color:#cbcb41">◍</span> payload.json<span class="g" style="color:var(--gitadd)">U</span></div>
+        <div class="row" style="padding-left:16px;"><span style="color:#2496ed">⬒</span> Dockerfile</div>
+        <div class="row" style="padding-left:16px;"><span style="color:#519aba">◆</span> README.md</div>
+      </div>
+      <div class="meta"><h3>VS Code–style explorer</h3><p>A lazy SFTP file tree with colored file icons, <b>git decorations</b> (<span style="color:var(--gitmod)">M</span> modified, <span style="color:var(--gitadd)">U</span> new), an OPEN EDITORS list, and single-click open.</p></div>
+    </div>
+
+    <!-- 3. routed editor + tabs -->
+    <div class="card">
+      <div class="mock" style="padding:0;">
+        <div style="display:flex;font-size:11px;border-bottom:.5px solid var(--border);background:var(--s1);">
+          <span style="padding:6px 10px;color:var(--accent);border-top:1.5px solid var(--accent);background:var(--s0);">◐ consumer.py ✕</span>
+          <span style="padding:6px 10px;color:var(--muted);">◍ payload.json ✕</span>
+        </div>
+        <div class="mono" style="padding:10px 12px;font-size:11.5px;line-height:1.7;">
+          <div style="color:var(--muted);">16 <span style="color:var(--muted)"># commit offsets</span></div>
+          <div>17 <span style="color:var(--accent)">def</span> <span style="color:var(--warn)">commit_batch</span>(o):</div>
+          <div style="background:var(--accent-bg);">18 &nbsp;&nbsp;consumer.commit(o)<span class="cursor"></span></div>
+          <div>19 &nbsp;&nbsp;<span style="color:var(--accent)">return</span> <span style="color:var(--green)">"ok"</span></div>
+        </div>
+      </div>
+      <div class="meta"><h3>Routed editor with tabs</h3><p>Click a file and it opens in <i>one</i> Monaco editor pane with tabs — never in-place, never a new floating block. Save writes straight back over SFTP.</p></div>
+    </div>
+
+    <!-- 4. terminals -->
+    <div class="card">
+      <div class="mock mono" style="font-size:11px;line-height:1.7;">
+        <div><span style="color:var(--accent)">surya@spark-prod-01</span> <span style="color:var(--text)">~/nnserver</span> <span style="color:var(--warn)">master</span></div>
+        <div>$ <span class="type">spark-submit pipeline.py</span></div>
+        <div style="color:var(--muted);">INFO  Job 3 finished <span style="color:var(--green)">✓</span></div>
+        <div style="margin-top:6px;"><span style="color:var(--accent)">surya@spark-prod-01</span> $ tail -f druid.log</div>
+        <div style="color:var(--warn);">WARN  gc pause 214ms</div>
+        <div>$ <span class="cursor"></span></div>
+      </div>
+      <div class="meta"><h3>Session-bound terminals</h3><p>Add, remove, and split terminals freely — every one is bound to the active connection. No per-terminal host picker.</p></div>
+    </div>
+
+    <!-- 5. per-connection layout -->
+    <div class="card">
+      <div class="mock" style="display:flex;gap:6px;padding:14px;">
+        <div style="width:26px;background:var(--s2);border-radius:5px;border:.5px solid var(--border);"></div>
+        <div style="width:34px;background:var(--s2);border-radius:5px;border:.5px solid var(--border);"></div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+          <div style="flex:1.3;background:var(--accent-bg);border:.5px solid var(--accent);border-radius:5px;"></div>
+          <div style="flex:1;display:flex;gap:6px;">
+            <div style="flex:1;background:var(--s2);border-radius:5px;border:.5px solid var(--border);"></div>
+            <div style="flex:1;background:var(--s2);border-radius:5px;border:.5px solid var(--border);"></div>
+          </div>
+        </div>
+      </div>
+      <div class="meta"><h3>Per-connection layout</h3><p>Each connection remembers its own arrangement — explorer width, open file, splits, terminals — and restores it when you switch back. Persisted to disk.</p></div>
+    </div>
+
+    <!-- 6. durable ssh -->
+    <div class="card">
+      <div class="mock mono" style="font-size:11px;line-height:1.7;">
+        <div style="color:var(--accent);">◴ durable session</div>
+        <div style="color:var(--muted);">connection lost — sleep / network change</div>
+        <div style="color:var(--warn);">reconnecting…</div>
+        <div style="color:var(--green);">✓ reattached — spark-submit still running</div>
+        <div style="margin-top:8px;">$ <span class="cursor"></span></div>
+      </div>
+      <div class="meta"><h3>Durable SSH sessions</h3><p>Inherited from Wave: remote sessions survive network drops, sleep, and restarts, and auto-reconnect — your long-running jobs keep going.</p></div>
+    </div>
+
+  </div>
+</body>
+</html>

@@ -15,7 +15,12 @@ in a single window. macOS-first.
 > terminals** — all bound to the active SSH connection. See the
 > [animated mockup](docs/clusterdeck/clusterdeck-demo.html) for the live version.
 
-## What it does
+## Features
+
+![Clusterdeck features](docs/clusterdeck/images/clusterdeck-features.png)
+
+> A mockup per feature — see the animated versions in
+> [`clusterdeck-features.html`](docs/clusterdeck/clusterdeck-features.html).
 
 - **Shell connections rail** — a vertical, collapsible workspace switcher with status
   dots and `⌘1–⌘n` hotkeys; each connection is a saved workspace.
@@ -30,6 +35,22 @@ in a single window. macOS-first.
 
 It keeps Wave's durable SSH sessions, `wsh` command system, connection controller,
 Monaco editor, terminal blocks, secret storage, and themes intact.
+
+## Install
+
+macOS-first (Apple Silicon). No prebuilt downloads yet — build from the repo:
+
+```sh
+git clone https://github.com/clusterdeck/clusterdeck.git && cd clusterdeck
+task init                                   # install deps (needs node, go, go-task)
+task package -- --mac dir --arm64           # build make/mac-arm64/Clusterdeck.app
+cp -R make/mac-arm64/Clusterdeck.app ~/Applications/ && \
+  xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
+open ~/Applications/Clusterdeck.app
+```
+
+Or run from source with hot-reload: `task dev`. Full details — requirements, dev workflow,
+upgrading, Gatekeeper notes — are in [`INSTALL.md`](INSTALL.md).
 
 ## Built on Wave Terminal
 
