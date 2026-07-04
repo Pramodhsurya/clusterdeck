@@ -43,7 +43,18 @@ Monaco editor, terminal blocks, secret storage, and themes intact.
 
 ## Install
 
-macOS-first (Apple Silicon). No prebuilt downloads yet — build from the repo:
+macOS-first (Apple Silicon). Easiest — via Homebrew:
+
+```sh
+brew tap clusterdeck/tap
+brew install --appdir=~/Applications --cask clusterdeck   # no admin/sudo needed
+```
+
+(Drop `--appdir=~/Applications` to install into `/Applications` if you have admin rights.
+The app isn't code-signed yet, so Gatekeeper will block the first launch — see the cask's
+install caveats for the one-line fix.)
+
+Or build from the repo:
 
 ```sh
 git clone https://github.com/clusterdeck/app.git clusterdeck && cd clusterdeck
