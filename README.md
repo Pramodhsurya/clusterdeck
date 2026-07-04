@@ -9,6 +9,12 @@ Clusterdeck is a fork of [Wave Terminal](https://www.waveterm.dev) reshaped from
 free-floating block terminal into a fixed IDE layout for working across many clusters
 in a single window. macOS-first.
 
+![Clusterdeck interface](docs/clusterdeck/images/clusterdeck-ui.png)
+
+> The three vertical zones — **connections rail**, **file explorer**, and **editor +
+> terminals** — all bound to the active SSH connection. See the
+> [animated mockup](docs/clusterdeck/clusterdeck-demo.html) for the live version.
+
 ## What it does
 
 - **Shell connections rail** — a vertical, collapsible workspace switcher with status

@@ -61,6 +61,11 @@ This is the mental model the whole UI hangs off: **the rail is a workspace switc
 └────────────┴────────────┴──────────────────────────────────┘
 ```
 
+Rendered — the three zones bound to one SSH connection (see
+[`clusterdeck-demo.html`](clusterdeck-demo.html) for the animated version):
+
+![Clusterdeck interface](images/clusterdeck-ui.png)
+
 | Zone | Spans | Purpose |
 |---|---|---|
 | Shell connections rail | Full height | Workspace switcher. Collapsible to icon-only strip. |
