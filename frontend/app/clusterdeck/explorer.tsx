@@ -152,6 +152,7 @@ class ClusterdeckExplorerModel implements ViewModel {
     collapsedAtom: jotai.Atom<boolean>;
     openFileAtom: jotai.Atom<string | null>;
     openFilesAtom: jotai.Atom<string[]>;
+    expandedAtom: jotai.Atom<string[]>;
     gitStatusAtom: jotai.PrimitiveAtom<Record<string, string>>;
     refreshVersion = jotai.atom(0);
 
@@ -176,8 +177,21 @@ class ClusterdeckExplorerModel implements ViewModel {
             const meta = this.editorMeta(get);
             return (meta?.["clusterdeck:openfiles"] as string[]) ?? [];
         });
+        // Directories the user expanded, persisted to meta so the tree survives a
+        // full reload / app restart (not just a re-mount).
+        this.expandedAtom = jotai.atom((get) => (get(this.blockAtom)?.meta?.["clusterdeck:expanded"] as string[]) ?? []);
         // Git decorations: absolute path -> "modified" | "added" (change #6 G#).
         this.gitStatusAtom = jotai.atom<Record<string, string>>({});
+    }
+
+    // Persist the expanded-directory set to block meta (durable across reloads).
+    persistExpanded(ids: string[]) {
+        fireAndForget(() =>
+            RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("block", this.blockId),
+                meta: { "clusterdeck:expanded": ids } as MetaType,
+            })
+        );
     }
 
     // Resolve the designated editor-zone block's id in this tab (§3.5). `get` is
@@ -369,6 +383,7 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
     const refreshVersion = useAtomValue(model.refreshVersion);
     const openFile = useAtomValue(model.openFileAtom);
     const gitStatus = useAtomValue(model.gitStatusAtom);
+    const restoreExpandedIds = useAtomValue(model.expandedAtom);
     const [rootIds, setRootIds] = useState<string[]>([]);
     const [initialNodes, setInitialNodes] = useState<Record<string, TreeNodeData>>({});
     const [error, setError] = useState<string>(null);
@@ -499,6 +514,8 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
                         singleClickOpen={true}
                         activeId={openFile ?? undefined}
                         gitStatus={gitStatus}
+                        restoreExpandedIds={restoreExpandedIds}
+                        onExpandedChange={(ids) => model.persistExpanded(ids)}
                         persistKey={`${model.blockId}:${connection}:${rootPath}`}
                         width="100%"
                         minWidth={0}
