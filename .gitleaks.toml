@@ -1,0 +1,23 @@
+# Clusterdeck secret-scanning config (gitleaks v8).
+#   Full-history scan:  gitleaks git --redact -v
+#   Working-tree scan:  gitleaks dir --redact -v
+#
+# Uses gitleaks' default rule set, plus an allowlist for two findings that a
+# manual review confirmed are NOT sensitive. Both live in `docs/` (Wave's
+# Docusaurus site, which Clusterdeck does not build or ship) and were authored
+# upstream, not in Clusterdeck's own commits. Everything else must scan clean.
+
+title = "Clusterdeck gitleaks config"
+
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Reviewed non-sensitive values inherited from upstream Wave docs"
+regexes = [
+  # Algolia DocSearch key — search-only and public by design (meant to ship in
+  # front-end config); part of Wave's documentation site.
+  '''e879cd8663f109b2822cd004d9cd468c''',
+  # Placeholder token in a `wsh secret set` docs example — not a real credential.
+  '''ghp_abc123xyz''',
+]
