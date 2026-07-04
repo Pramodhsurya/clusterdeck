@@ -5,10 +5,10 @@
         "email": "info@commandline.dev"
     },
     "productName": "Clusterdeck",
-    "description": "Open-Source AI-Native Terminal Built for Seamless Workflows",
+    "description": "Multi-cluster SSH workspaces — the connection is the workspace",
     "license": "Apache-2.0",
-    "version": "0.14.5",
-    "homepage": "https://waveterm.dev",
+    "version": "0.1.0",
+    "homepage": "https://github.com/clusterdeck/app",
     "build": {
         "appId": "dev.clusterdeck.app"
     },
