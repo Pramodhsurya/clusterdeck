@@ -30,9 +30,9 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                     <Logo />
                     <div className="text-[25px]">Clusterdeck</div>
                     <div className="leading-5">
-                        Open-Source AI-Integrated Terminal
+                        Multi-cluster SSH workspaces
                         <br />
-                        Built for Seamless Workflows
+                        <span className="text-secondary">Built on Clusterdeck</span>
                     </div>
                 </div>
                 <div className="items-center gap-4 self-stretch w-full text-center">
@@ -42,7 +42,7 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                 </div>
                 <div className="grid grid-cols-2 gap-[10px] self-stretch w-full">
                     <a
-                        href="https://github.com/wavetermdev/waveterm?ref=about"
+                        href="https://github.com/clusterdeck/clusterdeck"
                         target="_blank"
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"
@@ -50,15 +50,15 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                         <i className="fa-brands fa-github mr-2"></i>GitHub
                     </a>
                     <a
-                        href="https://www.waveterm.dev/?ref=about"
+                        href="https://www.waveterm.dev/?ref=clusterdeck"
                         target="_blank"
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"
                     >
-                        <i className="fa-sharp fa-light fa-globe mr-2"></i>Website
+                        <i className="fa-sharp fa-light fa-code-fork mr-2"></i>Clusterdeck
                     </a>
                     <a
-                        href="https://github.com/wavetermdev/waveterm/blob/main/ACKNOWLEDGEMENTS.md"
+                        href="https://github.com/clusterdeck/clusterdeck/blob/main/ACKNOWLEDGEMENTS.md"
                         target="_blank"
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"
@@ -71,11 +71,13 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"
                     >
-                        <i className="fa-sharp fa-light fa-heart mr-2"></i>Sponsor
+                        <i className="fa-sharp fa-light fa-heart mr-2"></i>Sponsor Wave
                     </a>
                 </div>
-                <div className="items-center gap-4 self-stretch w-full text-center">
-                    &copy; {currentDate.getFullYear()} Command Line Inc.
+                <div className="items-center gap-4 self-stretch w-full text-center text-secondary text-sm">
+                    A fork of Clusterdeck &middot; Apache-2.0
+                    <br />
+                    &copy; {currentDate.getFullYear()} Command Line Inc. &amp; the Clusterdeck authors
                 </div>
             </div>
         </Modal>

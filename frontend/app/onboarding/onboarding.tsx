@@ -96,7 +96,7 @@ const InitPage = ({
                         <div>
                             <a
                                 target="_blank"
-                                href="https://github.com/wavetermdev/waveterm?ref=install"
+                                href="https://github.com/clusterdeck/clusterdeck"
                                 rel="noopener"
                                 className="text-accent"
                                 onClick={handleStarClick}
@@ -111,12 +111,12 @@ const InitPage = ({
                                 for individual users. Please show your support by giving us a star on{" "}
                                 <a
                                     target="_blank"
-                                    href="https://github.com/wavetermdev/waveterm?ref=install"
+                                    href="https://github.com/clusterdeck/clusterdeck"
                                     rel="noopener"
                                     className="text-accent"
                                     onClick={handleStarClick}
                                 >
-                                    Github&nbsp;(wavetermdev/waveterm)
+                                    GitHub&nbsp;(clusterdeck/clusterdeck)
                                 </a>
                             </div>
                         </div>
@@ -125,7 +125,7 @@ const InitPage = ({
                         <div>
                             <a
                                 target="_blank"
-                                href="https://discord.gg/XfvZ334gwU"
+                                href="https://github.com/clusterdeck/clusterdeck/issues"
                                 rel="noopener"
                                 className="text-accent"
                             >
@@ -140,11 +140,11 @@ const InitPage = ({
                                 <br />
                                 <a
                                     target="_blank"
-                                    href="https://discord.gg/XfvZ334gwU"
+                                    href="https://github.com/clusterdeck/clusterdeck/issues"
                                     rel="noopener"
                                     className="text-accent"
                                 >
-                                    Join the Wave&nbsp;Discord&nbsp;Channel
+                                    Open an issue on&nbsp;GitHub
                                 </a>
                             </div>
                         </div>
@@ -207,7 +207,7 @@ const NoTelemetryStarPage = ({ isCompact }: { isCompact: boolean }) => {
             oref: WOS.makeORef("client", clientId),
             meta: { "onboarding:githubstar": true },
         });
-        window.open("https://github.com/wavetermdev/waveterm?ref=not", "_blank");
+        window.open("https://github.com/clusterdeck/clusterdeck", "_blank");
         setPageName("features");
     };
 
@@ -244,7 +244,7 @@ const NoTelemetryStarPage = ({ isCompact }: { isCompact: boolean }) => {
                     <div className="text-center text-secondary leading-relaxed max-w-md">
                         <p className="mb-4">No problem, we respect your privacy.</p>
                         <p className="mb-4">
-                            But, without usage data, we're flying blind. A GitHub star helps us know Wave is useful and
+                            But, without usage data, we're flying blind. A GitHub star helps us know Clusterdeck is useful and
                             worth maintaining.
                         </p>
                     </div>
