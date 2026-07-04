@@ -4,7 +4,11 @@ Clusterdeck is a derivative work of [Wave Terminal](https://github.com/wavetermd
 (Apache License 2.0, © Command Line Inc.). Wave's original `LICENSE` and `NOTICE` files are
 preserved unmodified at the repo root.
 
-Fork point: commit `c99022c15bd1f17273728e728a61743e690d6423` (upstream `main`, July 2026).
+Fork point: the merge-base with upstream `main` (July 2026) — find it with
+`git merge-base HEAD upstream/main`. Clusterdeck's commit history was rewritten once
+to normalize all fork commits to a single project identity; upstream Wave commits
+retain their original authorship, and a shared ancestor with `upstream/main` is
+preserved so upstream changes can still be merged or cherry-picked.
 
 ## Summary of modifications
 
