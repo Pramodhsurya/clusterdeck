@@ -9,18 +9,23 @@ Clusterdeck is a fork of [Wave Terminal](https://www.waveterm.dev) reshaped from
 free-floating block terminal into a fixed IDE layout for working across many clusters
 in a single window. macOS-first.
 
-![Clusterdeck interface](docs/clusterdeck/images/clusterdeck-ui.png)
+![Clusterdeck interface](docs/clusterdeck/images/clusterdeck-ui.gif)
 
 > The three vertical zones — **connections rail**, **file explorer**, and **editor +
-> terminals** — all bound to the active SSH connection. See the
-> [animated mockup](docs/clusterdeck/clusterdeck-demo.html) for the live version.
+> terminals** — all bound to the active SSH connection.
+> ([static image](docs/clusterdeck/images/clusterdeck-ui.png) ·
+> [full mockup](docs/clusterdeck/clusterdeck-demo.html))
 
 ## Features
 
-![Clusterdeck features](docs/clusterdeck/images/clusterdeck-features.png)
+A mockup per feature (animated versions in
+[`clusterdeck-features.html`](docs/clusterdeck/clusterdeck-features.html)):
 
-> A mockup per feature — see the animated versions in
-> [`clusterdeck-features.html`](docs/clusterdeck/clusterdeck-features.html).
+|  |  |
+|:--|:--|
+| ![Connection = workspace](docs/clusterdeck/images/feat-connection.png) | ![VS Code–style explorer](docs/clusterdeck/images/feat-explorer.png) |
+| ![Routed editor with tabs](docs/clusterdeck/images/feat-editor.png) | ![Session-bound terminals](docs/clusterdeck/images/feat-terminals.png) |
+| ![Per-connection layout](docs/clusterdeck/images/feat-layout.png) | ![Durable SSH sessions](docs/clusterdeck/images/feat-durable.png) |
 
 - **Shell connections rail** — a vertical, collapsible workspace switcher with status
   dots and `⌘1–⌘n` hotkeys; each connection is a saved workspace.

@@ -143,5 +143,15 @@
     </div>
 
   </div>
+  <style> body.single { padding: 20px; } body.single .grid { grid-template-columns: 1fr; max-width: 440px; margin: 0; } </style>
+  <script>
+    // ?only=N renders just the Nth feature card (for per-feature doc images)
+    const only = new URLSearchParams(location.search).get('only');
+    if (only) {
+      document.body.classList.add('single');
+      const h = document.querySelector('.head'); if (h) h.style.display = 'none';
+      document.querySelectorAll('.card').forEach((c, i) => { if (i != only - 1) c.style.display = 'none'; });
+    }
+  </script>
 </body>
 </html>
