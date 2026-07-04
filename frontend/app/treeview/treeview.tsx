@@ -74,6 +74,13 @@ export interface TreeViewProps {
     // If set, the tree's loaded/expanded/selected state is cached under this key
     // and restored across re-mounts (so expansion survives parent re-renders).
     persistKey?: string;
+    // Durable expansion: ids to expand on first mount (restored from backend meta
+    // so the tree survives a full page reload / app restart, not just a re-mount).
+    // Expanded-but-unloaded dirs are lazily fetched to rebuild the subtree.
+    restoreExpandedIds?: string[];
+    // Called (deduped) whenever the set of expanded ids changes, so the caller can
+    // persist it. Not called for the initial restore.
+    onExpandedChange?: (expandedIds: string[]) => void;
     height?: number | string;
     className?: string;
     onOpenFile?: (id: string, node: TreeNodeData) => void;
@@ -241,6 +248,8 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         activeId,
         gitStatus,
         persistKey,
+        restoreExpandedIds,
+        onExpandedChange,
         onOpenFile,
         onSelectionChange,
     } = props;
@@ -256,7 +265,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
               )
     );
     const [expandedIds, setExpandedIds] = useState<Set<string>>(() =>
-        cached ? new Set(cached.expandedIds) : new Set()
+        cached ? new Set(cached.expandedIds) : new Set(restoreExpandedIds ?? [])
     );
     const [selectedId, setSelectedId] = useState<string>(() => cached?.selectedId ?? rootIds[0]);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -267,6 +276,17 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
             treeStateCache.set(persistKey, { nodesById, expandedIds, selectedId });
         }
     }, [persistKey, nodesById, expandedIds, selectedId]);
+
+    // Notify the caller of expansion changes (to persist durably to backend meta),
+    // skipping the initial restore so we don't rewrite what we just read.
+    const didMountExpandRef = useRef(false);
+    useEffect(() => {
+        if (!didMountExpandRef.current) {
+            didMountExpandRef.current = true;
+            return;
+        }
+        onExpandedChange?.([...expandedIds]);
+    }, [expandedIds]);
 
     // Merge new root nodes without wiping already-loaded children (non-destructive).
     useEffect(() => {
@@ -378,6 +398,18 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
             });
         }
     };
+
+    // Rebuild a restored subtree: lazily load any expanded-but-unloaded directory.
+    // Loading a dir reveals its children; if one of those is also expanded, this
+    // effect re-fires and loads it too, cascading down the restored paths.
+    useEffect(() => {
+        for (const id of expandedIds) {
+            const node = nodesById.get(id);
+            if (node?.isDirectory && (node.childrenStatus ?? "unloaded") === "unloaded") {
+                loadChildren(id);
+            }
+        }
+    }, [expandedIds, nodesById]);
 
     const toggleExpand = (id: string) => {
         const node = nodesById.get(id);
