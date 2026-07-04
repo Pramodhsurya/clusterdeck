@@ -11,6 +11,24 @@ Fork point: commit `c99022c15bd1f17273728e728a61743e690d6423` (upstream `main`, 
 This file records every substantive change made to the Wave Terminal codebase, per
 Apache-2.0 §4(b). It is updated as changes land.
 
+### feat/rebrand-icons (2026-07-04)
+
+- Rebranded the app from "Wave"/"Wave Terminal" to **Clusterdeck** (display-only; Wave's
+  `LICENSE`/`NOTICE` and the package.json `author` attribution are preserved).
+  - `package.json`: `productName` → "Clusterdeck", `build.appId` → `dev.clusterdeck.app`.
+  - `emain/emain-platform.ts`: data/config directory name → `clusterdeck` (data dir via
+    `envPaths`, config dir via `waveDirName`); Electron app name → "Clusterdeck"/"Clusterdeck (Dev)".
+  - Renamed user-facing strings in the app menu (`emain-menu.ts`), quit dialog (`emain.ts`),
+    update notification (`updater.ts`), About modal (`about.tsx`), onboarding (`onboarding.tsx`),
+    and the window `<title>`/favicon (`index.html`).
+  - `pkg/wavebase/wavebase.go`: caches-dir bundle name → `clusterdeck`/`clusterdeck-dev` (the
+    data/config dirs auto-follow the `WAVETERM_*_HOME` env vars Electron sets, unchanged).
+  - Backend data/config dirs move to `clusterdeck-dev`; existing `waveterm-dev` data is migrated
+    by copy on the developer machine (old dirs retained as fallback).
+- Replaced the app icon set with the Clusterdeck icon (blue squircle + terminal glyph):
+  `build/icon.icns`, `build/icon.ico`, `build/icons/*.png`, `public/logos/clusterdeck-logo.png`,
+  `public/logos/clusterdeck-256.png`, and the in-app `frontend/app/asset/logo.svg`.
+
 ### Project scaffolding (2026-07-02)
 
 - Moved Wave's root `CLAUDE.md` to `docs/wave/CLAUDE.md` (preserved for build reference).
