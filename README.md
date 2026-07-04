@@ -46,7 +46,7 @@ Monaco editor, terminal blocks, secret storage, and themes intact.
 macOS-first (Apple Silicon). No prebuilt downloads yet — build from the repo:
 
 ```sh
-git clone https://github.com/clusterdeck/clusterdeck.git && cd clusterdeck
+git clone https://github.com/clusterdeck/app.git clusterdeck && cd clusterdeck
 task init                                   # install deps (needs node, go, go-task)
 task package -- --mac dir --arm64           # build make/mac-arm64/Clusterdeck.app
 cp -R make/mac-arm64/Clusterdeck.app ~/Applications/ && \

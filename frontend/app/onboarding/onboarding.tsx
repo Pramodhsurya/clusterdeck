@@ -96,7 +96,7 @@ const InitPage = ({
                         <div>
                             <a
                                 target="_blank"
-                                href="https://github.com/clusterdeck/clusterdeck"
+                                href="https://github.com/clusterdeck/app"
                                 rel="noopener"
                                 className="text-accent"
                                 onClick={handleStarClick}
@@ -111,12 +111,12 @@ const InitPage = ({
                                 for individual users. Please show your support by giving us a star on{" "}
                                 <a
                                     target="_blank"
-                                    href="https://github.com/clusterdeck/clusterdeck"
+                                    href="https://github.com/clusterdeck/app"
                                     rel="noopener"
                                     className="text-accent"
                                     onClick={handleStarClick}
                                 >
-                                    GitHub&nbsp;(clusterdeck/clusterdeck)
+                                    GitHub&nbsp;(clusterdeck/app)
                                 </a>
                             </div>
                         </div>
@@ -125,7 +125,7 @@ const InitPage = ({
                         <div>
                             <a
                                 target="_blank"
-                                href="https://github.com/clusterdeck/clusterdeck/issues"
+                                href="https://github.com/clusterdeck/app/issues"
                                 rel="noopener"
                                 className="text-accent"
                             >
@@ -140,7 +140,7 @@ const InitPage = ({
                                 <br />
                                 <a
                                     target="_blank"
-                                    href="https://github.com/clusterdeck/clusterdeck/issues"
+                                    href="https://github.com/clusterdeck/app/issues"
                                     rel="noopener"
                                     className="text-accent"
                                 >
@@ -207,7 +207,7 @@ const NoTelemetryStarPage = ({ isCompact }: { isCompact: boolean }) => {
             oref: WOS.makeORef("client", clientId),
             meta: { "onboarding:githubstar": true },
         });
-        window.open("https://github.com/clusterdeck/clusterdeck", "_blank");
+        window.open("https://github.com/clusterdeck/app", "_blank");
         setPageName("features");
     };
 

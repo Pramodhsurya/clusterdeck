@@ -42,7 +42,7 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                 </div>
                 <div className="grid grid-cols-2 gap-[10px] self-stretch w-full">
                     <a
-                        href="https://github.com/clusterdeck/clusterdeck"
+                        href="https://github.com/clusterdeck/app"
                         target="_blank"
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"
@@ -58,7 +58,7 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                         <i className="fa-sharp fa-light fa-code-fork mr-2"></i>Wave Terminal
                     </a>
                     <a
-                        href="https://github.com/clusterdeck/clusterdeck/blob/main/ACKNOWLEDGEMENTS.md"
+                        href="https://github.com/clusterdeck/app/blob/main/ACKNOWLEDGEMENTS.md"
                         target="_blank"
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"

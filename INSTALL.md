@@ -32,7 +32,7 @@ Produces `Clusterdeck.app`, which you run like any other macOS app.
 
 ```sh
 # 1. clone
-git clone https://github.com/clusterdeck/clusterdeck.git
+git clone https://github.com/clusterdeck/app.git clusterdeck
 cd clusterdeck
 
 # 2. install dependencies (JS + Go)
@@ -65,7 +65,7 @@ config from `~/.config/clusterdeck-dev`.
 Runs the app straight from the repo with hot-reload — no install step.
 
 ```sh
-git clone https://github.com/clusterdeck/clusterdeck.git
+git clone https://github.com/clusterdeck/app.git clusterdeck
 cd clusterdeck
 task init
 task dev          # launches the app; frontend changes hot-reload (⌘R)

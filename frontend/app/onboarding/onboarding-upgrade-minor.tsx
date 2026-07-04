@@ -144,7 +144,7 @@ const UpgradeOnboardingMinor = () => {
             oref: WOS.makeORef("client", clientId),
             meta: { "onboarding:githubstar": true },
         });
-        window.open("https://github.com/clusterdeck/clusterdeck", "_blank");
+        window.open("https://github.com/clusterdeck/app", "_blank");
         setPageName("features");
     };
 

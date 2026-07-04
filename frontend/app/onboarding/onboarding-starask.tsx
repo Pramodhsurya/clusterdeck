@@ -28,7 +28,7 @@ export function StarAskPage({ onClose, page = "upgrade" }: StarAskPageProps) {
             oref: WOS.makeORef("client", clientId),
             meta: { "onboarding:githubstar": true },
         });
-        window.open("https://github.com/clusterdeck/clusterdeck", "_blank");
+        window.open("https://github.com/clusterdeck/app", "_blank");
         onClose();
     };
 
@@ -58,7 +58,7 @@ export function StarAskPage({ onClose, page = "upgrade" }: StarAskPageProps) {
             },
             { noresponse: true }
         );
-        window.open("https://github.com/clusterdeck/clusterdeck", "_blank");
+        window.open("https://github.com/clusterdeck/app", "_blank");
     };
 
     const handleMaybeLater = async () => {
@@ -98,7 +98,7 @@ export function StarAskPage({ onClose, page = "upgrade" }: StarAskPageProps) {
                     >
                         <i className="fa-brands fa-github text-foreground text-lg group-hover:text-accent transition-colors" />
                         <span className="text-foreground font-mono text-sm group-hover:text-accent group-hover:underline transition-colors">
-                            wavetermdev/waveterm
+                            clusterdeck/app
                         </span>
                     </div>
                 </div>
