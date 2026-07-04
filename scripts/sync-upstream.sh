@@ -10,12 +10,16 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-FORK="c99022c15bd1f17273728e728a61743e690d6423"   # recorded fork point (see CHANGES.md)
 UPSTREAM_BRANCH="upstream/main"
 cmd="${1:-report}"
 
 echo "==> fetching upstream (Wave)…"
 git fetch upstream --tags
+
+# Fork point = the merge-base with Wave's main. Computed dynamically so it stays
+# correct across history rewrites (rather than a hard-coded SHA).
+FORK="$(git merge-base HEAD "${UPSTREAM_BRANCH}" 2>/dev/null || true)"
+[ -n "${FORK}" ] || { echo "!! no merge-base with ${UPSTREAM_BRANCH} (fetch upstream first)"; exit 1; }
 
 new_count=$(git rev-list --count "${FORK}..${UPSTREAM_BRANCH}" 2>/dev/null || echo "?")
 echo "==> upstream commits since fork point: ${new_count}"
