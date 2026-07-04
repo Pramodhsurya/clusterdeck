@@ -32,7 +32,7 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                     <div className="leading-5">
                         Multi-cluster SSH workspaces
                         <br />
-                        <span className="text-secondary">Built on Clusterdeck</span>
+                        <span className="text-secondary">Built on Wave Terminal</span>
                     </div>
                 </div>
                 <div className="items-center gap-4 self-stretch w-full text-center">
@@ -55,7 +55,7 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                         rel="noopener"
                         className="inline-flex items-center justify-center px-4 py-2 rounded border border-border hover:bg-hoverbg transition-colors duration-200"
                     >
-                        <i className="fa-sharp fa-light fa-code-fork mr-2"></i>Clusterdeck
+                        <i className="fa-sharp fa-light fa-code-fork mr-2"></i>Wave Terminal
                     </a>
                     <a
                         href="https://github.com/clusterdeck/clusterdeck/blob/main/ACKNOWLEDGEMENTS.md"
@@ -75,7 +75,7 @@ const AboutModalV = ({ versionString, updaterChannel, onClose }: AboutModalVProp
                     </a>
                 </div>
                 <div className="items-center gap-4 self-stretch w-full text-center text-secondary text-sm">
-                    A fork of Clusterdeck &middot; Apache-2.0
+                    A fork of Wave Terminal &middot; Apache-2.0
                     <br />
                     &copy; {currentDate.getFullYear()} Command Line Inc. &amp; the Clusterdeck authors
                 </div>
