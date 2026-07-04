@@ -25,7 +25,7 @@ manifests/
 out
 .kilocode/package-lock.json
 
-# Secrets / credentials — never commit (see CLAUDE.md security rules)
+# Secrets / credentials — never commit
 *.key
 *.pem
 *.p12
@@ -54,3 +54,6 @@ docsite/
 .superpowers
 docs/superpowers
 .claude
+# Local-only agent instructions — kept on this machine, never published
+CLAUDE.md
+**/CLAUDE.md
