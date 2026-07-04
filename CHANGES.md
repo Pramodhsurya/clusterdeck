@@ -35,8 +35,6 @@ Apache-2.0 §4(b). It is updated as changes land.
 
 ### Project scaffolding (2026-07-02)
 
-- Moved Wave's root `CLAUDE.md` to `docs/wave/CLAUDE.md` (preserved for build reference).
-- Added Clusterdeck's own `CLAUDE.md` (project behavioral contract) at the repo root.
 - Added `docs/clusterdeck/` containing the Clusterdeck design spec, fork plan, and UI mockup.
 - Added this `CHANGES.md`.
 
