@@ -391,6 +391,10 @@ type ConnKeywords struct {
 	DisplayHidden *bool   `json:"display:hidden,omitempty"`
 	DisplayOrder  float32 `json:"display:order,omitempty"`
 
+	// Recency for the Welcome "Recent" list, kept on the connection itself (not
+	// the workspace) so it survives workspace deletion — see clusterdeck welcome.tsx.
+	ClusterdeckLastOpened *int64 `json:"clusterdeck:lastopened,omitempty"`
+
 	TermClear      bool    `json:"term:*,omitempty"`
 	TermFontSize   float64 `json:"term:fontsize,omitempty"`
 	TermFontFamily string  `json:"term:fontfamily,omitempty"`

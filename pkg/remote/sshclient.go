@@ -34,6 +34,7 @@ import (
 	"github.com/wavetermdev/waveterm/pkg/util/utilfn"
 	"github.com/wavetermdev/waveterm/pkg/utilds"
 	"github.com/wavetermdev/waveterm/pkg/wavebase"
+	"github.com/wavetermdev/waveterm/pkg/waveobj"
 	"github.com/wavetermdev/waveterm/pkg/wconfig"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -382,7 +383,46 @@ func createPublicKeyCallback(connCtx context.Context, sshKeywords *wconfig.ConnK
 	}
 }
 
-func createPasswordCallbackPrompt(connCtx context.Context, remoteDisplayName string, password *string, debugInfo *ConnectionDebugInfo) func() (secret string, err error) {
+// secretNameForConn derives a valid secretstore name (must start with a letter,
+// then only letters/digits/underscores — see secretstore.SecretNamePattern)
+// from a connection name, so "Remember this password" has somewhere
+// deterministic to save to and a later connect can find it again.
+func secretNameForConn(connName string) string {
+	var b strings.Builder
+	b.WriteString("sshpw_")
+	for _, r := range connName {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') {
+			b.WriteRune(r)
+		} else {
+			b.WriteRune('_')
+		}
+	}
+	return b.String()
+}
+
+// rememberPassword saves the password to the secret store and points connName
+// at it via ssh:passwordsecretname, so the next connect finds it via the same
+// sshKeywords.SshPasswordSecretName lookup used above — no separate code path,
+// just completing the read side that already existed. Best-effort: the
+// connection itself already succeeded with the typed password, so a failure
+// here is logged, not surfaced as a connection error.
+func rememberPassword(connCtx context.Context, connName, password string) {
+	if connName == "" {
+		return
+	}
+	secretName := secretNameForConn(connName)
+	if err := secretstore.SetSecret(secretName, password); err != nil {
+		blocklogger.Infof(connCtx, "[conndebug] could not save password to secret store: %v\n", err)
+		return
+	}
+	if err := wconfig.SetConnectionsConfigValue(connName, waveobj.MetaMapType{"ssh:passwordsecretname": secretName}); err != nil {
+		blocklogger.Infof(connCtx, "[conndebug] could not save ssh:passwordsecretname for %q: %v\n", connName, err)
+		return
+	}
+	blocklogger.Infof(connCtx, "[conndebug] saved password for %q to secret store as %q\n", connName, secretName)
+}
+
+func createPasswordCallbackPrompt(connCtx context.Context, connName string, remoteDisplayName string, password *string, debugInfo *ConnectionDebugInfo) func() (secret string, err error) {
 	return func() (secret string, outErr error) {
 		defer func() {
 			panicErr := panichandler.PanicHandler("sshclient:password-callback", recover())
@@ -408,6 +448,7 @@ func createPasswordCallbackPrompt(connCtx context.Context, remoteDisplayName str
 			QueryText:    queryText,
 			Markdown:     true,
 			Title:        "Password Authentication",
+			CheckBoxMsg:  "Remember this password",
 		}
 		response, err := userinput.GetUserInput(ctx, request)
 		if err != nil {
@@ -415,6 +456,9 @@ func createPasswordCallbackPrompt(connCtx context.Context, remoteDisplayName str
 			return "", ConnectionError{ConnectionDebugInfo: debugInfo, Err: err}
 		}
 		blocklogger.Infof(connCtx, "[conndebug] got password from user, sending to ssh\n")
+		if response.CheckboxStat {
+			rememberPassword(connCtx, connName, response.Text)
+		}
 		return response.Text, nil
 	}
 }
@@ -754,7 +798,7 @@ func createHostKeyCallback(ctx context.Context, sshKeywords *wconfig.ConnKeyword
 	return waveHostKeyCallback, hostKeyAlgorithms, nil
 }
 
-func createClientConfig(connCtx context.Context, sshKeywords *wconfig.ConnKeywords, debugInfo *ConnectionDebugInfo) (*ssh.ClientConfig, error) {
+func createClientConfig(connCtx context.Context, connName string, sshKeywords *wconfig.ConnKeywords, debugInfo *ConnectionDebugInfo) (*ssh.ClientConfig, error) {
 	chosenUser := utilfn.SafeDeref(sshKeywords.SshUser)
 	chosenHostName := utilfn.SafeDeref(sshKeywords.SshHostName)
 	chosenPort := utilfn.SafeDeref(sshKeywords.SshPort)
@@ -795,7 +839,7 @@ func createClientConfig(connCtx context.Context, sshKeywords *wconfig.ConnKeywor
 
 	publicKeyCallback := ssh.PublicKeysCallback(createPublicKeyCallback(connCtx, sshKeywords, authSockSigners, agentClient, debugInfo))
 	keyboardInteractive := ssh.KeyboardInteractive(createInteractiveKbdInteractiveChallenge(connCtx, remoteName, debugInfo))
-	passwordCallback := ssh.PasswordCallback(createPasswordCallbackPrompt(connCtx, remoteName, sshPassword, debugInfo))
+	passwordCallback := ssh.PasswordCallback(createPasswordCallbackPrompt(connCtx, connName, remoteName, sshPassword, debugInfo))
 
 	// exclude gssapi-with-mic and hostbased until implemented
 	authMethodMap := map[string]ssh.AuthMethod{
@@ -946,7 +990,7 @@ func ConnectToClient(connCtx context.Context, opts *SSHOpts, currentClient *ssh.
 			return nil, jumpNum, err
 		}
 	}
-	clientConfig, err := createClientConfig(connCtx, sshKeywords, debugInfo)
+	clientConfig, err := createClientConfig(connCtx, rawName, sshKeywords, debugInfo)
 	if err != nil {
 		return nil, debugInfo.JumpNum, ConnectionError{ConnectionDebugInfo: debugInfo, Err: err}
 	}

@@ -87,13 +87,34 @@ const connectedCountAtom = atom((get) => {
     return count;
 });
 
+// Stamp both the workspace and its connection with "opened just now". The
+// connection stamp (connections.json) is what the Welcome "Recent" list falls
+// back to once a workspace is deleted, so recency survives that deletion.
+async function recordWorkspaceOpened(oid: string): Promise<void> {
+    const now = Date.now();
+    await RpcApi.SetMetaCommand(TabRpcClient, {
+        oref: WOS.makeORef("workspace", oid),
+        meta: { [ClusterdeckLastOpenedMetaKey]: now } as MetaType,
+    });
+    const ws = await WorkspaceService.GetWorkspace(oid);
+    const conn = ws ? getWorkspaceConnection(ws) : "";
+    if (!isLocalConn(conn)) {
+        await RpcApi.SetConnectionsConfigCommand(TabRpcClient, {
+            host: conn,
+            metamaptype: { "clusterdeck:lastopened": now } as MetaType,
+        });
+    }
+}
+
 // Open a workspace for a target — a local folder path (e.g. ~/Documents/proj)
 // OR a connection (user@host) — creating + seeding the IDE layout if needed,
-// then switch the window to it.
-function openTargetWorkspace(target: string) {
+// then switch the window to it. Also used to "reopen" a connection from the
+// Welcome "Recent" list whose workspace was since deleted.
+export function openTargetWorkspace(target: string) {
     fireAndForget(async () => {
         const workspaceId = await RpcApi.ClusterdeckOpenTargetCommand(TabRpcClient, target);
         if (workspaceId) {
+            await recordWorkspaceOpened(workspaceId);
             getApi().switchWorkspace(workspaceId);
         }
     });
@@ -105,10 +126,7 @@ export function switchToWorkspace(oid: string) {
         return;
     }
     fireAndForget(async () => {
-        await RpcApi.SetMetaCommand(TabRpcClient, {
-            oref: WOS.makeORef("workspace", oid),
-            meta: { [ClusterdeckLastOpenedMetaKey]: Date.now() } as MetaType,
-        });
+        await recordWorkspaceOpened(oid);
         getApi().switchWorkspace(oid);
     });
 }

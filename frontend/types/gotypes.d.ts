@@ -833,6 +833,7 @@ declare global {
         "conn:ignoresshconfig"?: boolean;
         "display:hidden"?: boolean;
         "display:order"?: number;
+        "clusterdeck:lastopened"?: number;
         "term:*"?: boolean;
         "term:fontsize"?: number;
         "term:fontfamily"?: string;

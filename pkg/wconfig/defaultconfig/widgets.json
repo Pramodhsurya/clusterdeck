@@ -1,4 +1,28 @@
 {
+    "defwidget@explorer": {
+        "display:order": -6,
+        "icon": "folder-tree",
+        "label": "explorer",
+        "description": "Reopen the file explorer if you closed it",
+        "blockdef": {
+            "meta": {
+                "view": "cdexplorer",
+                "clusterdeck:zone": "explorer"
+            }
+        }
+    },
+    "defwidget@editor": {
+        "display:order": -5.5,
+        "icon": "file-pen",
+        "label": "editor",
+        "description": "Reopen the file editor if you closed it",
+        "blockdef": {
+            "meta": {
+                "view": "cdeditor",
+                "clusterdeck:zone": "editor"
+            }
+        }
+    },
     "defwidget@terminal": {
         "display:order": -5,
         "icon": "square-terminal",

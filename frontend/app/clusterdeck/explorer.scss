@@ -144,4 +144,40 @@
         font-size: 11px;
         white-space: pre-wrap;
     }
+
+    .cd-explorer-connecting {
+        padding: 8px;
+        color: var(--secondary-text-color);
+        font-size: 11px;
+    }
+}
+
+// "Change folder" in-app browser (remote connections — no native OS dialog).
+// Only the clickable header needs styling here — the dropdown itself is
+// Wave's own SuggestionControl, styled by that component.
+.cd-rootpicker {
+    display: flex;
+    flex-direction: column;
+    width: 480px;
+    max-width: 70vw;
+
+    .cd-rootpicker-header {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        cursor: pointer;
+        font-family: var(--font-mono, monospace);
+        font-size: 12px;
+
+        i {
+            color: var(--secondary-text-color);
+        }
+
+        &:hover {
+            background: var(--button-grey-hover-bg-color, rgba(255, 255, 255, 0.08));
+        }
+    }
 }

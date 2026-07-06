@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { openKubeAppPicker } from "@/app/clusterdeck/connectionsrail";
+import { openOrFocusEditor, openOrFocusExplorer } from "@/app/clusterdeck/explorer";
 import { Tooltip } from "@/app/element/tooltip";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv, WaveEnv, WaveEnvSubset } from "@/app/waveenv/waveenv";
@@ -63,6 +64,17 @@ async function handleWidgetSelect(widget: WidgetConfigType, env: WidgetsEnv) {
     // clusters. Other widgets create their block directly.
     if (blockDef?.meta?.["cdapp:kube"]) {
         openKubeAppPicker(blockDef, widget.magnified ?? false);
+        return;
+    }
+    // Clusterdeck: the explorer widget reuses the existing explorer block if the
+    // tab still has one (there's otherwise no way to get it back after closing
+    // it), rather than spawning a duplicate.
+    if (blockDef?.meta?.view === "cdexplorer") {
+        openOrFocusExplorer();
+        return;
+    }
+    if (blockDef?.meta?.view === "cdeditor") {
+        openOrFocusEditor();
         return;
     }
     env.createBlock(blockDef, widget.magnified);

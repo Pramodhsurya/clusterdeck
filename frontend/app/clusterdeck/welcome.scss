@@ -98,6 +98,13 @@
         &:hover .cd-welcome-recent-name {
             text-decoration: underline;
         }
+
+        &.cd-welcome-recent-ghost {
+            > i,
+            .cd-welcome-recent-name {
+                opacity: 0.6;
+            }
+        }
     }
 
     .cd-welcome-empty {

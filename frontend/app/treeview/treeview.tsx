@@ -85,6 +85,16 @@ export interface TreeViewProps {
     className?: string;
     onOpenFile?: (id: string, node: TreeNodeData) => void;
     onSelectionChange?: (id: string, node: TreeNodeData) => void;
+    // Right-click on a node row (not fired for loading/error/capped rows). The
+    // row is selected first, matching VS Code's right-click-selects behavior.
+    onContextMenu?: (id: string, node: TreeNodeData, e: MouseEvent<HTMLDivElement>) => void;
+    // Right-click on empty space below/around the rows (not on any node).
+    onBackgroundContextMenu?: (e: MouseEvent<HTMLDivElement>) => void;
+    // Bump this to force every already-loaded folder to refetch its children.
+    // Without it, a folder's contents are fetched once and then cached for the
+    // component's lifetime — a rename/delete/paste inside an already-expanded
+    // folder would otherwise never show up until the whole tree remounts.
+    refreshVersion?: number;
 }
 
 export interface TreeViewRef {
@@ -252,6 +262,9 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         onExpandedChange,
         onOpenFile,
         onSelectionChange,
+        onContextMenu,
+        onBackgroundContextMenu,
+        refreshVersion,
     } = props;
     const cached = persistKey ? treeStateCache.get(persistKey) : undefined;
     const [nodesById, setNodesById] = useState<Map<string, TreeNodeData>>(() =>
@@ -411,6 +424,34 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         }
     }, [expandedIds, nodesById]);
 
+    // Force every already-loaded folder to refetch when refreshVersion changes
+    // (e.g. after a delete/rename/paste): loadChildren only ever fetches a given
+    // folder once and then treats it as done for the component's lifetime, so
+    // without this a change made inside an already-expanded folder would never
+    // show up until the whole tree remounted. Resetting to "unloaded" is enough
+    // — the effect above already refetches anything currently expanded.
+    const didMountRefreshRef = useRef(false);
+    useEffect(() => {
+        if (refreshVersion == null) {
+            return;
+        }
+        if (!didMountRefreshRef.current) {
+            didMountRefreshRef.current = true;
+            return;
+        }
+        setNodesById((prev) => {
+            const next = new Map(prev);
+            let changed = false;
+            for (const [id, node] of prev) {
+                if (node.isDirectory && (node.childrenStatus === "loaded" || node.childrenStatus === "capped")) {
+                    next.set(id, { ...node, childrenStatus: "unloaded" });
+                    changed = true;
+                }
+            }
+            return changed ? next : prev;
+        });
+    }, [refreshVersion]);
+
     const toggleExpand = (id: string) => {
         const node = nodesById.get(id);
         if (node == null || !node.isDirectory || node.notfound || node.staterror) {
@@ -512,7 +553,14 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
             onKeyDown={onKeyDown}
         >
             <div ref={scrollRef} className="h-full overflow-auto">
-                <div className="relative w-max min-w-full" style={{ height: virtualizer.getTotalSize() }}>
+                <div
+                    className="relative w-max min-w-full"
+                    style={{ height: virtualizer.getTotalSize(), minHeight: "100%" }}
+                    onContextMenu={(e: MouseEvent<HTMLDivElement>) => {
+                        e.preventDefault();
+                        onBackgroundContextMenu?.(e);
+                    }}
+                >
                     {virtualizer.getVirtualItems().map((virtualRow) => {
                         const row = visibleRows[virtualRow.index];
                         if (row.kind === "node" && row.node == null) {
@@ -559,6 +607,15 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                     if (row.node != null) {
                                         onOpenFile?.(row.id, row.node);
                                     }
+                                }}
+                                onContextMenu={(e: MouseEvent<HTMLDivElement>) => {
+                                    if (row.kind !== "node" || row.node == null) {
+                                        return;
+                                    }
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    commitSelection(row.id);
+                                    onContextMenu?.(row.id, row.node, e);
                                 }}
                             >
                                 <div

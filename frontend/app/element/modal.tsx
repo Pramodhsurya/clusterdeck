@@ -3,6 +3,7 @@
 
 import { Button } from "@/element/button";
 import React from "react";
+import { createPortal } from "react-dom";
 
 import "./modal.scss";
 
@@ -19,12 +20,17 @@ function Modal({ children, onClickOut, id = "modal", ...otherProps }: ModalProps
         }
     };
 
-    return (
+    // Portaled to document.body: a Modal can be opened from inside any block
+    // (e.g. a narrow tile-layout pane), and those panes clip their own overflow,
+    // which would otherwise crop the modal down to the pane's own bounds instead
+    // of covering the whole window.
+    return createPortal(
         <div className="modal-container" onClick={handleOutsideClick}>
             <dialog {...otherProps} id={id} className="modal">
                 {children}
             </dialog>
-        </div>
+        </div>,
+        document.body
     );
 }
 
