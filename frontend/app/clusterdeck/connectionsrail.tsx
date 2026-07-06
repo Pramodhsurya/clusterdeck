@@ -220,7 +220,7 @@ const AddConnectionModal = memo(() => {
     return (
         <WaveModal
             title="New Connection"
-            description="Enter an SSH connection (e.g. user@host). It opens as a workspace with the Clusterdeck layout; Wave's connect/auth runs when the blocks mount."
+            description="Enter an SSH connection (e.g. user@host). It opens as a workspace with the Clusterdeck layout; connect/auth runs when the blocks mount."
             buttonLabel="Connect"
             onSubmit={submit}
             onCancel={close}

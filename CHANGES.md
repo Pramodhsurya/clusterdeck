@@ -301,5 +301,35 @@ free-form via the rail "+", with nothing auto-seeded.
   changes; deleted the ten stale Wave-version files; updated
   `CurrentOnboardingVersion` (`onboarding-common.tsx`) from `v0.14.5` to `v0.1.1`.
 
+### Remaining Wave→Clusterdeck string rebrand (2026-07-06)
+
+- Earlier searches for leftover "Wave" strings in this fork missed several because
+  they used `\|` for alternation, which macOS's default (BSD) `grep` doesn't support
+  outside `-E` — a re-audit with `-E` found a few more:
+  - `emain/emain-platform.ts`'s `checkIfRunningUnderARM64Translation` dialog
+    ("Wave has detected a performance issue" / "Wave is running in ARM64
+    translation mode…") — retitled to Clusterdeck, and its "Learn More" link now
+    points at this repo's `INSTALL.md` instead of Wave's own docs site.
+  - `frontend/builder/builder-app.tsx`'s dev-badge tooltip ("Running Wave Dev
+    Build" → "Running Clusterdeck Dev Build", matching the one already fixed in
+    `widgets.tsx`).
+  - The "New Connection" modal description
+    (`frontend/app/clusterdeck/connectionsrail.tsx`) no longer says "Wave's
+    connect/auth".
+  - The wsh-install confirmation dialogs (`pkg/wslconn/wslconn.go`,
+    `pkg/remote/conncontroller/conncontroller.go`): title and body now say
+    "Clusterdeck requires…"/"Install Clusterdeck Shell Extensions" — the
+    extensions themselves are still called "Wave Shell Extensions" since that's
+    `wsh`'s own (kept-as-is) name, not Clusterdeck's.
+  - A few internal error strings (`pkg/blockcontroller/shellcontroller.go`'s
+    initscript-file errors, `pkg/remote/sshclient.go`'s ProxyJump-depth error).
+  - Deliberately **left alone**: the `X-Wave-*` HTTP headers and AI cloud-proxy
+    strings (`pkg/aiusechat/**`, `presets/ai.json`'s "Wave Proxy" preset) — these
+    describe Wave's own hosted AI proxy infrastructure, which Clusterdeck's AI
+    panel genuinely still talks to; renaming the labels would misrepresent who
+    operates that service. Also left the `frontend/preview/` standalone
+    component-preview tool alone — it's a dev-only tool, not part of the shipped
+    app.
+
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.

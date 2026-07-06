@@ -933,7 +933,7 @@ func ConnectToClient(connCtx context.Context, opts *SSHOpts, currentClient *ssh.
 		JumpNum:       jumpNum,
 	}
 	if jumpNum > SshProxyJumpMaxDepth {
-		return nil, jumpNum, ConnectionError{ConnectionDebugInfo: debugInfo, Err: utilds.Errorf(ConnErrCode_ProxyDepth, "ProxyJump %d exceeds Wave's max depth of %d", jumpNum, SshProxyJumpMaxDepth)}
+		return nil, jumpNum, ConnectionError{ConnectionDebugInfo: debugInfo, Err: utilds.Errorf(ConnErrCode_ProxyDepth, "ProxyJump %d exceeds Clusterdeck's max depth of %d", jumpNum, SshProxyJumpMaxDepth)}
 	}
 
 	rawName := opts.String()
