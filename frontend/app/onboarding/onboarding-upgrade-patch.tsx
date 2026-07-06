@@ -17,16 +17,8 @@ import { useAtomValue } from "jotai";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
 import { useEffect, useRef, useState } from "react";
 import { debounce } from "throttle-debounce";
-import { UpgradeOnboardingModal_v0_12_1_Content } from "./onboarding-upgrade-v0121";
-import { UpgradeOnboardingModal_v0_12_2_Content } from "./onboarding-upgrade-v0122";
-import { UpgradeOnboardingModal_v0_12_3_Content } from "./onboarding-upgrade-v0123";
-import { UpgradeOnboardingModal_v0_13_0_Content } from "./onboarding-upgrade-v0130";
-import { UpgradeOnboardingModal_v0_13_1_Content } from "./onboarding-upgrade-v0131";
-import { UpgradeOnboardingModal_v0_14_0_Content } from "./onboarding-upgrade-v0140";
-import { UpgradeOnboardingModal_v0_14_1_Content } from "./onboarding-upgrade-v0141";
-import { UpgradeOnboardingModal_v0_14_2_Content } from "./onboarding-upgrade-v0142";
-import { UpgradeOnboardingModal_v0_14_4_Content } from "./onboarding-upgrade-v0144";
-import { UpgradeOnboardingModal_v0_14_5_Content } from "./onboarding-upgrade-v0145";
+import { UpgradeOnboardingModal_v0_1_0_Content } from "./onboarding-upgrade-v010";
+import { UpgradeOnboardingModal_v0_1_1_Content } from "./onboarding-upgrade-v011";
 
 interface VersionConfig {
     version: string;
@@ -97,62 +89,14 @@ export function UpgradeOnboardingFooter({
 
 export const UpgradeOnboardingVersions: VersionConfig[] = [
     {
-        version: "v0.12.1",
-        content: () => <UpgradeOnboardingModal_v0_12_1_Content />,
-        nextText: "Next (v0.12.2)",
+        version: "v0.1.0",
+        content: () => <UpgradeOnboardingModal_v0_1_0_Content />,
+        nextText: "Next (v0.1.1)",
     },
     {
-        version: "v0.12.2",
-        content: () => <UpgradeOnboardingModal_v0_12_2_Content />,
-        prevText: "Prev (v0.12.1)",
-        nextText: "Next (v0.12.3)",
-    },
-    {
-        version: "v0.12.5",
-        content: () => <UpgradeOnboardingModal_v0_12_3_Content />,
-        prevText: "Prev (v0.12.2)",
-        nextText: "Next (v0.13.0)",
-    },
-    {
-        version: "v0.13.0",
-        content: () => <UpgradeOnboardingModal_v0_13_0_Content />,
-        prevText: "Prev (v0.12.5)",
-        nextText: "Next (v0.13.1)",
-    },
-    {
-        version: "v0.13.1",
-        content: () => <UpgradeOnboardingModal_v0_13_1_Content />,
-        prevText: "Prev (v0.13.0)",
-        nextText: "Next (v0.14.0)",
-    },
-    {
-        version: "v0.14.0",
-        content: () => <UpgradeOnboardingModal_v0_14_0_Content />,
-        prevText: "Prev (v0.13.1)",
-        nextText: "Next (v0.14.1)",
-    },
-    {
-        version: "v0.14.1",
-        content: () => <UpgradeOnboardingModal_v0_14_1_Content />,
-        prevText: "Prev (v0.14.0)",
-        nextText: "Next (v0.14.3)",
-    },
-    {
-        version: "v0.14.3",
-        content: () => <UpgradeOnboardingModal_v0_14_2_Content />,
-        prevText: "Prev (v0.14.1)",
-        nextText: "Next (v0.14.4)",
-    },
-    {
-        version: "v0.14.4",
-        content: () => <UpgradeOnboardingModal_v0_14_4_Content />,
-        prevText: "Prev (v0.14.3)",
-        nextText: "Next (v0.14.5)",
-    },
-    {
-        version: "v0.14.5",
-        content: () => <UpgradeOnboardingModal_v0_14_5_Content />,
-        prevText: "Prev (v0.14.4)",
+        version: "v0.1.1",
+        content: () => <UpgradeOnboardingModal_v0_1_1_Content />,
+        prevText: "Prev (v0.1.0)",
     },
 ];
 

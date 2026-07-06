@@ -284,5 +284,22 @@ free-form via the rail "+", with nothing auto-seeded.
   commits it to the secret store only after `connectInternal` confirms the handshake
   actually succeeded.
 
+### AI toggle relocation + real release notes (2026-07-06)
+
+- Moved the "Toggle AI Panel" button (sparkle icon) out of the tab bar — where it sat
+  next to the traffic lights/tabs (`WaveAIButton` in `frontend/app/tab/tabbar.tsx`,
+  `VTabBarAIButton` in `frontend/app/tab/vtabbar.tsx`) — into the widget rail
+  (`frontend/app/workspace/widgets.tsx`), directly below the app widgets (e.g. htop),
+  as its own `AIToggleWidget`. Both tab-bar variants and their now-dead
+  refs/width-calculations were removed.
+- Fixed Settings → Release Notes showing Wave's own upstream version history
+  (`onboarding-upgrade-v0121.tsx` through `onboarding-upgrade-v0145.tsx` — the
+  rebrand had only replaced the word "Wave" with "Clusterdeck" in these strings, not
+  the actual Wave release content describing Wave features Clusterdeck never
+  shipped). Replaced with two real entries, `onboarding-upgrade-v010.tsx` and
+  `onboarding-upgrade-v011.tsx`, describing Clusterdeck's actual 0.1.0 and 0.1.1
+  changes; deleted the ten stale Wave-version files; updated
+  `CurrentOnboardingVersion` (`onboarding-common.tsx`) from `v0.14.5` to `v0.1.1`.
+
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.
