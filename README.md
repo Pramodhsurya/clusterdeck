@@ -50,9 +50,21 @@ brew tap clusterdeck/tap
 brew install --appdir=~/Applications --cask clusterdeck   # no admin/sudo needed
 ```
 
-(Drop `--appdir=~/Applications` to install into `/Applications` if you have admin rights.
-The app isn't code-signed yet, so Gatekeeper will block the first launch — see the cask's
-install caveats for the one-line fix.)
+(Drop `--appdir=~/Applications` to install into `/Applications` if you have admin rights.)
+
+**⚠️ First launch will be blocked by Gatekeeper** — the build isn't code-signed or
+notarized by Apple yet, so macOS shows *"Clusterdeck" Not Opened*. Fix it once:
+
+```sh
+xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
+```
+
+(or right-click the app → **Open** → confirm **Open**, no Terminal needed). Only do
+this for a build from clusterdeck's own
+[homebrew-tap](https://github.com/clusterdeck/homebrew-tap) /
+[releases](https://github.com/clusterdeck/releases) — clearing the quarantine flag
+bypasses a real macOS security check, so only trust it for a source you trust. Full
+notice and details in [`INSTALL.md`](INSTALL.md).
 
 Or build from the repo:
 

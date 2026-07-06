@@ -10,6 +10,39 @@ building from source is there too if you want to hack on it.
 
 ---
 
+## ⚠️ Security notice — unsigned build
+
+Clusterdeck is **not yet code-signed or notarized by Apple**. On first launch, macOS
+will refuse to open it:
+
+> **"Clusterdeck" Not Opened**
+> Apple could not verify "Clusterdeck" is free of malware that may harm your Mac or
+> compromise your privacy.
+
+This is expected — every unsigned macOS app triggers this, not something specific to
+Clusterdeck. Clear it once, either way:
+
+**Terminal (fastest):**
+
+```sh
+xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
+```
+
+(use `/Applications/Clusterdeck.app` instead if you installed system-wide)
+
+**Finder (no Terminal needed):** right-click **Clusterdeck.app** → **Open** → confirm
+**Open** in the dialog. Only needed once per install/update.
+
+**Only do this for a build from an official source** —
+[`clusterdeck/homebrew-tap`](https://github.com/clusterdeck/homebrew-tap),
+[`clusterdeck/releases`](https://github.com/clusterdeck/releases), or one you built
+yourself from [`clusterdeck/app`](https://github.com/clusterdeck/app). Clearing the
+quarantine flag bypasses a real macOS security check, so only do it for a binary whose
+origin you trust — never for a `.app` sent to you directly or downloaded from an
+unfamiliar link. See [`SECURITY.md`](SECURITY.md) to report a vulnerability.
+
+---
+
 ## Option A — Homebrew (recommended)
 
 ```sh
@@ -21,14 +54,9 @@ brew install --appdir=~/Applications --cask clusterdeck
 from your user Applications folder. Drop that flag to install into `/Applications`
 system-wide instead (needs an admin password).
 
-The build isn't code-signed/notarized yet, so Gatekeeper blocks the first launch. Fix:
-
-```sh
-xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
-```
-
-(or right-click the app in Finder → **Open** → **Open**). This caveat is also printed
-after `brew install`.
+The build isn't code-signed/notarized yet, so Gatekeeper blocks the first launch — see
+the **security notice above** for the one-line fix (also printed as a caveat after
+`brew install`).
 
 Upgrade later with `brew upgrade --cask clusterdeck`; uninstall with
 `brew uninstall --cask clusterdeck`.
