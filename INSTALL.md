@@ -123,7 +123,25 @@ task dev
 
 ## Upgrading
 
-**Homebrew:** `brew upgrade --cask clusterdeck`.
+**Homebrew:**
+
+```sh
+brew update
+brew upgrade --cask clusterdeck
+```
+
+Run `brew update` first — Homebrew only re-fetches third-party taps (like
+`clusterdeck/tap`) when you update, not on every `install`/`upgrade`, so skipping it
+can leave you stuck installing an older version even after a new one is released.
+
+If you're still not getting the latest version after that, force a fresh pull of the
+tap itself:
+
+```sh
+brew untap clusterdeck/tap
+brew tap clusterdeck/tap
+brew reinstall --cask clusterdeck
+```
 
 **From source:** pull and rebuild:
 

@@ -55,6 +55,11 @@ brew install --appdir=~/Applications --cask clusterdeck   # no admin/sudo needed
 
 (Drop `--appdir=~/Applications` to install into `/Applications` if you have admin rights.)
 
+**Upgrading:** run `brew update` before `brew upgrade --cask clusterdeck` — Homebrew
+only re-fetches third-party taps on `update`, not on every install/upgrade, so skipping
+it can leave you on an older version. See [`INSTALL.md`](INSTALL.md#upgrading) if
+that's still not picking up the latest release.
+
 **Gatekeeper:** the build isn't code-signed or notarized by Apple yet, but the cask
 clears the quarantine flag automatically after install/upgrade, so it should just
 open. If it still shows *"Clusterdeck" Not Opened*, clear it yourself:
