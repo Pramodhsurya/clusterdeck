@@ -467,7 +467,6 @@ export class TermWrap {
         if (!this.loaded) {
             return;
         }
-
         this.sendDataHandler?.(data);
         this.multiInputCallback?.(data);
     }

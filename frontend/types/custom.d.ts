@@ -124,6 +124,8 @@ declare global {
         onQuicklook: (filePath: string) => void; // quicklook
         openNativePath(filePath: string): void; // open-native-path
         selectDirectory: () => Promise<string>; // get-directory
+        selectFile: (title?: string) => Promise<string>; // get-file
+        selectFiles: (title?: string) => Promise<string[]>; // get-files
         captureScreenshot(rect: Electron.Rectangle): Promise<string>; // capture-screenshot
         setKeyboardChordMode: () => void; // set-keyboard-chord-mode
         clearWebviewStorage: (webContentsId: number) => Promise<void>; // clear-webview-storage
@@ -261,6 +263,7 @@ declare global {
         icon?: string | React.ReactNode;
         subItems?: MenuItem[];
         onClick?: (e: React.MouseEvent<any>) => void;
+        onContextMenu?: (e: React.MouseEvent<any>) => void;
     };
 
     type MenuButtonProps = {

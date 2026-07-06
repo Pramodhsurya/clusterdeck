@@ -1,6 +1,7 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { openKubeAppPicker } from "@/app/clusterdeck/connectionsrail";
 import { Tooltip } from "@/app/element/tooltip";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv, WaveEnv, WaveEnvSubset } from "@/app/waveenv/waveenv";
@@ -57,6 +58,13 @@ type WidgetPropsType = {
 
 async function handleWidgetSelect(widget: WidgetConfigType, env: WidgetsEnv) {
     const blockDef = widget.blockdef;
+    // Clusterdeck: the k9s widget (marked cdapp:kube) asks which cluster to open
+    // against, so one workspace can hold several k9s blocks for different
+    // clusters. Other widgets create their block directly.
+    if (blockDef?.meta?.["cdapp:kube"]) {
+        openKubeAppPicker(blockDef, widget.magnified ?? false);
+        return;
+    }
     env.createBlock(blockDef, widget.magnified);
 }
 

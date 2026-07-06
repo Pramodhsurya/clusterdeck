@@ -226,6 +226,13 @@ declare global {
         newactivetabid?: string;
     };
 
+    // wshrpc.ClusterdeckKubeClusterInfo
+    type ClusterdeckKubeClusterInfo = {
+        name: string;
+        kubeconfigpath: string;
+        context: string;
+    };
+
     // wshrpc.CommandAuthenticateJobManagerData
     type CommandAuthenticateJobManagerData = {
         jobid: string;

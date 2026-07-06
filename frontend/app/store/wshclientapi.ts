@@ -102,6 +102,12 @@ export class RpcApiType {
         return client.wshRpcCall("checkgoversion", null, opts);
     }
 
+    // command "clusterdeckaddkubeconfig" [call]
+    ClusterdeckAddKubeConfigCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<ClusterdeckKubeClusterInfo[]> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckaddkubeconfig", data, opts);
+        return client.wshRpcCall("clusterdeckaddkubeconfig", data, opts);
+    }
+
     // command "clusterdeckconnectionsconfigpath" [call]
     ClusterdeckConnectionsConfigPathCommand(client: WshClient, opts?: RpcOpts): Promise<string> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckconnectionsconfigpath", null, opts);
@@ -114,6 +120,12 @@ export class RpcApiType {
         return client.wshRpcCall("clusterdeckgitstatus", { args: [arg1, arg2] }, opts);
     }
 
+    // command "clusterdecklistkubeclusters" [call]
+    ClusterdeckListKubeClustersCommand(client: WshClient, opts?: RpcOpts): Promise<ClusterdeckKubeClusterInfo[]> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdecklistkubeclusters", null, opts);
+        return client.wshRpcCall("clusterdecklistkubeclusters", null, opts);
+    }
+
     // command "clusterdeckopenhome" [call]
     ClusterdeckOpenHomeCommand(client: WshClient, opts?: RpcOpts): Promise<string> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckopenhome", null, opts);
@@ -124,6 +136,12 @@ export class RpcApiType {
     ClusterdeckOpenTargetCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<string> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckopentarget", data, opts);
         return client.wshRpcCall("clusterdeckopentarget", data, opts);
+    }
+
+    // command "clusterdeckremovekubecluster" [call]
+    ClusterdeckRemoveKubeClusterCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<void> {
+        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckremovekubecluster", data, opts);
+        return client.wshRpcCall("clusterdeckremovekubecluster", data, opts);
     }
 
     // command "clusterdeckresetlayout" [call]

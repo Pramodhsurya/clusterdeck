@@ -101,6 +101,12 @@ func CheckGoVersionCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (*wshrpc.Com
 	return resp, err
 }
 
+// command "clusterdeckaddkubeconfig", wshserver.ClusterdeckAddKubeConfigCommand
+func ClusterdeckAddKubeConfigCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
+	resp, err := sendRpcRequestCallHelper[[]wshrpc.ClusterdeckKubeClusterInfo](w, "clusterdeckaddkubeconfig", data, opts)
+	return resp, err
+}
+
 // command "clusterdeckconnectionsconfigpath", wshserver.ClusterdeckConnectionsConfigPathCommand
 func ClusterdeckConnectionsConfigPathCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (string, error) {
 	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckconnectionsconfigpath", nil, opts)
@@ -110,6 +116,12 @@ func ClusterdeckConnectionsConfigPathCommand(w *wshutil.WshRpc, opts *wshrpc.Rpc
 // command "clusterdeckgitstatus", wshserver.ClusterdeckGitStatusCommand
 func ClusterdeckGitStatusCommand(w *wshutil.WshRpc, arg1 string, arg2 string, opts *wshrpc.RpcOpts) (map[string]string, error) {
 	resp, err := sendRpcRequestCallHelper[map[string]string](w, "clusterdeckgitstatus", wshrpc.MultiArg{Args: []any{arg1, arg2}}, opts)
+	return resp, err
+}
+
+// command "clusterdecklistkubeclusters", wshserver.ClusterdeckListKubeClustersCommand
+func ClusterdeckListKubeClustersCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
+	resp, err := sendRpcRequestCallHelper[[]wshrpc.ClusterdeckKubeClusterInfo](w, "clusterdecklistkubeclusters", nil, opts)
 	return resp, err
 }
 
@@ -123,6 +135,12 @@ func ClusterdeckOpenHomeCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (string
 func ClusterdeckOpenTargetCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) (string, error) {
 	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckopentarget", data, opts)
 	return resp, err
+}
+
+// command "clusterdeckremovekubecluster", wshserver.ClusterdeckRemoveKubeClusterCommand
+func ClusterdeckRemoveKubeClusterCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) error {
+	_, err := sendRpcRequestCallHelper[any](w, "clusterdeckremovekubecluster", data, opts)
+	return err
 }
 
 // command "clusterdeckresetlayout", wshserver.ClusterdeckResetLayoutCommand

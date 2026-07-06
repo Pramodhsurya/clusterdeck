@@ -101,6 +101,9 @@ type WshRpcInterface interface {
 	ClusterdeckConnectionsConfigPathCommand(ctx context.Context) (string, error)
 	ClusterdeckOpenHomeCommand(ctx context.Context) (string, error)
 	ClusterdeckGitStatusCommand(ctx context.Context, connName string, rootDir string) (map[string]string, error)
+	ClusterdeckAddKubeConfigCommand(ctx context.Context, path string) ([]ClusterdeckKubeClusterInfo, error)
+	ClusterdeckListKubeClustersCommand(ctx context.Context) ([]ClusterdeckKubeClusterInfo, error)
+	ClusterdeckRemoveKubeClusterCommand(ctx context.Context, context string) error
 	GetAllBadgesCommand(ctx context.Context) ([]baseds.BadgeEvent, error)
 
 	// connection functions
@@ -245,6 +248,15 @@ func (rc RpcContext) GenerateRouteId() string {
 		return rc.RouteId
 	}
 	return "proc:" + uuid.New().String()
+}
+
+// ClusterdeckKubeClusterInfo is one registered cluster, for the k9s picker and
+// the add flow. KubeConfigPath is the merged kubeconfig (holds every registered
+// cluster) so k9s launched against it can `:ctx`-switch to any of them.
+type ClusterdeckKubeClusterInfo struct {
+	Name           string `json:"name"`
+	KubeConfigPath string `json:"kubeconfigpath"`
+	Context        string `json:"context"`
 }
 
 type CommandAuthenticateRtnData struct {

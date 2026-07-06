@@ -50,5 +50,45 @@
                 "view": "processviewer"
             }
         }
+    },
+    "cdapp@k9s": {
+        "display:order": 10,
+        "icon": "dharmachakra",
+        "label": "k9s",
+        "description": "k9s — pick a Kubernetes cluster to open it against",
+        "blockdef": {
+            "meta": {
+                "view": "term",
+                "controller": "cmd",
+                "cmd": "k9s",
+                "cdapp:kube": true
+            }
+        }
+    },
+    "cdapp@lazygit": {
+        "display:order": 11,
+        "icon": "code-branch",
+        "label": "lazygit",
+        "description": "lazygit — a terminal UI for git",
+        "blockdef": {
+            "meta": {
+                "view": "term",
+                "controller": "cmd",
+                "cmd": "lazygit"
+            }
+        }
+    },
+    "cdapp@htop": {
+        "display:order": 12,
+        "icon": "gauge-high",
+        "label": "htop",
+        "description": "htop — interactive process viewer",
+        "blockdef": {
+            "meta": {
+                "view": "term",
+                "controller": "cmd",
+                "cmd": "htop"
+            }
+        }
     }
 }

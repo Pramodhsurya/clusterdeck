@@ -157,6 +157,9 @@ const FlyoutMenuComponent = memo(
                                     onMouseEnter: (event: React.MouseEvent<HTMLDivElement, MouseEvent>) =>
                                         handleMouseEnterItem(event, null, index, item),
                                     onClick: (e: React.MouseEvent<HTMLDivElement>) => handleOnClick(e, item),
+                                    onContextMenu: item.onContextMenu
+                                        ? (e: React.MouseEvent<HTMLDivElement>) => item.onContextMenu(e)
+                                        : undefined,
                                 };
 
                                 const renderedItem = renderMenuItem ? (

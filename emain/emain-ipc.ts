@@ -521,6 +521,32 @@ export function initIpcHandlers() {
         return result.filePaths[0];
     });
 
+    // Clusterdeck: native file picker for "Add Kubernetes cluster…" (kubeconfig).
+    electron.ipcMain.handle("get-file", async (event, title?: string) => {
+        const ww = electron.BrowserWindow.fromWebContents(event.sender);
+        const result = await electron.dialog.showOpenDialog(ww, {
+            title: title || "Select File",
+            properties: ["openFile", "showHiddenFiles"],
+        });
+        if (result.canceled || result.filePaths.length === 0) {
+            return "";
+        }
+        return result.filePaths[0];
+    });
+
+    // Clusterdeck: native multi-file picker (add several kubeconfigs at once).
+    electron.ipcMain.handle("get-files", async (event, title?: string) => {
+        const ww = electron.BrowserWindow.fromWebContents(event.sender);
+        const result = await electron.dialog.showOpenDialog(ww, {
+            title: title || "Select Files",
+            properties: ["openFile", "multiSelections", "showHiddenFiles"],
+        });
+        if (result.canceled) {
+            return [];
+        }
+        return result.filePaths;
+    });
+
     electron.ipcMain.handle("save-text-file", async (event, fileName: string, content: string) => {
         const ww = electron.BrowserWindow.fromWebContents(event.sender);
         if (ww == null) {

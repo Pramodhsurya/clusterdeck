@@ -6,6 +6,12 @@
 // ssh connections); clicking a row switches the whole window to it. This
 // replaces Wave's native workspace switcher.
 
+import {
+    addKubeClusters,
+    kubeClustersListAtom,
+    refreshKubeClusters,
+    removeKubeCluster,
+} from "@/app/clusterdeck/kubeclusters";
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { WorkspaceEditor } from "@/app/tab/workspaceeditor";
 import { globalStore } from "@/app/store/jotaiStore";
@@ -130,6 +136,18 @@ export function openNewConnection() {
     globalStore.set(addConnModalOpenAtom, true);
 }
 
+// The k9s cluster-picker state: the k9s block template to launch once the user
+// picks which cluster it should target. A workspace can hold several k9s blocks,
+// each bound to a different cluster.
+type KubeAppLaunch = { blockDef: BlockDef; magnified: boolean };
+const kubeAppPickerAtom = atom(null as KubeAppLaunch | null);
+
+// Called by the k9s widget (marked `cdapp:kube` in widgets.json): instead of
+// launching k9s directly, ask which cluster it should open against.
+export function openKubeAppPicker(blockDef: BlockDef, magnified: boolean) {
+    globalStore.set(kubeAppPickerAtom, { blockDef, magnified });
+}
+
 // Open the Welcome/home workspace (creating it if needed).
 export function openHome() {
     fireAndForget(async () => {
@@ -206,6 +224,79 @@ const AddConnectionModal = memo(() => {
     );
 });
 AddConnectionModal.displayName = "AddConnectionModal";
+
+// Shown when the k9s widget is clicked: pick which registered cluster this k9s
+// block should watch. Creates a k9s block bound to that cluster (merged
+// kubeconfig + --context) on the local connection — k9s runs on the Mac (where
+// the kubeconfigs live) even inside an ssh workspace. Several k9s blocks for
+// different clusters can live in the same workspace. The inline "+" adds more
+// configs live (no separate workspace is created).
+const KubeAppPickerModal = memo(() => {
+    const [launch, setLaunch] = useAtom(kubeAppPickerAtom);
+    const clusters = useAtomValue(kubeClustersListAtom);
+    useEffect(() => {
+        if (launch != null) {
+            refreshKubeClusters();
+        }
+    }, [launch]);
+    if (launch == null) {
+        return null;
+    }
+    const close = () => setLaunch(null);
+    const launchFor = (cluster: ClusterdeckKubeClusterInfo) => {
+        const meta: MetaType = { ...launch.blockDef.meta };
+        delete meta["cdapp:kube"];
+        // Bind k9s to the chosen cluster via explicit flags. cmd:shell=false so the
+        // args apply and no login shell re-sources the user's ambient $KUBECONFIG.
+        // The kubeconfig is the MERGED registry file (--context selects the cluster)
+        // so k9s's :ctx and the header dropdown can switch among all registered.
+        // connection=local so k9s runs on the Mac (where the kubeconfigs are).
+        meta["connection"] = "local";
+        meta["cmd:shell"] = false;
+        meta["cmd:args"] = ["--kubeconfig", cluster.kubeconfigpath, "--context", cluster.context];
+        meta["cdk9s"] = true;
+        fireAndForget(async () => {
+            await createBlock({ ...launch.blockDef, meta }, launch.magnified, false);
+        });
+        close();
+    };
+    return (
+        <WaveModal
+            title="Open k9s"
+            description="Pick the cluster this k9s should watch. You can add more k9s blocks in the same workspace for other clusters."
+            onCancel={close}
+            onSubmit={close}
+            buttonLabel="Cancel"
+        >
+            <div className="cd-kube-context-list">
+                {clusters.length === 0 && (
+                    <div className="cd-kube-context-empty">No clusters registered yet.</div>
+                )}
+                {clusters.map((c) => (
+                    <div key={c.kubeconfigpath + c.context} className="cd-kube-context-item">
+                        <div className="cd-kube-context-main" onClick={() => launchFor(c)}>
+                            <i className={makeIconClass("dharmachakra", true)} />
+                            <span>{c.name}</span>
+                        </div>
+                        <i
+                            className={clsx(makeIconClass("xmark", true), "cd-kube-remove")}
+                            title={`Remove ${c.name}`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                removeKubeCluster(c.context);
+                            }}
+                        />
+                    </div>
+                ))}
+                <div className="cd-kube-context-item cd-kube-context-add" onClick={() => addKubeClusters()}>
+                    <i className={makeIconClass("plus", true)} />
+                    <span>Add Kubernetes config(s)…</span>
+                </div>
+            </div>
+        </WaveModal>
+    );
+});
+KubeAppPickerModal.displayName = "KubeAppPickerModal";
 
 function hotkeyLabel(num: number): string {
     return isMacOS() ? `⌘${num}` : `Alt+${num}`;
@@ -334,6 +425,9 @@ const ConnectionsRail = memo(() => {
 
     useEffect(() => {
         fireAndForget(updateWorkspaces);
+        // Populate the k9s cluster list once on mount (the header dropdown reads
+        // this atom during render, so it must not refresh itself there).
+        refreshKubeClusters();
         return waveEventSubscribeSingle({
             eventType: "workspace:update",
             handler: () => fireAndForget(updateWorkspaces),
@@ -387,6 +481,7 @@ const ConnectionsRail = memo(() => {
                 )}
             </div>
             <AddConnectionModal />
+            <KubeAppPickerModal />
             <WorkspaceEditorPopup />
         </div>
     );

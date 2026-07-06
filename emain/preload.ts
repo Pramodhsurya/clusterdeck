@@ -60,6 +60,8 @@ contextBridge.exposeInMainWorld("api", {
     onQuicklook: (filePath: string) => ipcRenderer.send("quicklook", filePath),
     openNativePath: (filePath: string) => ipcRenderer.send("open-native-path", filePath),
     selectDirectory: () => ipcRenderer.invoke("get-directory"),
+    selectFile: (title?: string) => ipcRenderer.invoke("get-file", title),
+    selectFiles: (title?: string) => ipcRenderer.invoke("get-files", title),
     captureScreenshot: (rect: Rectangle) => ipcRenderer.invoke("capture-screenshot", rect),
     setKeyboardChordMode: () => ipcRenderer.send("set-keyboard-chord-mode"),
     clearWebviewStorage: (webContentsId: number) => ipcRenderer.invoke("clear-webview-storage", webContentsId),

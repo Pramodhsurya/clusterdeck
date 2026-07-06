@@ -225,6 +225,52 @@ func (ws *WshServer) ClusterdeckGitStatusCommand(ctx context.Context, connName s
 	return clusterdeck.GitStatus(ctx, connName, rootDir)
 }
 
+// ClusterdeckAddKubeConfigCommand stores an uploaded kubeconfig, registers every
+// context it defines into the central registry (kubeclusters.json), rebuilds the
+// merged kubeconfig, and returns the full registry so the UI can offer the new
+// clusters.
+func (ws *WshServer) ClusterdeckAddKubeConfigCommand(ctx context.Context, path string) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
+	clusters, err := clusterdeck.RegisterKubeConfig(path)
+	if err != nil {
+		return nil, err
+	}
+	return kubeClustersToRpc(clusters), nil
+}
+
+// ClusterdeckListKubeClustersCommand returns the registered Kubernetes clusters
+// for the k9s cluster picker.
+func (ws *WshServer) ClusterdeckListKubeClustersCommand(ctx context.Context) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
+	clusters, err := clusterdeck.ListRegisteredClusters()
+	if err != nil {
+		return nil, err
+	}
+	return kubeClustersToRpc(clusters), nil
+}
+
+// ClusterdeckRemoveKubeClusterCommand removes a registered cluster (by context)
+// from the registry and rebuilds the merged kubeconfig.
+func (ws *WshServer) ClusterdeckRemoveKubeClusterCommand(ctx context.Context, context string) error {
+	return clusterdeck.RemoveKubeCluster(context)
+}
+
+// kubeClustersToRpc maps registry entries to the RPC type, pointing every entry
+// at the merged kubeconfig (so k9s launched against it can :ctx-switch).
+func kubeClustersToRpc(clusters []clusterdeck.KubeCluster) []wshrpc.ClusterdeckKubeClusterInfo {
+	merged := clusterdeck.MergedKubeConfigPath()
+	rtn := make([]wshrpc.ClusterdeckKubeClusterInfo, 0, len(clusters))
+	for _, c := range clusters {
+		name := c.Cluster
+		if name == "" {
+			name = c.Name
+		}
+		if name == "" {
+			name = c.Context
+		}
+		rtn = append(rtn, wshrpc.ClusterdeckKubeClusterInfo{Name: name, KubeConfigPath: merged, Context: c.Context})
+	}
+	return rtn
+}
+
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {
 	oref := waveobj.ORef{OType: waveobj.OType_Workspace, OID: workspaceId}
 	err := wcore.UpdateWorkspaceTabIds(ctx, workspaceId, tabIds)

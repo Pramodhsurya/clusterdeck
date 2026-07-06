@@ -3,6 +3,18 @@
 
 import { WaveAIModel } from "@/app/aipanel/waveai-model";
 import { BlockNodeModel } from "@/app/block/blocktypes";
+import {
+    addKubeClusters,
+    CdK9sMetaKey,
+    clusterNameForContext,
+    copyToClipboard,
+    currentK9sContext,
+    k9sKubeConfigPath,
+    kubeClustersListAtom,
+    openK9sForCluster,
+    removeKubeCluster,
+} from "@/app/clusterdeck/kubeclusters";
+import { ContextMenuModel } from "@/app/store/contextmenu";
 import { appHandleKeyDown } from "@/app/store/keymodel";
 import { modalsModel } from "@/app/store/modalmodel";
 import type { TabModel } from "@/app/store/tab-model";
@@ -154,16 +166,53 @@ export class TermViewModel implements ViewModel {
             const isCmd = get(this.isCmdController);
             if (isCmd) {
                 const blockMeta = get(this.blockAtom)?.meta;
-                let cmdText = blockMeta?.["cmd"];
-                const cmdArgs = blockMeta?.["cmd:args"];
-                if (cmdArgs != null && Array.isArray(cmdArgs) && cmdArgs.length > 0) {
-                    cmdText += " " + cmdArgs.join(" ");
+                // Clusterdeck: k9s blocks show a cluster dropdown (switch which
+                // cluster this k9s watches) instead of the raw command text.
+                if (blockMeta?.[CdK9sMetaKey]) {
+                    // NOTE: do not refresh here — viewText is read during render,
+                    // and refreshing (which sets a global atom) would loop. The
+                    // list is populated on rail mount and on add/remove.
+                    const clusters = get(kubeClustersListAtom);
+                    const currentCtx = currentK9sContext(blockMeta);
+                    const clusterItems: MenuItem[] = clusters.map((c) => ({
+                        label: c.name,
+                        icon: c.context === currentCtx ? "check" : "dharmachakra",
+                        // Left-click switches; right-click opens per-cluster actions.
+                        onClick: () => fireAndForget(() => this.switchK9sCluster(c.context)),
+                        onContextMenu: (e: React.MouseEvent) => {
+                            e.preventDefault();
+                            const menu: ContextMenuItem[] = [
+                                { label: "Open in new pane", click: () => openK9sForCluster(c) },
+                                { label: "Copy context name", click: () => copyToClipboard(c.context) },
+                                { type: "separator" },
+                                { label: "Delete config", click: () => removeKubeCluster(c.context) },
+                            ];
+                            ContextMenuModel.getInstance().showContextMenu(menu, e);
+                        },
+                    }));
+                    clusterItems.push({
+                        label: "Add config(s)…",
+                        icon: "plus",
+                        onClick: () => addKubeClusters(),
+                    });
+                    rtn.push({
+                        elemtype: "menubutton",
+                        text: clusterNameForContext(clusters, currentCtx) || "cluster",
+                        title: "Switch or add Kubernetes cluster",
+                        items: clusterItems,
+                    });
+                } else {
+                    let cmdText = blockMeta?.["cmd"];
+                    const cmdArgs = blockMeta?.["cmd:args"];
+                    if (cmdArgs != null && Array.isArray(cmdArgs) && cmdArgs.length > 0) {
+                        cmdText += " " + cmdArgs.join(" ");
+                    }
+                    rtn.push({
+                        elemtype: "text",
+                        text: cmdText,
+                        noGrow: true,
+                    });
                 }
-                rtn.push({
-                    elemtype: "text",
-                    text: cmdText,
-                    noGrow: true,
-                });
                 const isRestarting = get(this.isRestarting);
                 if (isRestarting) {
                     rtn.push({
@@ -791,6 +840,32 @@ export class TermViewModel implements ViewModel {
             return;
         }
         this.triggerRestartAtom();
+        await RpcApi.ControllerDestroyCommand(TabRpcClient, this.blockId);
+        const termsize = {
+            rows: this.termRef.current?.terminal?.rows,
+            cols: this.termRef.current?.terminal?.cols,
+        };
+        await RpcApi.ControllerResyncCommand(TabRpcClient, {
+            tabid: globalStore.get(atoms.staticTabId),
+            blockid: this.blockId,
+            forcerestart: true,
+            rtopts: { termsize: termsize },
+        });
+    }
+
+    // Clusterdeck: switch a k9s block to another registered cluster. Rewrites
+    // --context (keeping the merged --kubeconfig) and restarts k9s so it
+    // reconnects to the chosen cluster.
+    async switchK9sCluster(context: string) {
+        const blockMeta = globalStore.get(this.blockAtom)?.meta;
+        const merged = k9sKubeConfigPath(blockMeta);
+        const newArgs = merged
+            ? ["--kubeconfig", merged, "--context", context]
+            : ["--context", context];
+        await RpcApi.SetMetaCommand(TabRpcClient, {
+            oref: WOS.makeORef("block", this.blockId),
+            meta: { "cmd:args": newArgs },
+        });
         await RpcApi.ControllerDestroyCommand(TabRpcClient, this.blockId);
         const termsize = {
             rows: this.termRef.current?.terminal?.rows,
