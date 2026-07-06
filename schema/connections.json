@@ -24,6 +24,9 @@
         "display:order": {
           "type": "number"
         },
+        "clusterdeck:lastopened": {
+          "type": "integer"
+        },
         "term:*": {
           "type": "boolean"
         },

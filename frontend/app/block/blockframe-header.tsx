@@ -231,7 +231,9 @@ const BlockFrame_Header = ({
     const magnified = jotai.useAtomValue(nodeModel.isMagnified);
     const prevMagifiedState = React.useRef(magnified);
     const manageConnection = util.useAtomValueSafe(viewModel?.manageConnection);
-    // Clusterdeck: no per-block connection picker in connection workspaces
+    // Clusterdeck: no per-block connection picker in connection workspaces,
+    // except terminals — they default to the workspace connection but can
+    // still be switched to run locally instead (see isTerminalBlock below).
     const connLocked = jotai.useAtomValue(workspaceConnLockedAtom);
     const iconColor = jotai.useAtomValue(waveEnv.getBlockMetaKeyAtom(nodeModel.blockId, "icon:color"));
     const dragHandleRef = preview ? null : nodeModel.dragHandleRef;
@@ -265,7 +267,7 @@ const BlockFrame_Header = ({
                     </div>
                 </>
             )}
-            {manageConnection && !connLocked && (
+            {manageConnection && (!connLocked || isTerminalBlock) && (
                 <ConnectionButton
                     ref={connBtnRef}
                     key="connbutton"

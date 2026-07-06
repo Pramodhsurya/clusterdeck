@@ -267,5 +267,22 @@ free-form via the rail "+", with nothing auto-seeded.
   workspace object), so deleting a workspace no longer erases its entry from Recent;
   a "ghost" entry for a deleted workspace reopens a fresh one for that connection.
 
+### Per-terminal connection override + password-remember fix (2026-07-06)
+
+- `frontend/app/block/blockframe-header.tsx`: terminal blocks (`metaView === "term"`)
+  now show Wave's native connection button even inside a connection-locked workspace,
+  so a single terminal can be switched to Local (or back to the workspace's own
+  connection) without affecting the explorer, editor, or other terminals, which stay
+  locked. New terminals still default to the workspace connection unchanged
+  (`pkg/wcore/block.go`'s inherit-on-create logic is untouched).
+- Fixed a real bug in the "remember this password" feature (`pkg/remote/sshclient.go`):
+  the password was previously saved to the secret store as soon as the user submitted
+  it with the checkbox checked, before the SSH handshake had verified it — so a
+  mistyped or rejected password got permanently remembered, and every later connect
+  silently retried the bad password with no prompt at all. `createPasswordCallbackPrompt`
+  now only records the "remember" intent (`pendingPasswordRemember`); `ConnectToClient`
+  commits it to the secret store only after `connectInternal` confirms the handshake
+  actually succeeded.
+
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.

@@ -422,7 +422,16 @@ func rememberPassword(connCtx context.Context, connName, password string) {
 	blocklogger.Infof(connCtx, "[conndebug] saved password for %q to secret store as %q\n", connName, secretName)
 }
 
-func createPasswordCallbackPrompt(connCtx context.Context, connName string, remoteDisplayName string, password *string, debugInfo *ConnectionDebugInfo) func() (secret string, err error) {
+// pendingPasswordRemember carries a "remember this password" decision out of
+// the password callback (which only knows the typed value, not whether the
+// SSH handshake will actually accept it) so the caller can persist it only
+// after connectInternal reports success — never on a failed/rejected attempt.
+type pendingPasswordRemember struct {
+	shouldRemember bool
+	password       string
+}
+
+func createPasswordCallbackPrompt(connCtx context.Context, connName string, remoteDisplayName string, password *string, debugInfo *ConnectionDebugInfo, pending *pendingPasswordRemember) func() (secret string, err error) {
 	return func() (secret string, outErr error) {
 		defer func() {
 			panicErr := panichandler.PanicHandler("sshclient:password-callback", recover())
@@ -457,7 +466,11 @@ func createPasswordCallbackPrompt(connCtx context.Context, connName string, remo
 		}
 		blocklogger.Infof(connCtx, "[conndebug] got password from user, sending to ssh\n")
 		if response.CheckboxStat {
-			rememberPassword(connCtx, connName, response.Text)
+			// Only record the intent here — the SSH library hasn't validated
+			// this password yet. The caller commits it to the secret store
+			// once connectInternal confirms the handshake actually succeeded.
+			pending.shouldRemember = true
+			pending.password = response.Text
 		}
 		return response.Text, nil
 	}
@@ -798,7 +811,7 @@ func createHostKeyCallback(ctx context.Context, sshKeywords *wconfig.ConnKeyword
 	return waveHostKeyCallback, hostKeyAlgorithms, nil
 }
 
-func createClientConfig(connCtx context.Context, connName string, sshKeywords *wconfig.ConnKeywords, debugInfo *ConnectionDebugInfo) (*ssh.ClientConfig, error) {
+func createClientConfig(connCtx context.Context, connName string, sshKeywords *wconfig.ConnKeywords, debugInfo *ConnectionDebugInfo, pending *pendingPasswordRemember) (*ssh.ClientConfig, error) {
 	chosenUser := utilfn.SafeDeref(sshKeywords.SshUser)
 	chosenHostName := utilfn.SafeDeref(sshKeywords.SshHostName)
 	chosenPort := utilfn.SafeDeref(sshKeywords.SshPort)
@@ -839,7 +852,7 @@ func createClientConfig(connCtx context.Context, connName string, sshKeywords *w
 
 	publicKeyCallback := ssh.PublicKeysCallback(createPublicKeyCallback(connCtx, sshKeywords, authSockSigners, agentClient, debugInfo))
 	keyboardInteractive := ssh.KeyboardInteractive(createInteractiveKbdInteractiveChallenge(connCtx, remoteName, debugInfo))
-	passwordCallback := ssh.PasswordCallback(createPasswordCallbackPrompt(connCtx, connName, remoteName, sshPassword, debugInfo))
+	passwordCallback := ssh.PasswordCallback(createPasswordCallbackPrompt(connCtx, connName, remoteName, sshPassword, debugInfo, pending))
 
 	// exclude gssapi-with-mic and hostbased until implemented
 	authMethodMap := map[string]ssh.AuthMethod{
@@ -990,7 +1003,8 @@ func ConnectToClient(connCtx context.Context, opts *SSHOpts, currentClient *ssh.
 			return nil, jumpNum, err
 		}
 	}
-	clientConfig, err := createClientConfig(connCtx, rawName, sshKeywords, debugInfo)
+	pending := &pendingPasswordRemember{}
+	clientConfig, err := createClientConfig(connCtx, rawName, sshKeywords, debugInfo, pending)
 	if err != nil {
 		return nil, debugInfo.JumpNum, ConnectionError{ConnectionDebugInfo: debugInfo, Err: err}
 	}
@@ -998,6 +1012,10 @@ func ConnectToClient(connCtx context.Context, opts *SSHOpts, currentClient *ssh.
 	client, err := connectInternal(connCtx, networkAddr, clientConfig, debugInfo.CurrentClient)
 	if err != nil {
 		return client, debugInfo.JumpNum, ConnectionError{ConnectionDebugInfo: debugInfo, Err: err}
+	}
+	// Only now do we know the password was actually accepted — safe to persist.
+	if pending.shouldRemember {
+		rememberPassword(connCtx, rawName, pending.password)
 	}
 	return client, debugInfo.JumpNum, nil
 }
