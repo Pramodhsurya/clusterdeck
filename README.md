@@ -55,8 +55,9 @@ brew install --appdir=~/Applications --cask clusterdeck   # no admin/sudo needed
 
 (Drop `--appdir=~/Applications` to install into `/Applications` if you have admin rights.)
 
-**⚠️ First launch will be blocked by Gatekeeper** — the build isn't code-signed or
-notarized by Apple yet, so macOS shows *"Clusterdeck" Not Opened*. Fix it once:
+**Gatekeeper:** the build isn't code-signed or notarized by Apple yet, but the cask
+clears the quarantine flag automatically after install/upgrade, so it should just
+open. If it still shows *"Clusterdeck" Not Opened*, clear it yourself:
 
 ```sh
 xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app

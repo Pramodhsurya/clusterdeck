@@ -20,7 +20,10 @@ will refuse to open it:
 > compromise your privacy.
 
 This is expected — every unsigned macOS app triggers this, not something specific to
-Clusterdeck. Clear it once, either way:
+Clusterdeck. **If you installed via Homebrew, this is handled for you automatically**
+(the cask clears the quarantine flag as a post-install/post-upgrade step) — you
+shouldn't need to do anything. If you built from source, or the app still won't open,
+clear it manually:
 
 **Terminal (fastest):**
 
@@ -54,9 +57,9 @@ brew install --appdir=~/Applications --cask clusterdeck
 from your user Applications folder. Drop that flag to install into `/Applications`
 system-wide instead (needs an admin password).
 
-The build isn't code-signed/notarized yet, so Gatekeeper blocks the first launch — see
-the **security notice above** for the one-line fix (also printed as a caveat after
-`brew install`).
+The build isn't code-signed/notarized yet, but the cask automatically clears the
+quarantine flag after install (and after every upgrade), so Gatekeeper shouldn't block
+launch. See the **security notice above** if it still does.
 
 Upgrade later with `brew upgrade --cask clusterdeck`; uninstall with
 `brew uninstall --cask clusterdeck`.
