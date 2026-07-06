@@ -7,7 +7,7 @@
     "productName": "Clusterdeck",
     "description": "Multi-cluster SSH workspaces — the connection is the workspace",
     "license": "Apache-2.0",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "homepage": "https://github.com/clusterdeck/app",
     "build": {
         "appId": "dev.clusterdeck.app"

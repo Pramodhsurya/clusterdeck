@@ -37,6 +37,9 @@ A mockup per feature (animated versions in
   (with editor tabs), never in-place or as a new floating block.
 - **Per-connection layout** — the explorer/editor/terminal arrangement persists per
   connection and restores when you switch back.
+- **App widgets + Kubernetes clusters** — launch k9s, lazygit, or htop bound to the
+  active connection; add kubeconfigs and switch clusters from k9s's own dropdown, all
+  from one instance.
 
 It keeps Wave's durable SSH sessions, `wsh` command system, connection controller,
 Monaco editor, terminal blocks, secret storage, and themes intact.

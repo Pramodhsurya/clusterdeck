@@ -218,15 +218,54 @@ free-form via the rail "+", with nothing auto-seeded.
   before `wave-init` was sent, leaving the window blank until a restart. Not a
   feature change; dev-only.
 
-### Planned reshaping (not yet implemented)
+### feat/apps-and-kube-clusters (2026-07-06)
 
-The fork will reshape Wave into a multi-cluster SSH workspace ("connection = workspace"):
+- New built-in app widgets (k9s, lazygit, htop) launch as `cmd`-terminal blocks bound
+  to the active workspace connection, proving `widgets.json` is a generic app/plugin
+  extension point (any user can add their own the same way).
+- Kubernetes cluster support on top of that:
+  - `pkg/clusterdeck/kube.go`: a central registry (`kubeclusters.json`) of clusters
+    added from uploaded kubeconfigs, each with its own minified per-context config,
+    merged into one Clusterdeck-managed kubeconfig so a single k9s instance can list
+    and switch between every registered cluster via its `:ctx` command.
+  - New RPCs (`ClusterdeckAddKubeConfig`/`ListKubeClusters`/`RemoveKubeCluster`) back a
+    cluster picker on the k9s widget: pick a cluster to open k9s bound to it
+    (`--kubeconfig`/`--context`, `cmd:shell:false` so the flags apply and no login
+    shell re-sources the user's own ambient `$KUBECONFIG`), add more kubeconfigs
+    (single or multi-file picker), or remove one. Several k9s blocks for different
+    clusters can coexist in one workspace.
+  - The k9s terminal header shows a cluster-name dropdown to switch that block's
+    cluster live, with a right-click menu per entry (open in a new pane, copy context
+    name, delete config). `MenuItem`/`FlyoutMenu` gained `onContextMenu` support for
+    this.
+  - k9s runs on the local connection (where kubeconfigs live) even when launched from
+    inside an SSH workspace.
 
-1. Workspace Switcher → vertical, collapsible SHELL CONNECTIONS rail.
-2. Auto-seed saved workspaces from `~/.ssh/config` hosts.
-3. Lock block connections to the workspace connection (hide per-block picker).
-4. Default IDE layout template (explorer + editor + terminals) seeded per connection.
-5. Explorer file-click routing into the designated editor block.
+### Explorer/editor fixes and polish (2026-07-06)
+
+- Fixed the explorer losing its SSH connection after an app restart: file listing/read
+  now ensures the connection first (`ConnEnsureCommand`), mirroring the editor's
+  existing behavior, before the first `FileListCommand`/`FileReadCommand` call.
+- Added VS Code-style right-click context menus to the tree explorer and the open-
+  editors list: new file/folder, rename, delete, cut/copy/paste, copy (relative) path,
+  and close-other-editors.
+- The tree explorer's "change root" flow now reuses Wave's native `SuggestionControl`
+  fuzzy folder picker (same component the file explorer uses) instead of a hand-rolled
+  input, fixing manual path entry; `frontend/app/element/modal.tsx`'s `Modal` now
+  portals to `document.body` so it's no longer clipped when opened from a narrow pane.
+  `frontend/app/treeview/treeview.tsx` gained a `refreshVersion` prop so an already-
+  expanded folder's contents refresh after delete/rename/paste, not just on next
+  expand.
+- Added `defwidget@explorer`/`defwidget@editor` widgets so closing either zone leaves a
+  way to reopen it.
+- Added a "remember this password" checkbox to the SSH password prompt
+  (`pkg/remote/sshclient.go`): on accept, the password is saved to the existing
+  `secretstore` and wired to `ssh:passwordsecretname` on the connection, so the next
+  connect doesn't prompt again — reusing Wave's own (previously unused) read path.
+- The Welcome page's "Recent" list now also sources connection recency from
+  `connections.json` (`clusterdeck:lastopened` on the connection, not just the
+  workspace object), so deleting a workspace no longer erases its entry from Recent;
+  a "ghost" entry for a deleted workspace reopens a fresh one for that connection.
 
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
-blocks, secret storage, AI/web blocks, themes) are preserved.
+blocks, secret storage, AI/web blocks, themes) are preserved throughout.
