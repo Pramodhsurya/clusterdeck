@@ -265,12 +265,17 @@ const KubeAppPickerModal = memo(() => {
         const meta: MetaType = { ...launch.blockDef.meta };
         delete meta["cdapp:kube"];
         // Bind k9s to the chosen cluster via explicit flags. cmd:shell=false so the
-        // args apply and no login shell re-sources the user's ambient $KUBECONFIG.
+        // args apply as literal argv, not re-parsed by a shell. cmd:login=true so
+        // k9s is actually found on PATH (Homebrew etc. live in .zprofile, which
+        // only a login shell sources) — this does NOT source .zshrc (login
+        // without interactive), so a stray $KUBECONFIG export there still won't
+        // override the explicit --kubeconfig flag above.
         // The kubeconfig is the MERGED registry file (--context selects the cluster)
         // so k9s's :ctx and the header dropdown can switch among all registered.
         // connection=local so k9s runs on the Mac (where the kubeconfigs are).
         meta["connection"] = "local";
         meta["cmd:shell"] = false;
+        meta["cmd:login"] = true;
         meta["cmd:args"] = ["--kubeconfig", cluster.kubeconfigpath, "--context", cluster.context];
         meta["cdk9s"] = true;
         fireAndForget(async () => {

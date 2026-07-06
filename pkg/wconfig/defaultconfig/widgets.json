@@ -85,6 +85,7 @@
                 "view": "term",
                 "controller": "cmd",
                 "cmd": "k9s",
+                "cmd:login": true,
                 "cdapp:kube": true
             }
         }
@@ -98,7 +99,8 @@
             "meta": {
                 "view": "term",
                 "controller": "cmd",
-                "cmd": "lazygit"
+                "cmd": "lazygit",
+                "cmd:login": true
             }
         }
     },
@@ -111,7 +113,8 @@
             "meta": {
                 "view": "term",
                 "controller": "cmd",
-                "cmd": "htop"
+                "cmd": "htop",
+                "cmd:login": true
             }
         }
     }

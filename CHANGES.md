@@ -331,5 +331,28 @@ free-form via the rail "+", with nothing auto-seeded.
     component-preview tool alone — it's a dev-only tool, not part of the shipped
     app.
 
+### Fixed k9s/lazygit/htop "command not found" (2026-07-06)
+
+- `cmd`-controller blocks (`pkg/blockcontroller/shellcontroller.go`,
+  `pkg/shellexec/shellexec.go`) always ran via `zsh -c "<cmd>"` — a non-login
+  shell that inherits the packaged app's own minimal launchd-provided PATH, not
+  the user's real shell PATH. Homebrew-installed tools (`k9s`, `lazygit`,
+  `htop`, all typically under `/opt/homebrew/bin`, added to PATH via
+  `~/.zprofile`) failed with `command not found`, since a non-login shell never
+  sources `.zprofile`. Regular terminal blocks were unaffected — they already
+  ran a login shell.
+- Added a new opt-in `cmd:login` meta key: when set, the cmd block's shell gets
+  `-l` (login), sourcing `.zprofile` for PATH, without also sourcing `.zshrc`
+  (login without `-i`/interactive) — so it doesn't accidentally pick up other
+  profile customizations. Off by default so existing `cmd:shell:false` blocks
+  that rely on explicit `cmd:env` aren't affected unless they opt in.
+- Set `cmd:login: true` on the `k9s`/`lazygit`/`htop` app widgets
+  (`pkg/wconfig/defaultconfig/widgets.json`) and on the per-cluster k9s launch
+  (`frontend/app/clusterdeck/connectionsrail.tsx`'s cluster picker,
+  `frontend/app/clusterdeck/kubeclusters.ts`'s "open in new pane" action) — the
+  previous `cmd:shell:false` comment claiming this "avoids a login shell" was
+  describing intended, not actual, behavior; neither path had ever used a login
+  shell.
+
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.

@@ -56,6 +56,7 @@ export function openK9sForCluster(cluster: ClusterdeckKubeClusterInfo) {
             cmd: "k9s",
             connection: "local",
             "cmd:shell": false,
+            "cmd:login": true,
             "cmd:args": ["--kubeconfig", cluster.kubeconfigpath, "--context", cluster.context],
         };
         meta["cdk9s"] = true;
