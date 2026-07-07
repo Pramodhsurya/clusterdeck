@@ -46,34 +46,55 @@ Monaco editor, terminal blocks, secret storage, and themes intact.
 
 ## Install
 
-macOS-first (Apple Silicon). Easiest — via Homebrew:
+Clusterdeck is **macOS-first** (Apple Silicon). Recommended path: Homebrew.
+
+**1. Add the Clusterdeck tap** (so Homebrew trusts the source):
 
 ```sh
 brew tap clusterdeck/tap
-brew install --appdir=~/Applications --cask clusterdeck   # no admin/sudo needed
 ```
 
-(Drop `--appdir=~/Applications` to install into `/Applications` if you have admin rights.)
-
-**Upgrading:** run `brew update` before `brew upgrade --cask clusterdeck` — Homebrew
-only re-fetches third-party taps on `update`, not on every install/upgrade, so skipping
-it can leave you on an older version. See [`INSTALL.md`](INSTALL.md#upgrading) if
-that's still not picking up the latest release.
-
-**Gatekeeper:** the build isn't code-signed or notarized by Apple yet, but the cask
-clears the quarantine flag automatically after install/upgrade, so it should just
-open. If it still shows *"Clusterdeck" Not Opened*, clear it yourself:
+**2. Install the app** (no admin/sudo needed):
 
 ```sh
-xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
+brew install --appdir=~/Applications --cask clusterdeck
 ```
 
-(or right-click the app → **Open** → confirm **Open**, no Terminal needed). Only do
-this for a build from clusterdeck's own
-[homebrew-tap](https://github.com/clusterdeck/homebrew-tap) /
-[releases](https://github.com/clusterdeck/releases) — clearing the quarantine flag
-bypasses a real macOS security check, so only trust it for a source you trust. Full
-notice and details in [`INSTALL.md`](INSTALL.md).
+Drop `--appdir=~/Applications` to install system-wide into `/Applications` (needs an admin password).
+
+**3. Open it.** The cask clears the macOS quarantine flag automatically after install/upgrade,
+so Clusterdeck should open normally.
+
+**If macOS still blocks it on first launch:** Clusterdeck isn't code-signed or notarized by
+Apple yet, so Gatekeeper may show *"Clusterdeck" Not Opened*. Clear it once, either way:
+
+- Right-click **Clusterdeck.app** in Applications → **Open** → **Open**, or
+- from the terminal:
+
+  ```sh
+  xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
+  # or /Applications/Clusterdeck.app if installed system-wide
+  ```
+
+Only do this for a build from clusterdeck's own
+[tap](https://github.com/clusterdeck/homebrew-tap) /
+[releases](https://github.com/clusterdeck/releases) — it bypasses a real macOS security
+check, so only trust it for a source you trust. Full notice and details in [`INSTALL.md`](INSTALL.md).
+
+### Upgrading
+
+```sh
+brew update                          # refresh the tap (Homebrew only re-fetches taps on update)
+brew upgrade --cask clusterdeck
+```
+
+If it's still not on the latest version, force a fresh pull of the tap:
+
+```sh
+brew untap clusterdeck/tap
+brew tap clusterdeck/tap
+brew reinstall --cask clusterdeck
+```
 
 Or build from the repo:
 
