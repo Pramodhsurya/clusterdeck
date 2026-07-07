@@ -354,5 +354,23 @@ free-form via the rail "+", with nothing auto-seeded.
   describing intended, not actual, behavior; neither path had ever used a login
   shell.
 
+### Fixed stale content when switching files in the editor block (2026-07-06)
+
+- The shared editor block (§3.5) switches its active file by setting the `file`
+  meta directly (`frontend/app/clusterdeck/explorer.tsx`'s
+  `openInEditor`/`setActiveEditorFile`, `frontend/app/clusterdeck/editor.tsx`'s
+  `setActiveFile`) — the tab strip and path header updated correctly (they just
+  read meta), but Wave's `PreviewModel.fileContent` also checks two
+  block-scoped override buffers (`fileContentSaved`, `newFileContent`, used for
+  unsaved edits / just-saved content) that take priority over freshly fetched
+  content. Only Wave's own `goHistory` (directory-navigation) clears those
+  buffers when the active file changes; none of the three places above did, so
+  the editor kept showing whichever file was last saved/typed into, no matter
+  which file was actually selected — not just visually stale, but a real risk
+  of saving the wrong content into the wrong file.
+- Fixed by clearing both buffers whenever the active file changes, in one place
+  (`ClusterdeckEditorView`'s effect on `activeFileAtom`) rather than patching
+  all three call sites individually.
+
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.

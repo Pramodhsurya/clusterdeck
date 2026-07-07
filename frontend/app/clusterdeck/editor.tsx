@@ -16,7 +16,7 @@ import { fireAndForget, makeIconClass } from "@/util/util";
 import clsx from "clsx";
 import * as jotai from "jotai";
 import { useAtomValue } from "jotai";
-import { memo } from "react";
+import { memo, useEffect, useRef } from "react";
 
 import "./editor.scss";
 
@@ -72,6 +72,26 @@ const ClusterdeckEditorView = memo(
     }) => {
         const openFiles = useAtomValue(model.openFilesAtom);
         const activeFile = useAtomValue(model.activeFileAtom);
+
+        // This block is shared across every file opened from the explorer (§3.5
+        // routing) — switching the active file only changes the `file` meta
+        // directly (explorer.tsx's openInEditor/setActiveEditorFile, and
+        // setActiveFile above), bypassing Wave's own goHistory, which is the only
+        // other place that changes `file` on a live preview block and which
+        // clears these same two buffers when it does. Without this, whichever
+        // file was last saved/typed into keeps overriding freshly-fetched content
+        // for every file opened afterward — not just visually stale, but a real
+        // risk of saving the wrong content into the wrong file.
+        const prevActiveFile = useRef(activeFile);
+        useEffect(() => {
+            if (prevActiveFile.current === activeFile) {
+                return;
+            }
+            prevActiveFile.current = activeFile;
+            globalStore.set(model.fileContentSaved, null);
+            globalStore.set(model.newFileContent, null);
+        }, [activeFile]);
+
         return (
             <div className="cd-editor">
                 {openFiles.length > 0 && (
