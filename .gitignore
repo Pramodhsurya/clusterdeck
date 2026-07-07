@@ -2,6 +2,10 @@
 frontend/dist
 dist/
 dist-dev/
+# runtime-generated wsh shell-integration copy (real source lives in
+# pkg/util/shellutil/shellintegration/); created under CWD when wavesrv runs
+# from the repo root.
+/shell/
 frontend/node_modules
 node_modules/
 frontend/bindings
