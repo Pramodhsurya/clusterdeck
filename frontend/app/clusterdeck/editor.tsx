@@ -90,32 +90,38 @@ const ClusterdeckEditorView = memo(
         const openFiles = useAtomValue(model.openFilesAtom);
         const activeFile = useAtomValue(model.activeFileAtom);
 
-        // This block is shared across every file opened from the explorer (§3.5
-        // routing) — switching the active file only changes the `file` meta
-        // directly (explorer.tsx's openInEditor/setActiveEditorFile, and
-        // setActiveFile above), bypassing Wave's own goHistory, which is the only
-        // other place that changes `file` on a live preview block and which
-        // clears these same two buffers when it does. Without this, whichever
-        // file was last saved/typed into keeps overriding freshly-fetched content
-        // for every file opened afterward — not just visually stale, but a real
-        // risk of saving the wrong content into the wrong file.
+        // Stale-content fix. model.fileContent checks two override buffers
+        // (fileContentSaved / newFileContent) *before* the freshly-fetched file,
+        // and both are shared across every file this one editor block shows — so
+        // once autosave populates fileContentSaved for one file, the next file
+        // would render that stale content. We clear them synchronously here when
+        // the active file changes (React's blessed "reset state on prop change"
+        // pattern) — doing it in render rather than an effect means the keyed
+        // remount below reads cleared buffers on its very first paint, with no
+        // stale flash. Any not-yet-autosaved edit to the file being left is
+        // stashed for an effect to flush (a write RPC shouldn't run during
+        // render), targeting that file's path explicitly since meta.file has
+        // already moved on.
         const prevActiveFile = useRef(activeFile);
-        useEffect(() => {
-            if (prevActiveFile.current === activeFile) {
-                return;
-            }
+        const pendingFlushRef = useRef<{ path: string; content: string } | null>(null);
+        if (prevActiveFile.current !== activeFile) {
             const leavingFile = prevActiveFile.current;
             const pending = globalStore.get(model.newFileContent);
-            prevActiveFile.current = activeFile;
+            if (pending != null && leavingFile) {
+                pendingFlushRef.current = { path: leavingFile, content: pending };
+            }
             globalStore.set(model.fileContentSaved, null);
             globalStore.set(model.newFileContent, null);
-            // Flush a not-yet-autosaved edit to the file we're leaving instead of
-            // just discarding it — targets leavingFile explicitly since meta.file
-            // has already moved to the new file by the time this runs.
-            if (pending != null && leavingFile) {
-                fireAndForget(() => model.flushPendingSave(leavingFile, pending));
+            prevActiveFile.current = activeFile;
+        }
+        useEffect(() => {
+            const f = pendingFlushRef.current;
+            if (f == null) {
+                return;
             }
-        }, [activeFile]);
+            pendingFlushRef.current = null;
+            fireAndForget(() => model.flushPendingSave(f.path, f.content));
+        });
 
         // Autosave: debounced so normal typing doesn't hammer the (possibly
         // remote/SSH) filesystem with a write per keystroke. Reuses Wave's own
@@ -161,7 +167,16 @@ const ClusterdeckEditorView = memo(
                         })}
                     </div>
                 )}
-                <div className="cd-editor-content">
+                {/* key on the active file so the whole preview subtree (Monaco
+                    included) remounts per file. The block is shared across every
+                    file opened from the explorer, and Monaco keeps one model per
+                    editor instance keyed by path — without a hard remount, a
+                    freshly-selected file could render against the previously
+                    mounted model and show stale content. Keying on the
+                    synchronous activeFile (meta.file) is more reliable than the
+                    async statFilePath key Wave uses internally, which resolves
+                    later and can briefly be undefined. */}
+                <div className="cd-editor-content" key={activeFile ?? ""}>
                     <PreviewView blockId={blockId} blockRef={blockRef} contentRef={contentRef} model={model} />
                 </div>
             </div>

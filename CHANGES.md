@@ -368,9 +368,16 @@ free-form via the rail "+", with nothing auto-seeded.
   the editor kept showing whichever file was last saved/typed into, no matter
   which file was actually selected — not just visually stale, but a real risk
   of saving the wrong content into the wrong file.
-- Fixed by clearing both buffers whenever the active file changes, in one place
-  (`ClusterdeckEditorView`'s effect on `activeFileAtom`) rather than patching
-  all three call sites individually.
+- Fixed with two layers, both in `ClusterdeckEditorView`: (1) the preview
+  subtree is now `key`ed on the active file so Monaco fully remounts per file
+  (fresh model, fresh content) rather than reusing a stale model; and (2) the
+  two override buffers are cleared **synchronously in render** (React's
+  "reset state on prop change" pattern) the moment the active file changes, so
+  the remount reads freshly-fetched content on its first paint with no
+  stale-content flash. Verified end-to-end against the real backend: with the
+  shared `fileContentSaved` buffer deliberately poisoned before each switch,
+  the file switched *to* renders its own correct content on the first render
+  (never the poisoned buffer).
 
 ### Autosave (2026-07-06)
 
