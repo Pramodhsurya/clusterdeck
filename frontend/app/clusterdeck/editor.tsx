@@ -12,7 +12,7 @@ import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { PreviewView } from "@/app/view/preview/preview";
 import { PreviewModel } from "@/app/view/preview/preview-model";
 import { WOS } from "@/store/global";
-import { fireAndForget, makeIconClass } from "@/util/util";
+import { fireAndForget, makeIconClass, stringToBase64 } from "@/util/util";
 import clsx from "clsx";
 import * as jotai from "jotai";
 import { useAtomValue } from "jotai";
@@ -56,6 +56,23 @@ class ClusterdeckEditorModel extends PreviewModel {
             })
         );
     }
+
+    // Autosave for a file we're navigating away from. Takes the path/content
+    // explicitly (rather than reusing handleFileSave, which resolves the path
+    // from the block's *current* file meta) because by the time this runs the
+    // active-file effect has already detected the switch — meta.file points at
+    // the file we're switching TO, not the one this pending edit belongs to.
+    async flushPendingSave(filePath: string, content: string) {
+        try {
+            const path = await this.formatRemoteUri(filePath, globalStore.get);
+            await this.env.rpc.FileWriteCommand(TabRpcClient, {
+                info: { path },
+                data64: stringToBase64(content),
+            });
+        } catch (e) {
+            console.log("autosave flush-on-switch failed", filePath, e);
+        }
+    }
 }
 
 const ClusterdeckEditorView = memo(
@@ -87,10 +104,35 @@ const ClusterdeckEditorView = memo(
             if (prevActiveFile.current === activeFile) {
                 return;
             }
+            const leavingFile = prevActiveFile.current;
+            const pending = globalStore.get(model.newFileContent);
             prevActiveFile.current = activeFile;
             globalStore.set(model.fileContentSaved, null);
             globalStore.set(model.newFileContent, null);
+            // Flush a not-yet-autosaved edit to the file we're leaving instead of
+            // just discarding it — targets leavingFile explicitly since meta.file
+            // has already moved to the new file by the time this runs.
+            if (pending != null && leavingFile) {
+                fireAndForget(() => model.flushPendingSave(leavingFile, pending));
+            }
         }, [activeFile]);
+
+        // Autosave: debounced so normal typing doesn't hammer the (possibly
+        // remote/SSH) filesystem with a write per keystroke. Reuses Wave's own
+        // handleFileSave — it only performs the RPC write and updates the
+        // fileContentSaved/newFileContent buffers, never touches the Monaco
+        // model/editor, so it has no effect on Cmd+Z/Cmd+Shift+Z (Monaco's undo
+        // stack is independent of when/whether the content has been saved).
+        const newFileContent = useAtomValue(model.newFileContent);
+        useEffect(() => {
+            if (newFileContent == null) {
+                return;
+            }
+            const timer = setTimeout(() => {
+                fireAndForget(() => model.handleFileSave());
+            }, 600);
+            return () => clearTimeout(timer);
+        }, [newFileContent, model]);
 
         return (
             <div className="cd-editor">

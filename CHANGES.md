@@ -372,5 +372,18 @@ free-form via the rail "+", with nothing auto-seeded.
   (`ClusterdeckEditorView`'s effect on `activeFileAtom`) rather than patching
   all three call sites individually.
 
+### Autosave (2026-07-06)
+
+- The editor now autosaves: `frontend/app/clusterdeck/editor.tsx` debounces
+  600ms after the last edit, then calls Wave's existing `handleFileSave()` —
+  it only performs the RPC write and updates the save-tracking buffers, never
+  touches the Monaco model/editor, so Cmd+Z/Cmd+Shift+Z (Monaco's own,
+  independent undo stack) is completely unaffected by autosave.
+- Switching files (or closing the active one) no longer silently discards a
+  not-yet-autosaved edit — a new `flushPendingSave(filePath, content)` writes
+  it to the file being left, using that file's own path explicitly (not the
+  block's current `file` meta, which has already moved to the new file by the
+  time the switch is detected).
+
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.
