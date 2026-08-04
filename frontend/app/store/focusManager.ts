@@ -1,15 +1,17 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { waveAIHasFocusWithin } from "@/app/aipanel/waveai-focus-utils";
-import { WaveAIModel } from "@/app/aipanel/waveai-model";
+// Focus manager — simplified for Clusterdeck. The Wave AI panel focus
+// management was removed; only node (block) focus remains.
+// pi-agent focus will be added when the integration is built.
+
 import { getBlockComponentModel } from "@/app/store/global";
 import { globalStore } from "@/app/store/jotaiStore";
 import { getLayoutModelForStaticTab } from "@/layout/index";
 import { focusedBlockId } from "@/util/focusutil";
 import { Atom, atom, type PrimitiveAtom } from "jotai";
 
-export type FocusStrType = "node" | "waveai";
+export type FocusStrType = "node";
 
 export class FocusManager {
     private static instance: FocusManager | null = null;
@@ -19,9 +21,6 @@ export class FocusManager {
 
     private constructor() {
         this.blockFocusAtom = atom((get) => {
-            if (get(this.focusType) == "waveai") {
-                return null;
-            }
             const layoutModel = getLayoutModelForStaticTab();
             const lnode = get(layoutModel.focusedNode);
             return lnode?.data?.blockId;
@@ -35,15 +34,6 @@ export class FocusManager {
         return FocusManager.instance;
     }
 
-    setWaveAIFocused(force: boolean = false) {
-        const isAlreadyFocused = globalStore.get(this.focusType) == "waveai";
-        if (!force && isAlreadyFocused) {
-            return;
-        }
-        globalStore.set(this.focusType, "waveai");
-        this.refocusNode();
-    }
-
     setBlockFocus(force: boolean = false) {
         const ftype = globalStore.get(this.focusType);
         if (!force && ftype == "node") {
@@ -51,10 +41,6 @@ export class FocusManager {
         }
         globalStore.set(this.focusType, "node");
         this.refocusNode();
-    }
-
-    waveAIFocusWithin(): boolean {
-        return waveAIHasFocusWithin();
     }
 
     nodeFocusWithin(): boolean {
@@ -65,20 +51,11 @@ export class FocusManager {
         globalStore.set(this.focusType, "node");
     }
 
-    requestWaveAIFocus(): void {
-        globalStore.set(this.focusType, "waveai");
-    }
-
     getFocusType(): FocusStrType {
         return globalStore.get(this.focusType);
     }
 
     refocusNode() {
-        const ftype = globalStore.get(this.focusType);
-        if (ftype == "waveai") {
-            WaveAIModel.getInstance().focusInput();
-            return;
-        }
         const layoutModel = getLayoutModelForStaticTab();
         const lnode = globalStore.get(layoutModel.focusedNode);
         if (lnode == null || lnode.data?.blockId == null) {

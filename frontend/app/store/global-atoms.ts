@@ -55,7 +55,7 @@ function initGlobalAtoms(initOpts: GlobalInitOptions) {
         return WOS.getObjectValue(WOS.makeORef("workspace", workspaceId), get);
     });
     const fullConfigAtom = atom(null) as PrimitiveAtom<FullConfigType>;
-    const waveaiModeConfigAtom = atom(null) as PrimitiveAtom<Record<string, AIModeConfigType>>;
+    // waveaiModeConfigAtom removed — AI panel deleted
     const settingsAtom = atom((get) => {
         return get(fullConfigAtom)?.settings ?? {};
     }) as Atom<SettingsType>;
@@ -134,7 +134,7 @@ function initGlobalAtoms(initOpts: GlobalInitOptions) {
         workspaceId: workspaceIdAtom,
         workspace: workspaceAtom,
         fullConfigAtom,
-        waveaiModeConfigAtom,
+        // waveaiModeConfigAtom — removed (AI panel deleted)
         settingsAtom,
         hasCustomAIPresetsAtom,
         hasConfigErrors,

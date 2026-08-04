@@ -80,16 +80,6 @@ function makeConfigFiles(isWindows: boolean): ConfigFile[] {
             hasJsonView: true,
         },
         {
-            name: "AI Modes",
-            path: "waveai.json",
-            language: "json",
-            description: "Local models and BYOK",
-            docsUrl: "https://docs.clusterdeck.app/waveai-modes",
-            validator: validateWaveAiJson,
-            hasJsonView: true,
-            // visualComponent: WaveAIVisualContent,
-        },
-        {
             name: "Tab Backgrounds",
             path: "backgrounds.json",
             language: "json",

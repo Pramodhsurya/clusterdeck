@@ -1,8 +1,8 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { AIPanel } from "@/app/aipanel/aipanel";
 import { ConnectionsRail } from "@/app/clusterdeck/connectionsrail";
+import { PiAgentPanel } from "@/app/clusterdeck/piagentpanel";
 import { ErrorBoundary } from "@/app/element/errorboundary";
 import { CenteredDiv } from "@/app/element/quickelems";
 import { ModalsRenderer } from "@/app/modals/modalsrenderer";
@@ -11,7 +11,7 @@ import { TabContent } from "@/app/tab/tabcontent";
 import { VTabBar } from "@/app/tab/vtabbar";
 import { Widgets } from "@/app/workspace/widgets";
 import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
-import { atoms, getApi, getSettingsKeyAtom } from "@/store/global";
+import { atoms, getSettingsKeyAtom } from "@/store/global";
 import { isMacOS } from "@/util/platformutil";
 import { useAtomValue } from "jotai";
 import { memo, useEffect, useRef } from "react";
@@ -46,46 +46,39 @@ const WorkspaceElem = memo(() => {
     const ws = useAtomValue(atoms.workspace);
     const tabBarPosition = useAtomValue(getSettingsKeyAtom("app:tabbar")) ?? "top";
     const showLeftTabBar = tabBarPosition === "left";
-    const aiPanelVisible = useAtomValue(workspaceLayoutModel.panelVisibleAtom);
+    const piPanelVisible = useAtomValue(workspaceLayoutModel.panelVisibleAtom);
     const widgetsSidebarVisible = useAtomValue(workspaceLayoutModel.widgetsSidebarVisibleAtom);
     const windowWidth = window.innerWidth;
     const leftGroupInitialPct = workspaceLayoutModel.getLeftGroupInitialPercentage(windowWidth, showLeftTabBar);
     const innerVTabInitialPct = workspaceLayoutModel.getInnerVTabInitialPercentage(windowWidth, showLeftTabBar);
-    const innerAIPanelInitialPct = workspaceLayoutModel.getInnerAIPanelInitialPercentage(windowWidth, showLeftTabBar);
+    const innerPiPanelInitialPct = workspaceLayoutModel.getInnerPiPanelInitialPercentage(windowWidth, showLeftTabBar);
     const outerPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const innerPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
-    const aiPanelRef = useRef<ImperativePanelHandle>(null);
+    const piPanelRef = useRef<ImperativePanelHandle>(null);
     const vtabPanelRef = useRef<ImperativePanelHandle>(null);
     const panelContainerRef = useRef<HTMLDivElement>(null);
-    const aiPanelWrapperRef = useRef<HTMLDivElement>(null);
+    const piPanelWrapperRef = useRef<HTMLDivElement>(null);
     const vtabPanelWrapperRef = useRef<HTMLDivElement>(null);
 
-    // showLeftTabBar is passed as a seed value only; subsequent changes are handled by setShowLeftTabBar below.
-    // Do NOT add showLeftTabBar as a dep here — re-registering refs on config changes would redundantly re-run commitLayouts.
     useEffect(() => {
         if (
-            aiPanelRef.current &&
+            piPanelRef.current &&
             outerPanelGroupRef.current &&
             innerPanelGroupRef.current &&
             panelContainerRef.current &&
-            aiPanelWrapperRef.current
+            piPanelWrapperRef.current
         ) {
             workspaceLayoutModel.registerRefs(
-                aiPanelRef.current,
+                piPanelRef.current,
                 outerPanelGroupRef.current,
                 innerPanelGroupRef.current,
                 panelContainerRef.current,
-                aiPanelWrapperRef.current,
+                piPanelWrapperRef.current,
                 vtabPanelRef.current ?? undefined,
                 vtabPanelWrapperRef.current ?? undefined,
                 showLeftTabBar
             );
         }
-    }, []);
-
-    useEffect(() => {
-        const isVisible = workspaceLayoutModel.getAIPanelVisible();
-        getApi().setWaveAIOpen(isVisible);
     }, []);
 
     useEffect(() => {
@@ -103,9 +96,9 @@ const WorkspaceElem = memo(() => {
         return () => window.removeEventListener("focus", handleFocus);
     }, []);
 
-    const innerHandleVisible = showLeftTabBar && aiPanelVisible;
+    const innerHandleVisible = showLeftTabBar && piPanelVisible;
     const innerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${innerHandleVisible ? "w-0.5" : "w-0 pointer-events-none"}`;
-    const outerHandleVisible = showLeftTabBar || aiPanelVisible;
+    const outerHandleVisible = showLeftTabBar || piPanelVisible;
     const outerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${outerHandleVisible ? "w-0.5" : "w-0 pointer-events-none"}`;
 
     return (
@@ -139,17 +132,17 @@ const WorkspaceElem = memo(() => {
                                 </Panel>
                                 <PanelResizeHandle className={innerHandleClass} />
                                 <Panel
-                                    ref={aiPanelRef}
+                                    ref={piPanelRef}
                                     collapsible
-                                    defaultSize={innerAIPanelInitialPct}
+                                    defaultSize={innerPiPanelInitialPct}
                                     order={1}
                                     className="overflow-hidden"
                                 >
                                     <div
-                                        ref={aiPanelWrapperRef}
-                                        className={`w-full h-full pr-0.5 ${aiPanelVisible ? "" : "opacity-0"}`}
+                                        ref={piPanelWrapperRef}
+                                        className={`w-full h-full pr-0.5 ${piPanelVisible ? "" : "opacity-0"}`}
                                     >
-                                        {tabId !== "" && <AIPanel roundTopLeft={showLeftTabBar} />}
+                                        {tabId !== "" && <PiAgentPanel roundTopLeft={showLeftTabBar} />}
                                     </div>
                                 </Panel>
                             </PanelGroup>

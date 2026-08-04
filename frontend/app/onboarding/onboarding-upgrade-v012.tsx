@@ -6,8 +6,8 @@ const UpgradeOnboardingModal_v0_1_2_Content = () => {
         <div className="flex flex-col items-start gap-6 w-full mb-4 unselectable">
             <div className="text-secondary leading-relaxed">
                 <p className="mb-0">
-                    Clusterdeck v0.1.2 is a follow-up patch: a real fix for the k9s/lazygit/htop
-                    app widgets, a per-terminal connection override, and a round of leftover
+                    Clusterdeck v0.1.2 is a follow-up patch: a real fix for the htop
+                    app widget, a per-terminal connection override, and a round of leftover
                     Wave-branding cleanup.
                 </p>
             </div>
@@ -21,7 +21,7 @@ const UpgradeOnboardingModal_v0_1_2_Content = () => {
                         Fixed "command not found" for app widgets
                     </div>
                     <div className="text-secondary leading-5">
-                        k9s, lazygit, and htop now launch in a login shell, so Homebrew-installed
+                        The htop widget now launches in a login shell, so Homebrew-installed
                         tools (under <code>/opt/homebrew/bin</code>) are actually found on PATH.
                     </div>
                 </div>
