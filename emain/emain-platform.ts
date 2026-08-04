@@ -11,11 +11,12 @@ import { WaveDevVarName, WaveDevViteVarName } from "../frontend/util/isdev";
 import * as keyutil from "../frontend/util/keyutil";
 
 // This is a little trick to ensure that Electron puts all its runtime data into a subdirectory to avoid conflicts with our own data.
-// On macOS, it will store to ~/Library/Application \Support/waveterm/electron
-// On Linux, it will store to ~/.config/waveterm/electron
-// On Windows, it will store to %LOCALAPPDATA%/waveterm/electron
-app.setName("waveterm/electron");
-
+// On macOS, it will store to ~/Library/Application \Support/clusterdeck/electron
+// On Linux, it will store to ~/.config/clusterdeck/electron
+// On Windows, it will store to %LOCALAPPDATA%/clusterdeck/electron
+// (The "Clusterdeck (Dev)" / "Clusterdeck" setName call below overrides this
+// before app.whenReady fires, so it only affects internal Electron state used
+// in that initial window of time. Kept for consistency with the data dir.)
 const isDev = !app.isPackaged;
 const isDevVite = isDev && process.env.ELECTRON_RENDERER_URL;
 console.log(`Running in ${isDev ? "development" : "production"} mode`);

@@ -23,6 +23,12 @@ import (
 	"github.com/wavetermdev/waveterm/pkg/wavebase"
 )
 
+// WCloudEndpoint + WCloudPingEndpoint point at Wave's hosted control-plane
+// service (Command Line Inc. operates it). Clusterdeck's telemetry / web-share
+// features send requests there exactly as upstream Wave did — these are
+// intentionally not renamed, for the same reason as the Wave AI endpoint
+// (renaming would break the feature or misrepresent who runs it). See
+// CHANGES.md "Remaining Wave→Clusterdeck string rebrand" for the rationale.
 const WCloudEndpoint = "https://api.waveterm.dev/central"
 const WCloudEndpointVarName = "WCLOUD_ENDPOINT"
 const WCloudPingEndpoint = "https://ping.waveterm.dev/central"

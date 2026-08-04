@@ -1,8 +1,8 @@
 {
-    "name": "waveterm",
+    "name": "clusterdeck",
     "author": {
-        "name": "Command Line Inc",
-        "email": "info@commandline.dev"
+        "name": "Clusterdeck Authors",
+        "email": "support@clusterdeck.app"
     },
     "productName": "Clusterdeck",
     "description": "Multi-cluster SSH workspaces — the connection is the workspace",

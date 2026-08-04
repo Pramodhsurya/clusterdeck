@@ -160,7 +160,7 @@ const InitPage = ({
                                 <a
                                     className="text-secondary! hover:underline!"
                                     target="_blank"
-                                    href="https://waveterm.dev/privacy"
+                                    href="https://docs.clusterdeck.app/privacy"
                                     rel="noopener"
                                 >
                                     Privacy Policy

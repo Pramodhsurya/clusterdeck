@@ -10,6 +10,13 @@ import (
 	"strings"
 )
 
+// DefaultAIEndpoint points at Wave's hosted AI cloud proxy infrastructure
+// (Command Line Inc. operates it). Clusterdeck's AI panel — when the user
+// chooses the "Wave Proxy" preset — talks to it transparently, the same way
+// the upstream Wave app does. Renaming this would either break the AI panel
+// for users or misrepresent who operates the service, so it is intentionally
+// preserved from upstream. See CHANGES.md "Remaining Wave→Clusterdeck
+// string rebrand" for the rationale.
 const DefaultAIEndpoint = "https://cfapi.waveterm.dev/api/waveai"
 const WaveAIEndpointEnvName = "WAVETERM_WAVEAI_ENDPOINT"
 const DefaultAnthropicModel = "claude-sonnet-4-5"

@@ -394,3 +394,70 @@ free-form via the rail "+", with nothing auto-seeded.
 
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.
+
+### Branding & housekeeping sweep (2026-07-07)
+
+Cleanup pass fixing items surfaced during the post-1.3 review.
+
+- **CSS accent token — single source of truth.** `--cd-accent`,
+  `--cd-accent-bg`, and `--cd-muted-text` are now declared exactly once,
+  in `frontend/app/theme.scss :root`. The previous duplicate declarations
+  in `connectionsrail.scss :root` and `welcome.scss .cd-welcome` are
+  removed; the hardcoded `#429dff` / `rgba(66, 157, 255, 0.12)` fallback
+  values in `editor.scss` and `explorer.scss` are removed in favor of bare
+  `var(--cd-accent[-bg])` references. This satisfies CLAUDE.md §4
+  ("Define it as a token; never hard-code") and means future theme tweaks
+  are one-line edits in `theme.scss`.
+- **Frontend meta-key constants consolidated.** The duplicated
+  `clusterdeck:rootdir` literal that lived in both
+  `frontend/app/clusterdeck/welcome.tsx` and `pkg/wcore/clusterdeck.go`
+  is now exported from `frontend/app/clusterdeck/connlock.ts` and imported
+  by the Welcome view, so the two sides can't drift apart.
+- **Wave→Clusterdeck docs URL replacement.** Eight in-app "Learn more" /
+  docs links (in `quicktips.tsx`, `waveconfig-model.ts`, `helpview.tsx`,
+  `byokannouncement.tsx`, `telemetryrequired.tsx`, `onboarding.tsx`,
+  `durable-session-flyover.tsx`, plus the test fixture in
+  `webview.test.tsx`) now point at `docs.clusterdeck.app/...` instead of
+  `docs.waveterm.dev/...`. The deliberate upstream credit link ("Wave
+  Terminal" / "Sponsor Wave") in `about.tsx` is kept as required by
+  Apache-2.0 §4 and the project README.
+- **`package.json` rebranded.** `"name": "waveterm"` → `"name":
+  "clusterdeck"`, and `author` → `Clusterdeck Authors`. `private: true`
+  keeps this from accidentally publishing to npm.
+- **`termutil.ts` paste prefix.** `waveterm_paste_*` → `clusterdeck_paste_*`
+  (the rendered filename when pasting into a terminal).
+- **Onboarding demo strings.** The fake AI demo in `onboarding/fakechat.tsx`
+  now reads `~/clusterdeck` and `$HOME/Library/Application Support/
+  clusterdeck-dev/waveapp.log` instead of the old Wave paths. `waveapp.log`
+  itself stays — that's the actual log filename emitted by the Wave-derived
+  backend and renaming it would require an upstream wsh change.
+- **`emain/emain-platform.ts`** — the redundant
+  `app.setName("waveterm/electron")` (which was shadowed before
+  `app.whenReady` by the correct `"Clusterdeck"/"Clusterdeck (Dev)"`
+  setName 18 lines below) is removed. The data-dir comments now say
+  `clusterdeck/electron` instead of `waveterm/electron`.
+- **`emain/emain.ts`** — `console.log` strings `"waveterm-app starting…"`,
+  `"waveterm-app WAVETERM_DEV set"`, and `"waveterm-app could not get
+  single-instance-lock"` → `"clusterdeck-app …"`.
+- **Dead theme token removed.** `--tab-green` was defined in `theme.scss`
+  but referenced by nothing. Removed.
+- **`NOTICE` rebuilt** with a Clusterdeck Authors attribution line above
+  the preserved Wave/Command Line Inc. line, and a paragraph noting the
+  deliberately preserved Wave-hosted endpoints. Per Apache-2.0 §4(c).
+- **Inline comments documenting the intentional Wave-infrastructure
+  preservation** added at `DefaultAIEndpoint` (`pkg/aiusechat/uctypes/
+  uctypes.go`) and `WCloudEndpoint` / `WCloudPingEndpoint`
+  (`pkg/wcloud/wcloud.go`). The endpoints themselves point at Wave's
+  hosted AI / telemetry / web-share control-plane and are kept on purpose
+  (renaming would either break the features or misrepresent who operates
+  them).
+- **Tests for clusterdeck code paths.** Added `pkg/clusterdeck/
+  sshsync_test.go` covering `ClassifyTarget`, `DisplayName`,
+  `looksLikeLocalPath`, `cleanLocalPath`, `folderName`, and
+  `EnsureConnectionsConfigPath` (table-driven + edge cases). Added
+  `frontend/app/clusterdeck/explorer.test.ts` covering `baseName` and
+  `fileStyle`. The project now has tests for previously-untested
+  clusterdeck-specific logic; total test count went from 46 to 54.
+
+Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
+blocks, secret storage, AI/web blocks, themes) are preserved throughout.
