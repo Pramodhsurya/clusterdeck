@@ -742,10 +742,9 @@ func createCmdStrAndOpts(blockId string, blockMeta waveobj.MetaMapType, connName
 		}
 	}
 	cmdOpts.ForceJwt = blockMeta.GetBool(waveobj.MetaKey_CmdJwt, false)
-	// Clusterdeck: opt-in login shell for cmd blocks (e.g. the k9s/lazygit/htop
-	// app widgets) so they see the same PATH a regular terminal would (Homebrew,
-	// asdf, etc. via .zprofile) — off by default since some cmd blocks (e.g. the
-	// per-cluster k9s launch) rely on an explicit cmd:env instead.
+	// Clusterdeck: opt-in login shell for cmd blocks so they see the same PATH
+	// a regular terminal would (Homebrew, asdf, etc. via .zprofile) — off by
+	// default since some cmd blocks rely on an explicit cmd:env instead.
 	cmdOpts.Login = blockMeta.GetBool(waveobj.MetaKey_CmdLogin, false)
 	return cmdStr, &cmdOpts, nil
 }
