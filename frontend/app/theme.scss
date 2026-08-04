@@ -12,6 +12,14 @@
     --base-font: normal 14px / normal "Inter", sans-serif;
     --fixed-font: normal 12px / normal "Hack", monospace;
     --accent-color: rgb(66, 157, 255);
+
+    // Clusterdeck accent tokens — single source of truth for the clusterdeck
+    // blue. Defined here so connectionsrail / welcome / editor / explorer all
+    // resolve to the same color, and so future theme tweaks are one-line edits.
+    // Never hard-code #429dff / rgba(66, 157, 255, 0.12) anywhere else.
+    --cd-accent: #429dff;
+    --cd-accent-bg: rgba(66, 157, 255, 0.12);
+    --cd-muted-text: rgba(247, 247, 247, 0.45);
     --cd-git-modified: #e2c08d;
     --cd-git-added: #4fa6ff;
     --panel-bg-color: rgba(31, 33, 31, 0.5);
@@ -43,8 +51,6 @@
     --header-icon-size: 14px;
     --header-icon-width: 16px;
     --header-height: 30px;
-
-    --tab-green: rgb(88, 193, 66);
 
     /* z-index values */
     --zindex-header-hover: 100;

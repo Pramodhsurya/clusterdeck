@@ -16,6 +16,10 @@ export const ClusterdeckZoneMetaKey = "clusterdeck:zone";
 export const ClusterdeckZone_Explorer = "explorer";
 export const ClusterdeckZone_Editor = "editor";
 
+// Root folder meta on a workspace — a workspace is (connection, rootDir), so
+// this is the second half of the key. (Mirrors pkg/wcore/clusterdeck.go.)
+export const ClusterdeckRootDirMetaKey = "clusterdeck:rootdir";
+
 export function getWorkspaceConnection(workspace: Workspace): string {
     return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
 }

@@ -39,7 +39,7 @@
             &.active {
                 background: var(--main-bg-color);
                 color: var(--main-text-color);
-                border-top-color: var(--cd-accent, #429dff);
+                border-top-color: var(--cd-accent);
             }
 
             .cd-editor-tab-name {

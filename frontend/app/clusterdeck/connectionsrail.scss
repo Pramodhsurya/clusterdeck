@@ -1,13 +1,10 @@
 // Copyright 2026, Clusterdeck Authors.
 // SPDX-License-Identifier: Apache-2.0
 
-// Clusterdeck accent — the single accent token (mockup blue). Everything
-// accent-colored in Clusterdeck UI derives from this; never hard-code blues.
-:root {
-    --cd-accent: #429dff;
-    --cd-accent-bg: rgba(66, 157, 255, 0.12);
-    --cd-muted-text: rgba(247, 247, 247, 0.45);
-}
+// The --cd-accent / --cd-accent-bg / --cd-muted-text tokens are defined once
+// in the global :root (frontend/app/theme.scss) so every component resolves
+// to the same source. Don't re-declare them here or duplicate the hard-coded
+// blue anywhere else.
 
 .cd-connections-rail {
     display: flex;

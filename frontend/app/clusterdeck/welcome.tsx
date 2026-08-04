@@ -5,6 +5,7 @@
 // (Open Folder / New Connection) and a Recent list (last 5 opened workspaces).
 
 import { BlockNodeModel } from "@/app/block/blocktypes";
+import { ClusterdeckRootDirMetaKey } from "@/app/clusterdeck/connlock";
 import {
     ClusterdeckConnectionMetaKey,
     ClusterdeckLastOpenedMetaKey,
@@ -23,8 +24,6 @@ import * as jotai from "jotai";
 import { memo, useEffect, useState } from "react";
 
 import "./welcome.scss";
-
-const ClusterdeckRootDirMetaKey = "clusterdeck:rootdir";
 
 function recentSubtitle(ws: Workspace): string {
     const root = ws.meta?.[ClusterdeckRootDirMetaKey] as string;

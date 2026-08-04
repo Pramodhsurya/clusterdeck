@@ -1,1 +1,15 @@
+Clusterdeck
+Copyright 2026, Clusterdeck Authors.
+
+This product is a derivative of Wave Terminal (https://github.com/wavetermdev/waveterm),
+originally created and copyright Command Line Inc. (https://www.waveterm.dev).
+
+Wave Terminal
 Copyright 2025, Command Line Inc.
+
+Substantive modifications made by Clusterdeck Authors are recorded in CHANGES.md
+per Apache-2.0 §4(b). Endpoints that point at Wave's hosted AI proxy and
+control-plane (cfapi.waveterm.dev, api.waveterm.dev, ping.waveterm.dev) are
+intentionally preserved — they describe infrastructure operated by Command
+Line Inc. which Clusterdeck's AI / telemetry / web-share features still use.
+
