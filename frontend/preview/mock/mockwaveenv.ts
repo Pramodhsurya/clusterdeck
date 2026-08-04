@@ -169,7 +169,7 @@ function makeMockGlobalAtoms(
         workspaceId: workspaceIdAtom,
         workspace: workspaceAtom,
         fullConfigAtom,
-        waveaiModeConfigAtom: atom({}) as any,
+        // waveaiModeConfigAtom removed — AI panel deleted
         settingsAtom,
         hasCustomAIPresetsAtom: atom(false),
         hasConfigErrors: atom((get) => {

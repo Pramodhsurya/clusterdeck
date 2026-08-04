@@ -80,9 +80,6 @@ function makeConfigFiles(isWindows: boolean): ConfigFile[] {
             hasJsonView: true,
         },
         {
-            name: "AI Modes",
-
-        {
             name: "Tab Backgrounds",
             path: "backgrounds.json",
             language: "json",
