@@ -7,19 +7,9 @@ originally created and copyright Command Line Inc. (https://www.waveterm.dev).
 Wave Terminal
 Copyright 2025, Command Line Inc.
 
-Licensed under the Apache License, Version 2.0 (the "License"); you may not use
-this file except in compliance with the License. You may obtain a copy of the
-License at
-
-    https://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software distributed
-under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-CONDITIONS OF ANY KIND, either express or implied. See the License for the
-specific language governing permissions and limitations under the License.
-
 Substantive modifications made by Clusterdeck Authors are recorded in CHANGES.md
 per Apache-2.0 §4(b). Endpoints that point at Wave's hosted AI proxy and
 control-plane (cfapi.waveterm.dev, api.waveterm.dev, ping.waveterm.dev) are
 intentionally preserved — they describe infrastructure operated by Command
 Line Inc. which Clusterdeck's AI / telemetry / web-share features still use.
+

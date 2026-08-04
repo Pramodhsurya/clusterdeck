@@ -20,6 +20,15 @@ Clusterdeck is a private-mirror fork of Wave Terminal reshaped into a
 multi-cluster SSH workspace. The behavioral contract is the root `CLAUDE.md`;
 the visual ground truth is `docs/clusterdeck/clusterdeck-mockup.html`.
 
+## Automated verification script
+
+Always run `./scripts/verify-clusterdeck.sh` at the start of your audit (before
+any other checks). It performs 31 static checks covering accent tokens,
+branding, docs URL correctness, security, legal files, and subagent validity.
+Report its output as the first section of your findings — flag any failures
+but note that `docs.clusterdeck.app` not resolving is an expected pre-launch
+warning. The script does not modify any files.
+
 ## Verification checklist (apply what fits the diff under test)
 
 1. **Branding**: no "Wave" name or logo in Clusterdeck-owned strings/assets
