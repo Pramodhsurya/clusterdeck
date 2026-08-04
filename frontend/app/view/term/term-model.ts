@@ -1,7 +1,6 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { WaveAIModel } from "@/app/aipanel/waveai-model";
 import { BlockNodeModel } from "@/app/block/blocktypes";
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { appHandleKeyDown } from "@/app/store/keymodel";
@@ -288,13 +287,6 @@ export class TermViewModel implements ViewModel {
             const isCmd = get(this.isCmdController);
             const rtn: IconButtonDecl[] = [];
 
-            const isAIPanelOpen = get(WorkspaceLayoutModel.getInstance().panelVisibleAtom);
-            if (isAIPanelOpen) {
-                const shellIntegrationButton = this.getShellIntegrationIconButton(get);
-                if (shellIntegrationButton) {
-                    rtn.push(shellIntegrationButton);
-                }
-            }
 
             if (get(getSettingsKeyAtom("debug:webglstatus"))) {
                 const webglButton = this.getWebGlIconButton(get);
@@ -840,21 +832,6 @@ export class TermViewModel implements ViewModel {
                                 ? trimTerminalSelection(selection)
                                 : selection;
                         navigator.clipboard.writeText(text);
-                    }
-                },
-            });
-            menu.push({ type: "separator" });
-            menu.push({
-                label: "Send to AI",
-                click: () => {
-                    if (selection) {
-                        const aiModel = WaveAIModel.getInstance();
-                        aiModel.appendText(selection, true, { scrollToBottom: true });
-                        const layoutModel = WorkspaceLayoutModel.getInstance();
-                        if (!layoutModel.getAIPanelVisible()) {
-                            layoutModel.setAIPanelVisible(true);
-                        }
-                        aiModel.focusInput();
                     }
                 },
             });

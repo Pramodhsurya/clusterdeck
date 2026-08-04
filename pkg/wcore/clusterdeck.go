@@ -69,11 +69,11 @@ const (
 )
 
 // GetClusterdeckLayout returns the default IDE layout seeded into a connection
-// workspace's tab (§3.4): a narrow full-height explorer (remote directory tree)
-// down the left, a file editor across the top of the main column, and a
-// terminal below it. Every block inherits the workspace connection (see
-// CreateBlockWithTelemetry), so explorer, editor, and terminal all target the
-// same host — the "connection = workspace" model.
+// workspace's tab: a file editor pinned at the top (VS Code style), a narrow
+// file explorer (remote directory tree) in the left sidebar below it, and a
+// terminal in the bottom-right area. Every block inherits the workspace
+// connection (see CreateBlockWithTelemetry), so editor, explorer, and terminal
+// all target the same host — the "connection = workspace" model.
 func GetClusterdeckLayout(rootDir string) PortableLayout {
 	if rootDir == "" {
 		rootDir = "~"
@@ -81,26 +81,25 @@ func GetClusterdeckLayout(rootDir string) PortableLayout {
 	explorerSize := uint(2)
 	terminalSize := uint(6)
 	return PortableLayout{
-		// Explorer — VS Code–style file tree rooted at the workspace folder
-		// (change #6). Custom "cdexplorer" view; reads file/connection from meta.
-		{IndexArr: []int{0}, Size: &explorerSize, BlockDef: &waveobj.BlockDef{
+		// Editor — pinned at the top (VS Code style). Explorer file-clicks open
+		// files in this designated editor block (§3.5). Custom "cdeditor" view.
+		{IndexArr: []int{0}, BlockDef: &waveobj.BlockDef{
+			Meta: waveobj.MetaMapType{
+				waveobj.MetaKey_View:   "cdeditor",
+				ClusterdeckZoneMetaKey: ClusterdeckZone_Editor,
+			},
+		}},
+		// Explorer — VS Code–style file tree in the left sidebar below the editor.
+		// Custom "cdexplorer" view; reads file/connection from meta.
+		{IndexArr: []int{1, 0}, Size: &explorerSize, BlockDef: &waveobj.BlockDef{
 			Meta: waveobj.MetaMapType{
 				waveobj.MetaKey_View:   "cdexplorer",
 				waveobj.MetaKey_File:   rootDir,
 				ClusterdeckZoneMetaKey: ClusterdeckZone_Explorer,
 			},
 		}},
-		// Editor — designated file editor with tabs (change #6 X#); explorer
-		// clicks open files here (§3.5). Custom "cdeditor" view wraps the preview.
-		{IndexArr: []int{1}, BlockDef: &waveobj.BlockDef{
-			Meta: waveobj.MetaMapType{
-				waveobj.MetaKey_View:   "cdeditor",
-				ClusterdeckZoneMetaKey: ClusterdeckZone_Editor,
-			},
-		}},
-		// Terminal — shell on the workspace connection, started in the workspace
-		// folder; focused on open.
-		{IndexArr: []int{1, 1}, Size: &terminalSize, BlockDef: &waveobj.BlockDef{
+		// Terminal — shell on the workspace connection, in the bottom-right area.
+		{IndexArr: []int{1, 1, 0}, Size: &terminalSize, BlockDef: &waveobj.BlockDef{
 			Meta: waveobj.MetaMapType{
 				waveobj.MetaKey_View:       "term",
 				waveobj.MetaKey_Controller: "shell",

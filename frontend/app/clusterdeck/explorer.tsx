@@ -19,6 +19,7 @@ import { TreeNodeData, TreeView } from "@/app/treeview/treeview";
 import { Input } from "@/element/input";
 import { WaveModal } from "@/element/modal";
 import { getLayoutModelForStaticTab, LayoutTreeActionType, type LayoutTreeResizeNodeAction } from "@/layout/index";
+import { findParent } from "@/layout/lib/layoutNode";
 import { atoms, createBlock, getApi, WOS, refocusNode } from "@/store/global";
 import { makeNativeLabel } from "@/util/platformutil";
 import { fireAndForget, isLocalConnName, makeConnRoute, makeIconClass } from "@/util/util";
@@ -384,26 +385,48 @@ class ClusterdeckExplorerModel implements ViewModel {
         globalStore.set(this.gitStatusAtom, map);
     }
 
-    // Resize the explorer's layout node to sizePercent (0-100) of its row,
-    // sharing the rest among its siblings. Returns false if the node wasn't
-    // found (e.g. the layout isn't ready or was rearranged).
+    // Find a layout node by blockId, searching the tree recursively.
+    // The explorer may live at root.children[1].children[0] (after the
+    // editor-at-top layout restructure), not as a direct child of root.
+    private findNodeByBlockId(node: LayoutNode | undefined, blockId: string): LayoutNode | null {
+        if (!node) return null;
+        if (node.data?.blockId === blockId) return node;
+        if (!node.children) return null;
+        for (const child of node.children) {
+            const found = this.findNodeByBlockId(child, blockId);
+            if (found) return found;
+        }
+        return null;
+    }
+
+    // Resize the explorer's layout node to sizePercent (0-100) of its parent
+    // row, sharing the rest among its siblings. Returns false if the node
+    // wasn't found (e.g. the layout isn't ready or was rearranged).
     resizeExplorer(sizePercent: number): boolean {
         const lm = getLayoutModelForStaticTab();
-        const children = lm?.treeState?.rootNode?.children;
-        if (!children) {
+        const root = lm?.treeState?.rootNode;
+        if (!root?.children) {
             return false;
         }
-        const explorerNode = children.find((n) => n.data?.blockId === this.blockId);
-        const others = children.filter((n) => n.id !== explorerNode?.id);
-        if (explorerNode == null || others.length === 0) {
+        const explorerNode = this.findNodeByBlockId(root, this.blockId);
+        if (!explorerNode) {
             return false;
         }
-        const rest = (100 - sizePercent) / others.length;
+        // Find the parent container (the row that holds explorer + siblings)
+        const parent = findParent(root, explorerNode.id);
+        if (!parent?.children) {
+            return false;
+        }
+        const siblings = parent.children.filter((n) => n.id !== explorerNode.id);
+        if (siblings.length === 0) {
+            return false;
+        }
+        const rest = (100 - sizePercent) / siblings.length;
         const action: LayoutTreeResizeNodeAction = {
             type: LayoutTreeActionType.ResizeNode,
             resizeOperations: [
                 { nodeId: explorerNode.id, size: sizePercent },
-                ...others.map((n) => ({ nodeId: n.id, size: rest })),
+                ...siblings.map((n) => ({ nodeId: n.id, size: rest })),
             ],
         };
         lm.treeReducer(action);
