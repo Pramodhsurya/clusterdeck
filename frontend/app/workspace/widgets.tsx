@@ -1,13 +1,11 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { openKubeAppPicker } from "@/app/clusterdeck/connectionsrail";
 import { openOrFocusEditor, openOrFocusExplorer } from "@/app/clusterdeck/explorer";
 import { Tooltip } from "@/app/element/tooltip";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv, WaveEnv, WaveEnvSubset } from "@/app/waveenv/waveenv";
 import { shouldIncludeWidgetForWorkspace } from "@/app/workspace/widgetfilter";
-import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
 import { modalsModel } from "@/store/modalmodel";
 import { fireAndForget, isBlank, makeIconClass } from "@/util/util";
 import {
@@ -61,13 +59,6 @@ type WidgetPropsType = {
 
 async function handleWidgetSelect(widget: WidgetConfigType, env: WidgetsEnv) {
     const blockDef = widget.blockdef;
-    // Clusterdeck: the k9s widget (marked cdapp:kube) asks which cluster to open
-    // against, so one workspace can hold several k9s blocks for different
-    // clusters. Other widgets create their block directly.
-    if (blockDef?.meta?.["cdapp:kube"]) {
-        openKubeAppPicker(blockDef, widget.magnified ?? false);
-        return;
-    }
     // Clusterdeck: the explorer widget reuses the existing explorer block if the
     // tab still has one (there's otherwise no way to get it back after closing
     // it), rather than spawning a duplicate.
@@ -390,48 +381,6 @@ const SettingsFloatingWindow = memo(
 
 SettingsFloatingWindow.displayName = "SettingsFloatingWindow";
 
-// Clusterdeck: the "Toggle AI Panel" button, moved here (below the app
-// widgets, e.g. htop) from the tab bar so it lives with the rest of the
-// widget rail instead of next to the traffic lights.
-const AIToggleWidget = memo(({ mode, env }: { mode: "normal" | "compact" | "supercompact"; env: WidgetsEnv }) => {
-    const aiPanelOpen = useAtomValue(WorkspaceLayoutModel.getInstance().panelVisibleAtom);
-    const hideAiButton = useAtomValue(env.getSettingsKeyAtom("app:hideaibutton"));
-
-    if (hideAiButton) {
-        return null;
-    }
-
-    const onClick = () => {
-        const currentVisible = WorkspaceLayoutModel.getInstance().getAIPanelVisible();
-        WorkspaceLayoutModel.getInstance().setAIPanelVisible(!currentVisible);
-    };
-
-    return (
-        <div
-            className={clsx(
-                "flex flex-col justify-center items-center w-full py-1.5 pr-0.5 overflow-hidden rounded-sm hover:bg-hoverbg hover:text-white cursor-pointer",
-                mode === "supercompact" ? "text-sm" : "text-lg",
-                aiPanelOpen ? "text-accent" : "text-secondary"
-            )}
-            onClick={onClick}
-        >
-            <Tooltip content="Toggle AI Panel" placement="left">
-                <div className="flex flex-col items-center w-full">
-                    <div>
-                        <i className="fa fa-sparkles"></i>
-                    </div>
-                    {mode === "normal" && (
-                        <div className="text-xxs mt-0.5 w-full px-0.5 text-center whitespace-nowrap overflow-hidden text-ellipsis">
-                            ai
-                        </div>
-                    )}
-                </div>
-            </Tooltip>
-        </div>
-    );
-});
-AIToggleWidget.displayName = "AIToggleWidget";
-
 const Widgets = memo(() => {
     const env = useWaveEnv<WidgetsEnv>();
     const fullConfig = useAtomValue(env.atoms.fullConfigAtom);
@@ -532,7 +481,6 @@ const Widgets = memo(() => {
                             {widgets?.map((data, idx) => (
                                 <Widget key={`widget-${idx}`} widget={data} mode={mode} env={env} />
                             ))}
-                            <AIToggleWidget mode={mode} env={env} />
                         </div>
                         <div className="flex-grow" />
                         <div className="grid grid-cols-2 gap-0 w-full">
@@ -574,7 +522,6 @@ const Widgets = memo(() => {
                         {widgets?.map((data, idx) => (
                             <Widget key={`widget-${idx}`} widget={data} mode={mode} env={env} />
                         ))}
-                        <AIToggleWidget mode={mode} env={env} />
                         <div className="flex-grow" />
                         {env.isDev() || featureWaveAppBuilder ? (
                             <div

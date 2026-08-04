@@ -1,7 +1,12 @@
 // Copyright 2025, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { formatFileSize } from "@/app/aipanel/ai-utils";
+function formatFileSize(bytes: number): string {
+    if (bytes >= 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+    if (bytes >= 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return bytes + " B";
+}
+
 import { Modal } from "@/app/modals/modal";
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { modalsModel } from "@/app/store/modalmodel";

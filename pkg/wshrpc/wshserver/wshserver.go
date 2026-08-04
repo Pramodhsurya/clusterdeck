@@ -21,9 +21,6 @@ import (
 	"time"
 
 	"github.com/skratchdot/open-golang/open"
-	"github.com/wavetermdev/waveterm/pkg/aiusechat"
-	"github.com/wavetermdev/waveterm/pkg/aiusechat/chatstore"
-	"github.com/wavetermdev/waveterm/pkg/aiusechat/uctypes"
 	"github.com/wavetermdev/waveterm/pkg/baseds"
 	"github.com/wavetermdev/waveterm/pkg/blockcontroller"
 	"github.com/wavetermdev/waveterm/pkg/blocklogger"
@@ -216,59 +213,6 @@ func (ws *WshServer) ClusterdeckConnectionsConfigPathCommand(ctx context.Context
 		return "", fmt.Errorf("error ensuring connections config: %w", err)
 	}
 	return path, nil
-}
-
-// ClusterdeckGitStatusCommand returns a map of absolute file path -> git status
-// ("modified" | "added") for the repo at rootDir on the given connection, for the
-// explorer's git decorations (change #6 G#).
-func (ws *WshServer) ClusterdeckGitStatusCommand(ctx context.Context, connName string, rootDir string) (map[string]string, error) {
-	return clusterdeck.GitStatus(ctx, connName, rootDir)
-}
-
-// ClusterdeckAddKubeConfigCommand stores an uploaded kubeconfig, registers every
-// context it defines into the central registry (kubeclusters.json), rebuilds the
-// merged kubeconfig, and returns the full registry so the UI can offer the new
-// clusters.
-func (ws *WshServer) ClusterdeckAddKubeConfigCommand(ctx context.Context, path string) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
-	clusters, err := clusterdeck.RegisterKubeConfig(path)
-	if err != nil {
-		return nil, err
-	}
-	return kubeClustersToRpc(clusters), nil
-}
-
-// ClusterdeckListKubeClustersCommand returns the registered Kubernetes clusters
-// for the k9s cluster picker.
-func (ws *WshServer) ClusterdeckListKubeClustersCommand(ctx context.Context) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
-	clusters, err := clusterdeck.ListRegisteredClusters()
-	if err != nil {
-		return nil, err
-	}
-	return kubeClustersToRpc(clusters), nil
-}
-
-// ClusterdeckRemoveKubeClusterCommand removes a registered cluster (by context)
-// from the registry and rebuilds the merged kubeconfig.
-func (ws *WshServer) ClusterdeckRemoveKubeClusterCommand(ctx context.Context, context string) error {
-	return clusterdeck.RemoveKubeCluster(context)
-}
-
-// kubeClustersToRpc maps registry entries to the RPC type, pointing every entry
-// at the merged kubeconfig (so k9s launched against it can :ctx-switch).
-func kubeClustersToRpc(clusters []clusterdeck.KubeCluster) []wshrpc.ClusterdeckKubeClusterInfo {
-	merged := clusterdeck.MergedKubeConfigPath()
-	rtn := make([]wshrpc.ClusterdeckKubeClusterInfo, 0, len(clusters))
-	for _, c := range clusters {
-		name := c.Cluster
-		if name == "" {
-			name = c.Name
-		}
-		if name == "" {
-			name = c.Context
-		}
-		rtn = append(rtn, wshrpc.ClusterdeckKubeClusterInfo{Name: name, KubeConfigPath: merged, Context: c.Context})
-	}
-	return rtn
 }
 
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {
@@ -670,11 +614,6 @@ func (ws *WshServer) GetFullConfigCommand(ctx context.Context) (wconfig.FullConf
 	return watcher.GetFullConfig(), nil
 }
 
-func (ws *WshServer) GetWaveAIModeConfigCommand(ctx context.Context) (wconfig.AIModeConfigUpdate, error) {
-	fullConfig := wconfig.GetWatcher().GetFullConfig()
-	resolvedConfigs := aiusechat.ComputeResolvedAIModeConfigs(fullConfig)
-	return wconfig.AIModeConfigUpdate{Configs: resolvedConfigs}, nil
-}
 
 func (ws *WshServer) ConnStatusCommand(ctx context.Context) ([]wshrpc.ConnStatus, error) {
 	rtn := conncontroller.GetAllConnStatus()
@@ -1359,63 +1298,12 @@ func (ws WshServer) SendTelemetryCommand(ctx context.Context) error {
 	return wcloud.SendAllTelemetry(wstore.GetClientId())
 }
 
-func (ws *WshServer) WaveAIEnableTelemetryCommand(ctx context.Context) error {
-	// Enable telemetry in config
-	meta := waveobj.MetaMapType{
-		wconfig.ConfigKey_TelemetryEnabled: true,
-	}
-	err := wconfig.SetBaseConfigValue(meta)
-	if err != nil {
-		return fmt.Errorf("error setting telemetry enabled: %w", err)
-	}
 
-	// Record the telemetry event
-	event := telemetrydata.MakeTEvent("waveai:enabletelemetry", telemetrydata.TEventProps{})
-	err = telemetry.RecordTEvent(ctx, event)
-	if err != nil {
-		log.Printf("error recording waveai:enabletelemetry event: %v", err)
-	}
 
-	// Immediately send telemetry to cloud
-	err = wcloud.SendAllTelemetry(wstore.GetClientId())
-	if err != nil {
-		log.Printf("error sending telemetry after enabling: %v", err)
-	}
 
-	return nil
-}
 
-func (ws *WshServer) GetWaveAIChatCommand(ctx context.Context, data wshrpc.CommandGetWaveAIChatData) (*uctypes.UIChat, error) {
-	aiChat := chatstore.DefaultChatStore.Get(data.ChatId)
-	if aiChat == nil {
-		return nil, nil
-	}
-	uiChat, err := aiusechat.ConvertAIChatToUIChat(aiChat)
-	if err != nil {
-		return nil, fmt.Errorf("error converting AI chat to UI chat: %w", err)
-	}
-	return uiChat, nil
-}
 
-func (ws *WshServer) GetWaveAIRateLimitCommand(ctx context.Context) (*uctypes.RateLimitInfo, error) {
-	return aiusechat.GetGlobalRateLimit(), nil
-}
 
-func (ws *WshServer) WaveAIToolApproveCommand(ctx context.Context, data wshrpc.CommandWaveAIToolApproveData) error {
-	return aiusechat.UpdateToolApproval(data.ToolCallId, data.Approval)
-}
-
-func (ws *WshServer) WaveAIGetToolDiffCommand(ctx context.Context, data wshrpc.CommandWaveAIGetToolDiffData) (*wshrpc.CommandWaveAIGetToolDiffRtnData, error) {
-	originalContent, modifiedContent, err := aiusechat.CreateWriteTextFileDiff(ctx, data.ChatId, data.ToolCallId)
-	if err != nil {
-		return nil, err
-	}
-
-	return &wshrpc.CommandWaveAIGetToolDiffRtnData{
-		OriginalContents64: base64.StdEncoding.EncodeToString(originalContent),
-		ModifiedContents64: base64.StdEncoding.EncodeToString(modifiedContent),
-	}, nil
-}
 
 var wshActivityRe = regexp.MustCompile(`^[a-z:#]+$`)
 

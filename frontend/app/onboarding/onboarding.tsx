@@ -61,9 +61,6 @@ const InitPage = ({
         if (!clientData?.tosagreed) {
             fireAndForget(() => services.ClientService.AgreeTos());
         }
-        if (telemetryEnabled) {
-            WorkspaceLayoutModel.getInstance().setAIPanelVisible(true);
-        }
         setPageName(telemetryEnabled ? "features" : "notelemetrystar");
     };
 

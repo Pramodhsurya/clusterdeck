@@ -7,6 +7,9 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
+    // VS Code style: pinned editor zone with a subtle bottom border to
+    // separate it from the explorer/terminal area below.
+    border-bottom: 0.5px solid var(--border-color);
 
     .cd-editor-tabs {
         display: flex;

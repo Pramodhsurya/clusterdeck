@@ -196,13 +196,17 @@ const HeaderEndIcons = React.memo(({ viewModel, nodeModel, blockId }: HeaderEndI
         );
     }
 
-    const closeDecl: IconButtonDecl = {
-        elemtype: "iconbutton",
-        icon: "xmark-large",
-        title: "Close",
-        click: () => uxCloseBlock(nodeModel.blockId),
-    };
-    endIconsElem.push(<IconButton key="close" decl={closeDecl} className="block-frame-default-close" />);
+    // Clusterdeck: suppress the close button on the cdeditor block so the
+    // editor stays pinned at the top of the layout (like VS Code's editor area).
+    if (viewModel?.viewType !== "cdeditor") {
+        const closeDecl: IconButtonDecl = {
+            elemtype: "iconbutton",
+            icon: "xmark-large",
+            title: "Close",
+            click: () => uxCloseBlock(nodeModel.blockId),
+        };
+        endIconsElem.push(<IconButton key="close" decl={closeDecl} className="block-frame-default-close" />);
+    }
 
     return <div className="block-frame-end-icons">{endIconsElem}</div>;
 });

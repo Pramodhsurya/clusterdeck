@@ -625,10 +625,10 @@ func StartLocalShellProc(logCtx context.Context, termSize waveobj.TermSize, cmdS
 		}
 	} else {
 		isShell = false
-		// Clusterdeck: cmd:login opts a "cmd" block into a login shell (e.g. the
-		// k9s/lazygit/htop app widgets), so it sees the same PATH a regular
-		// terminal would (Homebrew, asdf, etc. via .zprofile) instead of just the
-		// app process's own minimal launchd-provided PATH.
+		// Clusterdeck: cmd:login opts a "cmd" block into a login shell so it sees
+		// the same PATH a regular terminal would (Homebrew, asdf, etc. via
+		// .zprofile) instead of just the app process's own minimal launchd-provided
+		// PATH.
 		if cmdOpts.Login && shellType != shellutil.ShellType_pwsh {
 			shellOpts = append(shellOpts, "-l")
 		}

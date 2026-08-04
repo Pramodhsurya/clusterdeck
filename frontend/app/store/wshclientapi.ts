@@ -102,12 +102,6 @@ export class RpcApiType {
         return client.wshRpcCall("checkgoversion", null, opts);
     }
 
-    // command "clusterdeckaddkubeconfig" [call]
-    ClusterdeckAddKubeConfigCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<ClusterdeckKubeClusterInfo[]> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckaddkubeconfig", data, opts);
-        return client.wshRpcCall("clusterdeckaddkubeconfig", data, opts);
-    }
-
     // command "clusterdeckconnectionsconfigpath" [call]
     ClusterdeckConnectionsConfigPathCommand(client: WshClient, opts?: RpcOpts): Promise<string> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckconnectionsconfigpath", null, opts);
@@ -120,12 +114,6 @@ export class RpcApiType {
         return client.wshRpcCall("clusterdeckgitstatus", { args: [arg1, arg2] }, opts);
     }
 
-    // command "clusterdecklistkubeclusters" [call]
-    ClusterdeckListKubeClustersCommand(client: WshClient, opts?: RpcOpts): Promise<ClusterdeckKubeClusterInfo[]> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdecklistkubeclusters", null, opts);
-        return client.wshRpcCall("clusterdecklistkubeclusters", null, opts);
-    }
-
     // command "clusterdeckopenhome" [call]
     ClusterdeckOpenHomeCommand(client: WshClient, opts?: RpcOpts): Promise<string> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckopenhome", null, opts);
@@ -136,12 +124,6 @@ export class RpcApiType {
     ClusterdeckOpenTargetCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<string> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckopentarget", data, opts);
         return client.wshRpcCall("clusterdeckopentarget", data, opts);
-    }
-
-    // command "clusterdeckremovekubecluster" [call]
-    ClusterdeckRemoveKubeClusterCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<void> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "clusterdeckremovekubecluster", data, opts);
-        return client.wshRpcCall("clusterdeckremovekubecluster", data, opts);
     }
 
     // command "clusterdeckresetlayout" [call]
@@ -538,24 +520,6 @@ export class RpcApiType {
     GetVarCommand(client: WshClient, data: CommandVarData, opts?: RpcOpts): Promise<CommandVarResponseData> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "getvar", data, opts);
         return client.wshRpcCall("getvar", data, opts);
-    }
-
-    // command "getwaveaichat" [call]
-    GetWaveAIChatCommand(client: WshClient, data: CommandGetWaveAIChatData, opts?: RpcOpts): Promise<UIChat> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "getwaveaichat", data, opts);
-        return client.wshRpcCall("getwaveaichat", data, opts);
-    }
-
-    // command "getwaveaimodeconfig" [call]
-    GetWaveAIModeConfigCommand(client: WshClient, opts?: RpcOpts): Promise<AIModeConfigUpdate> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "getwaveaimodeconfig", null, opts);
-        return client.wshRpcCall("getwaveaimodeconfig", null, opts);
-    }
-
-    // command "getwaveairatelimit" [call]
-    GetWaveAIRateLimitCommand(client: WshClient, opts?: RpcOpts): Promise<RateLimitInfo> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "getwaveairatelimit", null, opts);
-        return client.wshRpcCall("getwaveairatelimit", null, opts);
     }
 
     // command "jobcmdexited" [call]
@@ -1030,30 +994,6 @@ export class RpcApiType {
     WaitForRouteCommand(client: WshClient, data: CommandWaitForRouteData, opts?: RpcOpts): Promise<boolean> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "waitforroute", data, opts);
         return client.wshRpcCall("waitforroute", data, opts);
-    }
-
-    // command "waveaiaddcontext" [call]
-    WaveAIAddContextCommand(client: WshClient, data: CommandWaveAIAddContextData, opts?: RpcOpts): Promise<void> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "waveaiaddcontext", data, opts);
-        return client.wshRpcCall("waveaiaddcontext", data, opts);
-    }
-
-    // command "waveaienabletelemetry" [call]
-    WaveAIEnableTelemetryCommand(client: WshClient, opts?: RpcOpts): Promise<void> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "waveaienabletelemetry", null, opts);
-        return client.wshRpcCall("waveaienabletelemetry", null, opts);
-    }
-
-    // command "waveaigettooldiff" [call]
-    WaveAIGetToolDiffCommand(client: WshClient, data: CommandWaveAIGetToolDiffData, opts?: RpcOpts): Promise<CommandWaveAIGetToolDiffRtnData> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "waveaigettooldiff", data, opts);
-        return client.wshRpcCall("waveaigettooldiff", data, opts);
-    }
-
-    // command "waveaitoolapprove" [call]
-    WaveAIToolApproveCommand(client: WshClient, data: CommandWaveAIToolApproveData, opts?: RpcOpts): Promise<void> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "waveaitoolapprove", data, opts);
-        return client.wshRpcCall("waveaitoolapprove", data, opts);
     }
 
     // command "wavefilereadstream" [call]
