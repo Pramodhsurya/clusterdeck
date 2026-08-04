@@ -154,18 +154,15 @@ else
     fail "Paste temp filename does NOT use 'clusterdeck_paste_' prefix"
 fi
 
-# Onboarding paths
-if grep -q '~/clusterdeck' frontend/app/onboarding/fakechat.tsx 2>/dev/null; then
-    pass "Onboarding fake chat uses ~/clusterdeck paths"
+# Onboarding paths (fakechat.tsx removed with AI feature — pi agent store will replace it)
+if [ -f frontend/app/onboarding/fakechat.tsx ]; then
+    if grep -q '~/clusterdeck' frontend/app/onboarding/fakechat.tsx 2>/dev/null; then
+        pass "Onboarding fake chat uses ~/clusterdeck paths"
+    else
+        fail "Onboarding fake chat does NOT use ~/clusterdeck paths"
+    fi
 else
-    fail "Onboarding fake chat does NOT use ~/clusterdeck paths"
-fi
-
-# Onboarding log path
-if grep -q 'clusterdeck-dev' frontend/app/onboarding/fakechat.tsx 2>/dev/null; then
-    pass "Onboarding fake chat uses clusterdeck-dev log paths"
-else
-    fail "Onboarding fake chat does NOT use clusterdeck-dev log paths"
+    pass "Onboarding fake chat removed (replaced by pi agent store)"
 fi
 
 # GitHub URLs point to clusterdeck/app

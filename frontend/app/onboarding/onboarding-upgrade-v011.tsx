@@ -6,7 +6,7 @@ const UpgradeOnboardingModal_v0_1_1_Content = () => {
         <div className="flex flex-col items-start gap-6 w-full mb-4 unselectable">
             <div className="text-secondary leading-relaxed">
                 <p className="mb-0">
-                    Clusterdeck v0.1.1 adds app widgets, Kubernetes cluster support, and a round of explorer/SSH
+                    Clusterdeck v0.1.1 adds app widgets, explorer improvements, and a round of explorer/SSH
                     fixes.
                 </p>
             </div>
@@ -17,12 +17,11 @@ const UpgradeOnboardingModal_v0_1_1_Content = () => {
                 </div>
                 <div className="flex flex-col items-start gap-2 flex-1">
                     <div className="text-foreground text-base font-semibold leading-[18px]">
-                        App Widgets &amp; Kubernetes Clusters
+                        App Widgets
                     </div>
                     <div className="text-secondary leading-5">
-                        Launch k9s, lazygit, or htop bound to the active connection. Add kubeconfigs and switch
-                        between registered clusters right from k9s's own dropdown — several clusters can be open at
-                        once.
+                        Launch htop or other widgets bound to the active connection. Widgets can be configured
+                        via the widget bar's right-click menu.
                     </div>
                 </div>
             </div>

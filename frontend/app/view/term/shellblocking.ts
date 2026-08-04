@@ -8,7 +8,7 @@ const ALWAYS_BLOCK = [
     // editors/pagers
     "vim", "nvim", "emacs", "nano", "less", "more", "man", "most", "view",
     // TUIs / tools
-    "htop", "top", "btop", "fzf", "ranger", "mc", "nnn", "k9s", "nmtui", "alsamixer",
+    "htop", "top", "btop", "fzf", "ranger", "mc", "nnn", "nmtui", "alsamixer",
     "tig", "gdb", "lldb",
     // mail/irc
     "mutt", "neomutt", "alpine", "weechat", "irssi",

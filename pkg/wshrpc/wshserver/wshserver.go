@@ -21,9 +21,6 @@ import (
 	"time"
 
 	"github.com/skratchdot/open-golang/open"
-	"github.com/wavetermdev/waveterm/pkg/aiusechat"
-	"github.com/wavetermdev/waveterm/pkg/aiusechat/chatstore"
-	"github.com/wavetermdev/waveterm/pkg/aiusechat/uctypes"
 	"github.com/wavetermdev/waveterm/pkg/baseds"
 	"github.com/wavetermdev/waveterm/pkg/blockcontroller"
 	"github.com/wavetermdev/waveterm/pkg/blocklogger"
@@ -216,59 +213,6 @@ func (ws *WshServer) ClusterdeckConnectionsConfigPathCommand(ctx context.Context
 		return "", fmt.Errorf("error ensuring connections config: %w", err)
 	}
 	return path, nil
-}
-
-// ClusterdeckGitStatusCommand returns a map of absolute file path -> git status
-// ("modified" | "added") for the repo at rootDir on the given connection, for the
-// explorer's git decorations (change #6 G#).
-func (ws *WshServer) ClusterdeckGitStatusCommand(ctx context.Context, connName string, rootDir string) (map[string]string, error) {
-	return clusterdeck.GitStatus(ctx, connName, rootDir)
-}
-
-// ClusterdeckAddKubeConfigCommand stores an uploaded kubeconfig, registers every
-// context it defines into the central registry (kubeclusters.json), rebuilds the
-// merged kubeconfig, and returns the full registry so the UI can offer the new
-// clusters.
-func (ws *WshServer) ClusterdeckAddKubeConfigCommand(ctx context.Context, path string) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
-	clusters, err := clusterdeck.RegisterKubeConfig(path)
-	if err != nil {
-		return nil, err
-	}
-	return kubeClustersToRpc(clusters), nil
-}
-
-// ClusterdeckListKubeClustersCommand returns the registered Kubernetes clusters
-// for the k9s cluster picker.
-func (ws *WshServer) ClusterdeckListKubeClustersCommand(ctx context.Context) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
-	clusters, err := clusterdeck.ListRegisteredClusters()
-	if err != nil {
-		return nil, err
-	}
-	return kubeClustersToRpc(clusters), nil
-}
-
-// ClusterdeckRemoveKubeClusterCommand removes a registered cluster (by context)
-// from the registry and rebuilds the merged kubeconfig.
-func (ws *WshServer) ClusterdeckRemoveKubeClusterCommand(ctx context.Context, context string) error {
-	return clusterdeck.RemoveKubeCluster(context)
-}
-
-// kubeClustersToRpc maps registry entries to the RPC type, pointing every entry
-// at the merged kubeconfig (so k9s launched against it can :ctx-switch).
-func kubeClustersToRpc(clusters []clusterdeck.KubeCluster) []wshrpc.ClusterdeckKubeClusterInfo {
-	merged := clusterdeck.MergedKubeConfigPath()
-	rtn := make([]wshrpc.ClusterdeckKubeClusterInfo, 0, len(clusters))
-	for _, c := range clusters {
-		name := c.Cluster
-		if name == "" {
-			name = c.Name
-		}
-		if name == "" {
-			name = c.Context
-		}
-		rtn = append(rtn, wshrpc.ClusterdeckKubeClusterInfo{Name: name, KubeConfigPath: merged, Context: c.Context})
-	}
-	return rtn
 }
 
 func (ws *WshServer) UpdateWorkspaceTabIdsCommand(ctx context.Context, workspaceId string, tabIds []string) error {
@@ -1397,13 +1341,9 @@ func (ws *WshServer) GetWaveAIChatCommand(ctx context.Context, data wshrpc.Comma
 	return uiChat, nil
 }
 
-func (ws *WshServer) GetWaveAIRateLimitCommand(ctx context.Context) (*uctypes.RateLimitInfo, error) {
-	return aiusechat.GetGlobalRateLimit(), nil
-}
 
-func (ws *WshServer) WaveAIToolApproveCommand(ctx context.Context, data wshrpc.CommandWaveAIToolApproveData) error {
-	return aiusechat.UpdateToolApproval(data.ToolCallId, data.Approval)
-}
+
+
 
 func (ws *WshServer) WaveAIGetToolDiffCommand(ctx context.Context, data wshrpc.CommandWaveAIGetToolDiffData) (*wshrpc.CommandWaveAIGetToolDiffRtnData, error) {
 	originalContent, modifiedContent, err := aiusechat.CreateWriteTextFileDiff(ctx, data.ChatId, data.ToolCallId)

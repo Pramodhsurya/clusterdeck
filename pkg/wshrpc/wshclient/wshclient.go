@@ -6,7 +6,6 @@
 package wshclient
 
 import (
-	"github.com/wavetermdev/waveterm/pkg/aiusechat/uctypes"
 	"github.com/wavetermdev/waveterm/pkg/baseds"
 	"github.com/wavetermdev/waveterm/pkg/telemetry/telemetrydata"
 	"github.com/wavetermdev/waveterm/pkg/vdom"
@@ -101,12 +100,6 @@ func CheckGoVersionCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (*wshrpc.Com
 	return resp, err
 }
 
-// command "clusterdeckaddkubeconfig", wshserver.ClusterdeckAddKubeConfigCommand
-func ClusterdeckAddKubeConfigCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
-	resp, err := sendRpcRequestCallHelper[[]wshrpc.ClusterdeckKubeClusterInfo](w, "clusterdeckaddkubeconfig", data, opts)
-	return resp, err
-}
-
 // command "clusterdeckconnectionsconfigpath", wshserver.ClusterdeckConnectionsConfigPathCommand
 func ClusterdeckConnectionsConfigPathCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (string, error) {
 	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckconnectionsconfigpath", nil, opts)
@@ -116,12 +109,6 @@ func ClusterdeckConnectionsConfigPathCommand(w *wshutil.WshRpc, opts *wshrpc.Rpc
 // command "clusterdeckgitstatus", wshserver.ClusterdeckGitStatusCommand
 func ClusterdeckGitStatusCommand(w *wshutil.WshRpc, arg1 string, arg2 string, opts *wshrpc.RpcOpts) (map[string]string, error) {
 	resp, err := sendRpcRequestCallHelper[map[string]string](w, "clusterdeckgitstatus", wshrpc.MultiArg{Args: []any{arg1, arg2}}, opts)
-	return resp, err
-}
-
-// command "clusterdecklistkubeclusters", wshserver.ClusterdeckListKubeClustersCommand
-func ClusterdeckListKubeClustersCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) ([]wshrpc.ClusterdeckKubeClusterInfo, error) {
-	resp, err := sendRpcRequestCallHelper[[]wshrpc.ClusterdeckKubeClusterInfo](w, "clusterdecklistkubeclusters", nil, opts)
 	return resp, err
 }
 
@@ -135,12 +122,6 @@ func ClusterdeckOpenHomeCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (string
 func ClusterdeckOpenTargetCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) (string, error) {
 	resp, err := sendRpcRequestCallHelper[string](w, "clusterdeckopentarget", data, opts)
 	return resp, err
-}
-
-// command "clusterdeckremovekubecluster", wshserver.ClusterdeckRemoveKubeClusterCommand
-func ClusterdeckRemoveKubeClusterCommand(w *wshutil.WshRpc, data string, opts *wshrpc.RpcOpts) error {
-	_, err := sendRpcRequestCallHelper[any](w, "clusterdeckremovekubecluster", data, opts)
-	return err
 }
 
 // command "clusterdeckresetlayout", wshserver.ClusterdeckResetLayoutCommand
@@ -538,23 +519,11 @@ func GetVarCommand(w *wshutil.WshRpc, data wshrpc.CommandVarData, opts *wshrpc.R
 	return resp, err
 }
 
-// command "getwaveaichat", wshserver.GetWaveAIChatCommand
-func GetWaveAIChatCommand(w *wshutil.WshRpc, data wshrpc.CommandGetWaveAIChatData, opts *wshrpc.RpcOpts) (*uctypes.UIChat, error) {
-	resp, err := sendRpcRequestCallHelper[*uctypes.UIChat](w, "getwaveaichat", data, opts)
-	return resp, err
-}
 
-// command "getwaveaimodeconfig", wshserver.GetWaveAIModeConfigCommand
-func GetWaveAIModeConfigCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (wconfig.AIModeConfigUpdate, error) {
-	resp, err := sendRpcRequestCallHelper[wconfig.AIModeConfigUpdate](w, "getwaveaimodeconfig", nil, opts)
-	return resp, err
-}
 
-// command "getwaveairatelimit", wshserver.GetWaveAIRateLimitCommand
-func GetWaveAIRateLimitCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) (*uctypes.RateLimitInfo, error) {
-	resp, err := sendRpcRequestCallHelper[*uctypes.RateLimitInfo](w, "getwaveairatelimit", nil, opts)
-	return resp, err
-}
+
+
+
 
 // command "jobcmdexited", wshserver.JobCmdExitedCommand
 func JobCmdExitedCommand(w *wshutil.WshRpc, data wshrpc.CommandJobCmdExitedData, opts *wshrpc.RpcOpts) error {
@@ -1024,29 +993,13 @@ func WaitForRouteCommand(w *wshutil.WshRpc, data wshrpc.CommandWaitForRouteData,
 	return resp, err
 }
 
-// command "waveaiaddcontext", wshserver.WaveAIAddContextCommand
-func WaveAIAddContextCommand(w *wshutil.WshRpc, data wshrpc.CommandWaveAIAddContextData, opts *wshrpc.RpcOpts) error {
-	_, err := sendRpcRequestCallHelper[any](w, "waveaiaddcontext", data, opts)
-	return err
-}
 
-// command "waveaienabletelemetry", wshserver.WaveAIEnableTelemetryCommand
-func WaveAIEnableTelemetryCommand(w *wshutil.WshRpc, opts *wshrpc.RpcOpts) error {
-	_, err := sendRpcRequestCallHelper[any](w, "waveaienabletelemetry", nil, opts)
-	return err
-}
 
-// command "waveaigettooldiff", wshserver.WaveAIGetToolDiffCommand
-func WaveAIGetToolDiffCommand(w *wshutil.WshRpc, data wshrpc.CommandWaveAIGetToolDiffData, opts *wshrpc.RpcOpts) (*wshrpc.CommandWaveAIGetToolDiffRtnData, error) {
-	resp, err := sendRpcRequestCallHelper[*wshrpc.CommandWaveAIGetToolDiffRtnData](w, "waveaigettooldiff", data, opts)
-	return resp, err
-}
 
-// command "waveaitoolapprove", wshserver.WaveAIToolApproveCommand
-func WaveAIToolApproveCommand(w *wshutil.WshRpc, data wshrpc.CommandWaveAIToolApproveData, opts *wshrpc.RpcOpts) error {
-	_, err := sendRpcRequestCallHelper[any](w, "waveaitoolapprove", data, opts)
-	return err
-}
+
+
+
+
 
 // command "wavefilereadstream", wshserver.WaveFileReadStreamCommand
 func WaveFileReadStreamCommand(w *wshutil.WshRpc, data wshrpc.CommandWaveFileReadStreamData, opts *wshrpc.RpcOpts) (*wshrpc.WaveFileInfo, error) {
