@@ -1,6 +1,11 @@
 # Clusterdeck — Design Considerations
 
-A VS Code–style terminal workspace for working across many SSH clusters in a single window. Working title: **Clusterdeck**. macOS-first.
+A VS Code–style terminal workspace for working across many SSH clusters in a single window. **Clusterdeck** is the final name (no longer a working title). macOS-first.
+
+> **Status:** this document is the *design intent*. The post-fork reality
+> lives in [`clusterdeck-building-on-wave.md`](./clusterdeck-building-on-wave.md)
+> and the changelog at [`../../CHANGES.md`](../../CHANGES.md). Where they
+> diverge, the changelog wins.
 
 ---
 
