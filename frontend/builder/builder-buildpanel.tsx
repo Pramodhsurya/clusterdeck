@@ -1,7 +1,6 @@
 // Copyright 2025, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// WaveAIModel import removed with AI panel feature
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import { BuilderAppPanelModel } from "@/builder/store/builder-apppanel-model";
@@ -74,10 +73,6 @@ const BuilderBuildPanel = memo(() => {
         BuilderAppPanelModel.getInstance().restartBuilder();
     }, []);
 
-    const handleSendToAI = useCallback(() => {
-        console.log("AI features removed — pi-agent integration coming soon");
-    }, [model]);
-
     const filteredLines = showDebug
         ? outputLines
         : outputLines.filter((line) => !line.startsWith("[debug]") && line.trim().length > 0);
@@ -96,12 +91,6 @@ const BuilderBuildPanel = memo(() => {
                         />
                         Debug
                     </label>
-                    <button
-                        className="px-3 py-1 text-sm font-medium rounded transition-colors bg-accent/80 text-white hover:bg-accent cursor-pointer"
-                        onClick={handleSendToAI}
-                    >
-                        Send to pi-agent (soon)
-                    </button>
                     <button
                         className="px-3 py-1 text-sm font-medium rounded transition-colors bg-accent/80 text-white hover:bg-accent cursor-pointer"
                         onClick={handleRestart}

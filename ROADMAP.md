@@ -18,29 +18,7 @@ identity have been **removed** rather than kept-around-in-a-disabled-state:
 - ❌ `k9s` / `lazygit` / `htop` app widgets (the `tsunami` widget launcher
   that backed them).
 
-Both removals happened in v0.1.3. The replacement for the AI panel is the
-`pi-agent` side panel and widget-rail button — see "Coding agent" below.
-
-## Coding agent
-
-### pi-agent (auto-install + auto-update)
-
-- ✅ `pi-agent` widget-rail button auto-installs
-  `@earendil-works/pi-coding-agent` (via `npm install -g`) on first click
-  if missing.
-- ✅ On every widget-rail click, the IPC bridge checks the npm registry
-  for the latest version and runs `npm install -g …@latest` if newer
-  (no-op when current, so the per-click cost is one `npm view` query).
-- ✅ Side-panel controls for **Install pi** / **Update to vX.Y.Z** /
-  **Uninstall** with in-progress feedback and error surfacing.
-- ✅ `pi` is launched via `controller: "cmd"` so it owns the block — when
-  pi exits, the block stays open showing the exit code.
-- ✅ `cmd:cwd` is set to the workspace's `clusterdeck:rootdir` so pi
-  sees the project.
-- 🔷 Streaming pi output to the panel rather than only the terminal block.
-- 🔷 Keyboard shortcut (⌘⇧P) to open pi on the active workspace.
-- 🔷 Per-project `.pi/` config (auth, model) that travels with the workspace.
-- 🤞 pi-agent multi-agent: spawn separate `pi` processes per connection.
+Both removals happened in v0.1.3.
 
 ## IDE layout
 
@@ -108,7 +86,8 @@ load-bearing for the shell + editor + explorer experience:
 
 Clusterdeck will **not** add:
 
-- ❌ A second AI assistant beyond `pi-agent` (use the npm ecosystem).
+- ❌ A built-in AI assistant (use the npm ecosystem to install whatever coding
+  agent you prefer).
 - ❌ A plugin marketplace (Wave's app builder is preserved but no
   third-party store is planned).
 - ❌ Mobile clients (macOS-first; Linux/Windows are stretch).

@@ -38,11 +38,6 @@ A mockup per feature (animated versions in
   switching or closing a file flushes any pending edit to disk before it leaves scope.
 - **Per-connection layout** — the explorer/editor/terminal arrangement persists per
   connection and restores when you switch back.
-- **pi-agent integration** — the widget-rail pi-agent button auto-installs
-  `@earendil-works/pi-coding-agent` if missing, auto-updates to the latest
-  version on every click, and opens a `pi` terminal bound to the active
-  workspace's project root. The side panel exposes install/update/uninstall
-  controls.
 
 It keeps Wave's durable SSH sessions, `wsh` command system, connection controller,
 Monaco editor, terminal blocks, secret storage, and themes intact.

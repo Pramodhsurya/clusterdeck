@@ -512,47 +512,6 @@ The post-merge housekeeping pass.
   endpoints" paragraph from `NOTICE` — it duplicated the inline comments
   already in `pkg/aiusechat/uctypes/uctypes.go` and `pkg/wcloud/wcloud.go`.
 
-### pi-agent install/update wiring (2026-08-05) — widget-rail button auto-installs/updates pi
-
-PR #33. The widget-rail `pi-agent` button is now wired to guarantee a working
-`pi` terminal for the current workspace project.
-
-- **Go backend — `pkg/piagent/piagent.go`.** A new tested package exposing
-  `GetStatus`, `Install`, `Uninstall`, `Update`. `Status.Installed` +
-  `Status.CurrentVersion` + `Status.LatestVersion` + `Status.UpdateAvailable`
-  with JSON tags matching the TypeScript bridge. `compareVersions` does a
-  three-part numeric semver compare ignoring pre-release/build tags so
-  `0.84.0-rc1` and `0.84.0` don't trigger an upgrade prompt (npm treats
-  `latest` as stable). `pkg/piagent/piagent_test.go` covers `compareVersions`
-  (10 cases) and `extractJSONStringValue` (5 cases).
-- **Electron IPC bridge — `emain/emain-piagent.ts`.** Four `ipcMain.handle`
-  registrations: `piagent-get-status`, `piagent-install`, `piagent-uninstall`,
-  `piagent-update`. install/uninstall/update share a lock so a rapid
-  double-click can't spawn two npm processes (mirrors `configureAutoUpdater`).
-  npm is resolved via `which npm` once and cached. `preload.ts` exposes
-  `getPiAgentStatus` / `installPiAgent` / `uninstallPiAgent` /
-  `updatePiAgent` on the context bridge; `custom.d.ts` declares the
-  `PiAgentStatus` type and the four method signatures.
-- **Side panel UI — `piagentpanel.tsx`.** The placeholder panel is now a
-  real status UI: shows `installed vX.Y.Z` + `latest vA.B.C` + an "update
-  available" badge when applicable, with **Install pi** /
-  **Update to vX.Y.Z** / **Uninstall** buttons. Busy states + error messages
-  are surfaced inline.
-- **Widget-rail click.** `openOrFocusPiAgent()` runs `ensurePiAgentInstalled()`
-  before opening the terminal block. The helper calls `getPiAgentStatus`; if
-  `installed` is false it calls `installPiAgent`; if `updateavailable` is
-  true it calls `updatePiAgent`. The block is launched via
-  `controller: "cmd"` (not `shell`) so `pi` owns the block — when `pi` exits,
-  the block stays open showing its exit code. `cmd:cwd` is the workspace's
-  `clusterdeck:rootdir` so `pi` sees the project. The widget-rail click also
-  sets `piPanelVisible = true` so the install/update/uninstall controls are
-  reachable. Existing-terminal de-dup via a `piAgentBlockEnsures` map keyed
-  by `${tabId}:piagent` (same pattern as `openOrFocusZoneBlock`).
-- **Cleanup of dangling reference.** Drops `getApi().setPiAgentOpen(visible)`
-  from `workspace-layout-model.ts` — a TS error that was left over from the
-  AI-panel removal. The atom and meta-key wiring (`panelVisibleAtom`,
-  `cdpi:panelopen`) is preserved.
-
 ### feat/copilot-merge-back (2026-08-05) — 5 stale agent branches merged
 
 Five stale `copilot-swe-agent` feature branches were merged into `main` after

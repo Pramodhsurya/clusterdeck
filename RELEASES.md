@@ -12,9 +12,7 @@ The 0.1.x line is the first public Clusterdeck line. It is built on the Wave Ter
   files, never a side panel. (`4da2bee2b`)
 - **AI subsystem removed.** Wave's AI chat (~21k lines including
   `pkg/aiusechat/`, the `waveai.json` schema, the `usechat`/`ai-mode` view,
-  and the in-app AI toggle IPC) is deleted. A placeholder `pi-agent`
-  panel replaces the right-side AI panel; a `pi-agent` button is added to
-  the widget rail.
+  and the in-app AI toggle IPC) is deleted.
 - **k9s / lazygit / htop app widgets removed.** The `tsunami` widget launcher
   that backed them is removed from the widget rail and `widgets.json`.
 - **Stale editor content fix.** Switching files in the editor block no longer

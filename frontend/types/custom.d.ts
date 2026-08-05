@@ -139,12 +139,6 @@ declare global {
         getPathForFile: (file: File) => string; // webUtils.getPathForFile
         saveTextFile: (fileName: string, content: string) => Promise<boolean>; // save-text-file
         setIsActive: () => Promise<void>; // set-is-active
-        // pi-agent — Clusterdeck-managed install of the pi CLI.
-        // See emain/emain-piagent.ts.
-        getPiAgentStatus: () => Promise<PiAgentStatus>; // piagent-get-status
-        installPiAgent: () => Promise<{ ok: boolean; error?: string }>; // piagent-install
-        uninstallPiAgent: () => Promise<{ ok: boolean; error?: string }>; // piagent-uninstall
-        updatePiAgent: () => Promise<{ ok: boolean; error?: string }>; // piagent-update
     };
 
     type ElectronContextMenuItem = {
@@ -376,18 +370,6 @@ declare global {
     }
 
     type UpdaterStatus = "up-to-date" | "checking" | "downloading" | "ready" | "error" | "installing";
-
-    // pi-agent status reported by the Electron main process. Field names
-    // match what emain-piagent.ts returns (lowercase JSON). When
-    // `installed` is false, `currentversion` is empty. When the npm
-    // registry query fails, `latestversion` is empty and
-    // `updateavailable` is false (treat as "unknown, don't prompt").
-    type PiAgentStatus = {
-        installed: boolean;
-        currentversion: string;
-        latestversion: string;
-        updateavailable: boolean;
-    };
 
     // jotai doesn't export this type :/
     type Loadable<T> = { state: "loading" } | { state: "hasData"; data: T } | { state: "hasError"; error: unknown };

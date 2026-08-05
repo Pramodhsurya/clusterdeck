@@ -83,7 +83,7 @@ const ErrorStateView = memo(({ errorMsg }: { errorMsg: string }) => {
                     </div>
                     <div className="flex gap-3 mt-2 justify-center">
                         <span className="px-4 py-2 text-sm text-secondary">
-                            AI features removed — pi-agent integration coming soon
+                            AI features removed
                         </span>
                     </div>
                 </div>

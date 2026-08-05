@@ -2,7 +2,6 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { ConnectionsRail } from "@/app/clusterdeck/connectionsrail";
-import { PiAgentPanel } from "@/app/clusterdeck/piagentpanel";
 import { ErrorBoundary } from "@/app/element/errorboundary";
 import { CenteredDiv } from "@/app/element/quickelems";
 import { ModalsRenderer } from "@/app/modals/modalsrenderer";
@@ -46,34 +45,26 @@ const WorkspaceElem = memo(() => {
     const ws = useAtomValue(atoms.workspace);
     const tabBarPosition = useAtomValue(getSettingsKeyAtom("app:tabbar")) ?? "top";
     const showLeftTabBar = tabBarPosition === "left";
-    const piPanelVisible = useAtomValue(workspaceLayoutModel.panelVisibleAtom);
     const widgetsSidebarVisible = useAtomValue(workspaceLayoutModel.widgetsSidebarVisibleAtom);
     const windowWidth = window.innerWidth;
     const leftGroupInitialPct = workspaceLayoutModel.getLeftGroupInitialPercentage(windowWidth, showLeftTabBar);
     const innerVTabInitialPct = workspaceLayoutModel.getInnerVTabInitialPercentage(windowWidth, showLeftTabBar);
-    const innerPiPanelInitialPct = workspaceLayoutModel.getInnerPiPanelInitialPercentage(windowWidth, showLeftTabBar);
     const outerPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
     const innerPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
-    const piPanelRef = useRef<ImperativePanelHandle>(null);
     const vtabPanelRef = useRef<ImperativePanelHandle>(null);
     const panelContainerRef = useRef<HTMLDivElement>(null);
-    const piPanelWrapperRef = useRef<HTMLDivElement>(null);
     const vtabPanelWrapperRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         if (
-            piPanelRef.current &&
             outerPanelGroupRef.current &&
             innerPanelGroupRef.current &&
-            panelContainerRef.current &&
-            piPanelWrapperRef.current
+            panelContainerRef.current
         ) {
             workspaceLayoutModel.registerRefs(
-                piPanelRef.current,
                 outerPanelGroupRef.current,
                 innerPanelGroupRef.current,
                 panelContainerRef.current,
-                piPanelWrapperRef.current,
                 vtabPanelRef.current ?? undefined,
                 vtabPanelWrapperRef.current ?? undefined,
                 showLeftTabBar
@@ -96,9 +87,8 @@ const WorkspaceElem = memo(() => {
         return () => window.removeEventListener("focus", handleFocus);
     }, []);
 
-    const innerHandleVisible = showLeftTabBar && piPanelVisible;
-    const innerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${innerHandleVisible ? "w-0.5" : "w-0 pointer-events-none"}`;
-    const outerHandleVisible = showLeftTabBar || piPanelVisible;
+    const innerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${showLeftTabBar ? "w-0.5" : "w-0 pointer-events-none"}`;
+    const outerHandleVisible = showLeftTabBar;
     const outerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${outerHandleVisible ? "w-0.5" : "w-0 pointer-events-none"}`;
 
     return (
@@ -130,21 +120,8 @@ const WorkspaceElem = memo(() => {
                                         {showLeftTabBar && <VTabBar workspace={ws} />}
                                     </div>
                                 </Panel>
+                                {/* pi-agent panel removed — inner panel group now only contains vtab */}
                                 <PanelResizeHandle className={innerHandleClass} />
-                                <Panel
-                                    ref={piPanelRef}
-                                    collapsible
-                                    defaultSize={innerPiPanelInitialPct}
-                                    order={1}
-                                    className="overflow-hidden"
-                                >
-                                    <div
-                                        ref={piPanelWrapperRef}
-                                        className={`w-full h-full pr-0.5 ${piPanelVisible ? "" : "opacity-0"}`}
-                                    >
-                                        {tabId !== "" && <PiAgentPanel roundTopLeft={showLeftTabBar} />}
-                                    </div>
-                                </Panel>
                             </PanelGroup>
                         </Panel>
                         <PanelResizeHandle className={outerHandleClass} />
