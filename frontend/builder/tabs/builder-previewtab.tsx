@@ -15,8 +15,7 @@ const EmptyStateView = memo(() => {
                 <div className="flex flex-col gap-3">
                     <h2 className="text-2xl font-semibold text-primary">No App to Preview</h2>
                     <p className="text-base text-secondary leading-relaxed">
-                        Get started by using the AI chat interface on the left to create your WaveApp. Describe what you
-                        want to build, and the AI will help you generate the code.
+                        Create an <span className="font-mono">app.go</span> file to start building your WaveApp.
                     </p>
                 </div>
                 <div className="text-base text-secondary mt-2">
@@ -83,7 +82,7 @@ const ErrorStateView = memo(({ errorMsg }: { errorMsg: string }) => {
                     </div>
                     <div className="flex gap-3 mt-2 justify-center">
                         <span className="px-4 py-2 text-sm text-secondary">
-                            AI features removed
+                            Fix the reported error, then rebuild your app.
                         </span>
                     </div>
                 </div>

@@ -14,13 +14,7 @@ import { atoms, getSettingsKeyAtom } from "@/store/global";
 import { isMacOS } from "@/util/platformutil";
 import { useAtomValue } from "jotai";
 import { memo, useEffect, useRef } from "react";
-import {
-    ImperativePanelGroupHandle,
-    ImperativePanelHandle,
-    Panel,
-    PanelGroup,
-    PanelResizeHandle,
-} from "react-resizable-panels";
+import { ImperativePanelGroupHandle, Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 
 const MacOSTabBarSpacer = memo(() => {
     return (
@@ -46,40 +40,27 @@ const WorkspaceElem = memo(() => {
     const tabBarPosition = useAtomValue(getSettingsKeyAtom("app:tabbar")) ?? "top";
     const showLeftTabBar = tabBarPosition === "left";
     const widgetsSidebarVisible = useAtomValue(workspaceLayoutModel.widgetsSidebarVisibleAtom);
-    const windowWidth = window.innerWidth;
-    const leftGroupInitialPct = workspaceLayoutModel.getLeftGroupInitialPercentage(windowWidth, showLeftTabBar);
-    const innerVTabInitialPct = workspaceLayoutModel.getInnerVTabInitialPercentage(windowWidth, showLeftTabBar);
-    const outerPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
-    const innerPanelGroupRef = useRef<ImperativePanelGroupHandle>(null);
-    const vtabPanelRef = useRef<ImperativePanelHandle>(null);
-    const panelContainerRef = useRef<HTMLDivElement>(null);
-    const vtabPanelWrapperRef = useRef<HTMLDivElement>(null);
+    const vtabInitialPct = workspaceLayoutModel.getVTabInitialPercentage(window.innerWidth, showLeftTabBar, ws.oid);
+    const panelGroupRef = useRef<ImperativePanelGroupHandle>(null);
+    const panelGroupContainerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
-        if (
-            outerPanelGroupRef.current &&
-            innerPanelGroupRef.current &&
-            panelContainerRef.current
-        ) {
+        if (panelGroupRef.current && panelGroupContainerRef.current) {
             workspaceLayoutModel.registerRefs(
-                outerPanelGroupRef.current,
-                innerPanelGroupRef.current,
-                panelContainerRef.current,
-                vtabPanelRef.current ?? undefined,
-                vtabPanelWrapperRef.current ?? undefined,
-                showLeftTabBar
+                panelGroupRef.current,
+                panelGroupContainerRef.current,
+                showLeftTabBar,
+                ws.oid
             );
         }
-    }, []);
+    }, [showLeftTabBar, ws.oid]);
 
     useEffect(() => {
-        window.addEventListener("resize", workspaceLayoutModel.handleWindowResize);
-        return () => window.removeEventListener("resize", workspaceLayoutModel.handleWindowResize);
+        if (!panelGroupContainerRef.current) return;
+        const resizeObserver = new ResizeObserver(workspaceLayoutModel.handleContainerResize);
+        resizeObserver.observe(panelGroupContainerRef.current);
+        return () => resizeObserver.disconnect();
     }, []);
-
-    useEffect(() => {
-        workspaceLayoutModel.setShowLeftTabBar(showLeftTabBar);
-    }, [showLeftTabBar]);
 
     useEffect(() => {
         const handleFocus = () => workspaceLayoutModel.syncVTabWidthFromMeta();
@@ -87,57 +68,61 @@ const WorkspaceElem = memo(() => {
         return () => window.removeEventListener("focus", handleFocus);
     }, []);
 
-    const innerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${showLeftTabBar ? "w-0.5" : "w-0 pointer-events-none"}`;
-    const outerHandleVisible = showLeftTabBar;
-    const outerHandleClass = `bg-transparent hover:bg-zinc-500/20 transition-colors ${outerHandleVisible ? "w-0.5" : "w-0 pointer-events-none"}`;
-
     return (
         <div className="flex flex-col w-full flex-grow overflow-hidden">
             {!(showLeftTabBar && isMacOS()) && <TabBar key={ws.oid} workspace={ws} noTabs={showLeftTabBar} />}
             {showLeftTabBar && isMacOS() && <MacOSTabBarSpacer />}
-            <div ref={panelContainerRef} className="flex flex-row flex-grow overflow-hidden">
+            <div className="flex flex-row flex-grow overflow-hidden">
                 <ConnectionsRail />
-                <ErrorBoundary key={tabId}>
+                <div ref={panelGroupContainerRef} className="flex flex-1 min-w-0 overflow-hidden">
                     <PanelGroup
                         direction="horizontal"
-                        onLayout={workspaceLayoutModel.handleOuterPanelLayout}
-                        ref={outerPanelGroupRef}
+                        onLayout={(sizes) => workspaceLayoutModel.handlePanelLayout(sizes, ws.oid)}
+                        ref={panelGroupRef}
                     >
-                        <Panel order={0} defaultSize={leftGroupInitialPct} className="overflow-hidden">
-                            <PanelGroup
-                                direction="horizontal"
-                                onLayout={workspaceLayoutModel.handleInnerPanelLayout}
-                                ref={innerPanelGroupRef}
-                            >
+                        {showLeftTabBar && (
+                            <>
                                 <Panel
-                                    ref={vtabPanelRef}
-                                    collapsible
-                                    defaultSize={innerVTabInitialPct}
+                                    id="vtab-panel"
                                     order={0}
+                                    defaultSize={vtabInitialPct}
+                                    minSize={0}
+                                    maxSize={100}
                                     className="overflow-hidden"
                                 >
-                                    <div ref={vtabPanelWrapperRef} className="w-full h-full">
-                                        {showLeftTabBar && <VTabBar workspace={ws} />}
+                                    <div className="w-full h-full">
+                                        <VTabBar workspace={ws} />
                                     </div>
                                 </Panel>
-                                {/* pi-agent panel removed — inner panel group now only contains vtab */}
-                                <PanelResizeHandle className={innerHandleClass} />
-                            </PanelGroup>
-                        </Panel>
-                        <PanelResizeHandle className={outerHandleClass} />
-                        <Panel order={1} defaultSize={100 - leftGroupInitialPct}>
-                            {tabId === "" ? (
-                                <CenteredDiv>No Active Tab</CenteredDiv>
-                            ) : (
-                                <div className="flex flex-row h-full">
-                                    <TabContent key={tabId} tabId={tabId} noTopPadding={showLeftTabBar && isMacOS()} />
-                                    {widgetsSidebarVisible && <Widgets />}
-                                </div>
-                            )}
+                                <PanelResizeHandle
+                                    id="vtab-resize-handle"
+                                    className="w-0.5 bg-transparent hover:bg-zinc-500/20 transition-colors"
+                                />
+                            </>
+                        )}
+                        <Panel
+                            id="workspace-content-panel"
+                            order={showLeftTabBar ? 1 : 0}
+                            defaultSize={100 - vtabInitialPct}
+                        >
+                            <ErrorBoundary key={tabId}>
+                                {tabId === "" ? (
+                                    <CenteredDiv>No Active Tab</CenteredDiv>
+                                ) : (
+                                    <div className="flex flex-row h-full">
+                                        <TabContent
+                                            key={tabId}
+                                            tabId={tabId}
+                                            noTopPadding={showLeftTabBar && isMacOS()}
+                                        />
+                                        {widgetsSidebarVisible && <Widgets />}
+                                    </div>
+                                )}
+                                <ModalsRenderer />
+                            </ErrorBoundary>
                         </Panel>
                     </PanelGroup>
-                    <ModalsRenderer />
-                </ErrorBoundary>
+                </div>
             </div>
         </div>
     );

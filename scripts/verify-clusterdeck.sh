@@ -20,6 +20,7 @@ set -euo pipefail
 # ---- helpers ----------------------------------------------------------------
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 PASS=0; FAIL=0; MANUAL=0; WARN=0
+CI_MODE=false
 RESULTS=""  # accumulated markdown
 
 pass() { PASS=$((PASS+1)); RESULTS+="  ✅ $1\n"; }
@@ -54,18 +55,33 @@ check_urls_resolve() {
     if curl -sI --max-time 8 "https://${domain}/" >/dev/null 2>&1; then
         pass "$label — ${domain} resolves"
     else
-        warn "$label — ${domain} does NOT resolve (may be intentional pre-launch)"
+        if [ "$CI_MODE" = true ]; then
+            fail "$label — ${domain} does NOT resolve"
+        else
+            warn "$label — ${domain} does NOT resolve (may be intentional pre-launch)"
+        fi
     fi
 }
 
 # ---- intro ------------------------------------------------------------------
 cd "$ROOT"
 
-if [ "${1:-}" = "--list" ]; then
-    echo "Available checks:"
-    grep '^## \[CD-' "$0" | sed 's/## //'
-    exit 0
-fi
+case "${1:-}" in
+    --list)
+        echo "Available checks:"
+        grep '^# \[CD-' "$0" | sed 's/^# //'
+        exit 0
+        ;;
+    --ci)
+        CI_MODE=true
+        ;;
+    "")
+        ;;
+    *)
+        echo "Usage: $0 [--ci|--list]" >&2
+        exit 2
+        ;;
+esac
 
 echo "# Clusterdeck Automated Verification"
 echo "Root: $ROOT"
@@ -154,15 +170,11 @@ else
     fail "Paste temp filename does NOT use 'clusterdeck_paste_' prefix"
 fi
 
-# Onboarding paths (fakechat.tsx removed with AI feature — pi agent store will replace it)
+# The former fake-chat onboarding was removed with the built-in AI feature.
 if [ -f frontend/app/onboarding/fakechat.tsx ]; then
-    if grep -q '~/clusterdeck' frontend/app/onboarding/fakechat.tsx 2>/dev/null; then
-        pass "Onboarding fake chat uses ~/clusterdeck paths"
-    else
-        fail "Onboarding fake chat does NOT use ~/clusterdeck paths"
-    fi
+    fail "Removed onboarding fake chat unexpectedly exists"
 else
-    pass "Onboarding fake chat removed (replaced by pi agent store)"
+    pass "Onboarding fake chat is removed"
 fi
 
 # GitHub URLs point to clusterdeck/app
@@ -288,8 +300,8 @@ echo "    Paste an image/text into a terminal. Check temp filename,"
 echo "    should contain 'clusterdeck_paste_'."
 
 manual "CD-MANUAL-4: Onboarding flow"
-echo "    Walk through onboarding. The fake chat demo should show"
-echo "    ~/clusterdeck paths and clusterdeck-dev log paths."
+echo "    Walk through onboarding. Confirm the flow completes and"
+echo "    links open the Clusterdeck GitHub project."
 
 manual "CD-MANUAL-5: Editor file switching"
 echo "    Open files in the editor block, switch between them."

@@ -13,15 +13,19 @@ import { memo, useCallback, useEffect, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
 import { debounce } from "throttle-debounce";
 
-const DefaultLayoutPercentages = {
-    chat: 50,
+type BuilderLayout = {
+    app: number;
+    build: number;
+};
+
+const DefaultLayoutPercentages: BuilderLayout = {
     app: 80,
     build: 20,
 };
 
 const BuilderWorkspace = memo(() => {
     const builderId = useAtomValue(atoms.builderId);
-    const [layout, setLayout] = useState<Record<string, number>>(null);
+    const [layout, setLayout] = useState<BuilderLayout>(null);
     const [isLoading, setIsLoading] = useState(true);
     const focusType = useAtomValue(BuilderFocusManager.getInstance().focusType);
     const isAppFocused = focusType === "app";
@@ -38,11 +42,11 @@ const BuilderWorkspace = memo(() => {
                 const rtInfo = await RpcApi.GetRTInfoCommand(TabRpcClient, {
                     oref: `builder:${builderId}`,
                 });
-                if (rtInfo?.["builder:layout"]) {
-                    setLayout(rtInfo["builder:layout"] as Record<string, number>);
-                } else {
-                    setLayout(DefaultLayoutPercentages);
-                }
+                const savedLayout = rtInfo?.["builder:layout"] as Partial<BuilderLayout> | undefined;
+                setLayout({
+                    app: savedLayout?.app ?? DefaultLayoutPercentages.app,
+                    build: savedLayout?.build ?? DefaultLayoutPercentages.build,
+                });
             } catch (error) {
                 console.error("Failed to load builder layout:", error);
                 setLayout(DefaultLayoutPercentages);
@@ -55,7 +59,7 @@ const BuilderWorkspace = memo(() => {
     }, [builderId]);
 
     const saveLayout = useCallback(
-        debounce(500, (newLayout: Record<string, number>) => {
+        debounce(500, (newLayout: BuilderLayout) => {
             if (!builderId) return;
 
             RpcApi.SetRTInfoCommand(TabRpcClient, {
@@ -70,22 +74,13 @@ const BuilderWorkspace = memo(() => {
         [builderId]
     );
 
-    const handleHorizontalLayout = useCallback(
-        (sizes: number[]) => {
-            const newLayout = { ...layout, chat: sizes[0] };
-            setLayout(newLayout);
-            saveLayout(newLayout);
-        },
-        [layout, saveLayout]
-    );
-
     const handleVerticalLayout = useCallback(
         (sizes: number[]) => {
-            const newLayout = { ...layout, app: sizes[0], build: sizes[1] };
+            const newLayout = { app: sizes[0], build: sizes[1] };
             setLayout(newLayout);
             saveLayout(newLayout);
         },
-        [layout, saveLayout]
+        [saveLayout]
     );
 
     if (isLoading || !layout) {
@@ -94,38 +89,23 @@ const BuilderWorkspace = memo(() => {
 
     return (
         <div className="flex-1 overflow-hidden">
-            <PanelGroup direction="horizontal" onLayout={handleHorizontalLayout}>
-                <Panel defaultSize={layout.chat} minSize={20}>
-                    {/* pi-agent panel removed */}
-                </Panel>
-                <PanelResizeHandle className="w-0.5 bg-transparent hover:bg-gray-500/20 transition-colors" />
-                <Panel defaultSize={100 - layout.chat} minSize={20}>
-                    <div
-                        className={cn(
-                            "flex flex-col relative h-full",
-                            isAppFocused ? "border-2 border-accent" : "border-2 border-transparent"
-                        )}
-                        style={{
-                            borderBottomRightRadius: 8,
-                        }}
-                    >
-                        <PanelGroup direction="vertical" onLayout={handleVerticalLayout}>
-                            <Panel defaultSize={layout.app} minSize={20}>
-                                <BuilderAppPanel />
-                            </Panel>
-                            <PanelResizeHandle className="h-0.5 bg-transparent hover:bg-gray-500/20 transition-colors" />
-                            <Panel
-                                defaultSize={layout.build}
-                                minSize={20}
-                                maxSize={50}
-                                style={{ borderBottomRightRadius: 8 }}
-                            >
-                                <BuilderBuildPanel />
-                            </Panel>
-                        </PanelGroup>
-                    </div>
-                </Panel>
-            </PanelGroup>
+            <div
+                className={cn(
+                    "flex flex-col relative h-full",
+                    isAppFocused ? "border-2 border-accent" : "border-2 border-transparent"
+                )}
+                style={{ borderBottomRightRadius: 8 }}
+            >
+                <PanelGroup direction="vertical" onLayout={handleVerticalLayout}>
+                    <Panel defaultSize={layout.app} minSize={20}>
+                        <BuilderAppPanel />
+                    </Panel>
+                    <PanelResizeHandle className="h-0.5 bg-transparent hover:bg-gray-500/20 transition-colors" />
+                    <Panel defaultSize={layout.build} minSize={20} maxSize={50} style={{ borderBottomRightRadius: 8 }}>
+                        <BuilderBuildPanel />
+                    </Panel>
+                </PanelGroup>
+            </div>
         </div>
     );
 });

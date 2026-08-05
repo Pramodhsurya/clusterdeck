@@ -2,80 +2,51 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { globalStore } from "@/app/store/jotaiStore";
-import { isBuilderWindow } from "@/app/store/windowtype";
 import * as WOS from "@/app/store/wos";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
-import { getLayoutModelForStaticTab } from "@/layout/lib/layoutModelHooks";
-import { atoms, getOrefMetaKeyAtom, getSettingsKeyAtom, refocusNode } from "@/store/global";
-import debug from "debug";
+import { atoms, getOrefMetaKeyAtom } from "@/store/global";
 import * as jotai from "jotai";
 import { debounce } from "lodash-es";
-import { ImperativePanelGroupHandle, ImperativePanelHandle } from "react-resizable-panels";
-
-const dlog = debug("wave:workspace");
+import { ImperativePanelGroupHandle } from "react-resizable-panels";
 
 const VTabBar_DefaultWidth = 220;
 const VTabBar_MinWidth = 110;
 const VTabBar_MaxWidth = 280;
 
-function clampVTabWidth(w: number): number {
-    return Math.max(VTabBar_MinWidth, Math.min(w, VTabBar_MaxWidth));
+function clampVTabWidth(width: number): number {
+    return Math.max(VTabBar_MinWidth, Math.min(width, VTabBar_MaxWidth));
 }
 
 class WorkspaceLayoutModel {
     private static instance: WorkspaceLayoutModel | null = null;
 
-    // piPanelRef kept as null for backward compat — pi-agent panel was removed.
-    piPanelRef: ImperativePanelHandle | null;
-    vtabPanelRef: ImperativePanelHandle | null;
-    outerPanelGroupRef: ImperativePanelGroupHandle | null;
-    innerPanelGroupRef: ImperativePanelGroupHandle | null;
-    panelContainerRef: HTMLDivElement | null;
-    vtabPanelWrapperRef: HTMLDivElement | null;
-    panelVisibleAtom: jotai.PrimitiveAtom<boolean>;
+    private panelGroupRef: ImperativePanelGroupHandle | null = null;
+    private panelGroupContainerRef: HTMLDivElement | null = null;
+    private currentWorkspaceId = "";
+    private inResize = false;
+    private vtabWidth = VTabBar_DefaultWidth;
+    private vtabVisible = false;
+    private debouncedPersistVTabWidth: ReturnType<typeof debounce>;
 
-    private inResize: boolean;
-    private vtabWidth: number;
-    private vtabVisible: boolean;
-    private transitionTimeoutRef: NodeJS.Timeout | null = null;
-    private debouncedPersistVTabWidth: () => void;
     widgetsSidebarVisibleAtom: jotai.Atom<boolean>;
 
     private constructor() {
-        this.piPanelRef = null;
-        this.vtabPanelRef = null;
-        this.outerPanelGroupRef = null;
-        this.innerPanelGroupRef = null;
-        this.panelContainerRef = null;
-        this.vtabPanelWrapperRef = null;
-        this.inResize = false;
-        this.vtabWidth = VTabBar_DefaultWidth;
-        this.vtabVisible = false;
-        this.panelVisibleAtom = jotai.atom(false);
         this.widgetsSidebarVisibleAtom = jotai.atom(
             (get) =>
                 get(getOrefMetaKeyAtom(WOS.makeORef("workspace", this.getWorkspaceId()), "layout:widgetsvisible")) ??
                 true
         );
-        this.initializeFromMeta();
 
-        this.handleWindowResize = this.handleWindowResize.bind(this);
-        this.handleOuterPanelLayout = this.handleOuterPanelLayout.bind(this);
-        this.handleInnerPanelLayout = this.handleInnerPanelLayout.bind(this);
+        this.handleContainerResize = this.handleContainerResize.bind(this);
 
-        this.debouncedPersistVTabWidth = debounce(() => {
-            if (!this.vtabVisible) return;
-            const width = this.vtabPanelWrapperRef?.offsetWidth;
-            if (width == null || width <= 0) return;
-            try {
-                RpcApi.SetMetaCommand(TabRpcClient, {
-                    oref: WOS.makeORef("workspace", this.getWorkspaceId()),
-                    meta: { "layout:vtabbarwidth": width },
-                });
-            } catch (e) {
-                console.warn("Failed to persist vtabbar width:", e);
-            }
+        this.debouncedPersistVTabWidth = debounce((workspaceId: string, width: number) => {
+            void RpcApi.SetMetaCommand(TabRpcClient, {
+                oref: WOS.makeORef("workspace", workspaceId),
+                meta: { "layout:vtabbarwidth": width },
+            }).catch((error) => {
+                console.warn("Failed to persist vtabbar width:", error);
+            });
         }, 300);
     }
 
@@ -86,186 +57,102 @@ class WorkspaceLayoutModel {
         return WorkspaceLayoutModel.instance;
     }
 
-    // ---- Meta / persistence helpers ----
-
-    private getTabId(): string {
-        return globalStore.get(atoms.staticTabId);
-    }
-
     private getWorkspaceId(): string {
         return globalStore.get(atoms.workspace)?.oid ?? "";
     }
 
-    private getVTabBarWidthAtom(): jotai.Atom<number> {
-        return getOrefMetaKeyAtom(WOS.makeORef("workspace", this.getWorkspaceId()), "layout:vtabbarwidth");
+    private getVTabBarWidthAtom(workspaceId: string): jotai.Atom<number> {
+        return getOrefMetaKeyAtom(WOS.makeORef("workspace", workspaceId), "layout:vtabbarwidth");
     }
 
-    private initializeFromMeta(): void {
+    private loadWorkspaceWidth(workspaceId: string): void {
+        if (workspaceId === this.currentWorkspaceId) return;
+
+        // Preserve a final resize from the workspace being left instead of
+        // allowing the shared debouncer to be replaced by the next workspace.
+        this.debouncedPersistVTabWidth.flush();
+        this.currentWorkspaceId = workspaceId;
+        this.vtabWidth = VTabBar_DefaultWidth;
+        if (!workspaceId) return;
+
         try {
-            const savedVTabWidth = globalStore.get(this.getVTabBarWidthAtom());
-            if (savedVTabWidth != null && savedVTabWidth > 0) {
-                this.vtabWidth = savedVTabWidth;
+            const savedWidth = globalStore.get(this.getVTabBarWidthAtom(workspaceId));
+            if (savedWidth != null && savedWidth > 0) {
+                this.vtabWidth = clampVTabWidth(savedWidth);
             }
-            const tabBarPosition = globalStore.get(getSettingsKeyAtom("app:tabbar")) ?? "top";
-            const showLeftTabBar = tabBarPosition === "left" && !isBuilderWindow();
-            this.vtabVisible = showLeftTabBar;
-        } catch (e) {
-            console.warn("Failed to initialize from tab meta:", e);
+        } catch (error) {
+            console.warn("Failed to load vtabbar width:", error);
         }
     }
 
-    // ---- Resolved width getters (always clamped) ----
-
-    private getResolvedVTabWidth(): number {
-        return clampVTabWidth(this.vtabWidth);
+    private getContainerWidth(): number {
+        return this.panelGroupContainerRef?.clientWidth ?? window.innerWidth;
     }
 
-    // ---- Core layout computation ----
-
-    private computeLayout(windowWidth: number): { outer: number[]; inner: number[] } {
-        const vtabW = this.vtabVisible ? this.getResolvedVTabWidth() : 0;
-
-        // outer: [leftGroupPct, contentPct] — pi-agent panel removed; left group is just vtab.
-        const leftPct = windowWidth > 0 ? (vtabW / windowWidth) * 100 : 0;
-        const contentPct = Math.max(0, 100 - leftPct);
-
-        // inner: [vtabPct, 0] — pi-agent panel removed; inner panel always 100% vtab.
-        return { outer: [leftPct, contentPct], inner: [100, 0] };
+    private getLayout(containerWidth: number): number[] {
+        if (!this.vtabVisible) return [100];
+        const vtabPercentage = containerWidth > 0 ? (clampVTabWidth(this.vtabWidth) / containerWidth) * 100 : 0;
+        return [vtabPercentage, Math.max(0, 100 - vtabPercentage)];
     }
 
-    private commitLayouts(windowWidth: number): void {
-        if (!this.outerPanelGroupRef || !this.innerPanelGroupRef) return;
-        const { outer, inner } = this.computeLayout(windowWidth);
+    private applyLayout(): void {
+        if (!this.panelGroupRef) return;
         this.inResize = true;
-        this.outerPanelGroupRef.setLayout(outer);
-        this.innerPanelGroupRef.setLayout(inner);
+        this.panelGroupRef.setLayout(this.getLayout(this.getContainerWidth()));
         this.inResize = false;
     }
 
-    // ---- Drag handlers ----
-
-    handleOuterPanelLayout(sizes: number[]): void {
-        if (this.inResize) return;
-        const windowWidth = window.innerWidth;
-        const newLeftGroupPx = (sizes[0] / 100) * windowWidth;
-
-        if (this.vtabVisible) {
-            this.vtabWidth = clampVTabWidth(newLeftGroupPx);
-            this.debouncedPersistVTabWidth();
+    handlePanelLayout(sizes: number[], workspaceId: string): void {
+        if (this.inResize || !this.vtabVisible || sizes.length < 2 || workspaceId !== this.currentWorkspaceId) {
+            return;
         }
 
-        this.commitLayouts(windowWidth);
+        const containerWidth = this.getContainerWidth();
+        if (containerWidth <= 0) return;
+
+        const requestedWidth = (sizes[0] / 100) * containerWidth;
+        const width = clampVTabWidth(requestedWidth);
+        this.vtabWidth = width;
+        this.debouncedPersistVTabWidth(workspaceId, width);
+
+        if (Math.abs(width - requestedWidth) > 0.5) {
+            this.applyLayout();
+        }
     }
 
-    handleInnerPanelLayout(_sizes: number[]): void {
-        if (this.inResize) return;
-        // pi-agent panel removed — inner panel is always 100% vtab. No-op.
+    handleContainerResize(): void {
+        this.applyLayout();
     }
-
-    handleWindowResize(): void {
-        this.commitLayouts(window.innerWidth);
-    }
-
-    // ---- Registration & sync ----
 
     syncVTabWidthFromMeta(): void {
-        const savedVTabWidth = globalStore.get(this.getVTabBarWidthAtom());
-        if (savedVTabWidth != null && savedVTabWidth > 0 && savedVTabWidth !== this.vtabWidth) {
-            this.vtabWidth = savedVTabWidth;
-            this.commitLayouts(window.innerWidth);
+        if (!this.currentWorkspaceId) return;
+        const savedWidth = globalStore.get(this.getVTabBarWidthAtom(this.currentWorkspaceId));
+        if (savedWidth != null && savedWidth > 0) {
+            const width = clampVTabWidth(savedWidth);
+            if (width !== this.vtabWidth) {
+                this.vtabWidth = width;
+                this.applyLayout();
+            }
         }
     }
 
     registerRefs(
-        outerPanelGroupRef: ImperativePanelGroupHandle,
-        innerPanelGroupRef: ImperativePanelGroupHandle,
-        panelContainerRef: HTMLDivElement,
-        vtabPanelRef?: ImperativePanelHandle,
-        vtabPanelWrapperRef?: HTMLDivElement,
-        showLeftTabBar?: boolean
+        panelGroupRef: ImperativePanelGroupHandle,
+        panelGroupContainerRef: HTMLDivElement,
+        showLeftTabBar: boolean,
+        workspaceId: string
     ): void {
-        this.vtabPanelRef = vtabPanelRef ?? null;
-        this.outerPanelGroupRef = outerPanelGroupRef;
-        this.innerPanelGroupRef = innerPanelGroupRef;
-        this.panelContainerRef = panelContainerRef;
-        this.vtabPanelWrapperRef = vtabPanelWrapperRef ?? null;
-        this.vtabVisible = showLeftTabBar ?? false;
-        this.syncPanelCollapse();
-        this.commitLayouts(window.innerWidth);
-    }
-
-    private syncPanelCollapse(): void {
-        if (this.vtabPanelRef) {
-            if (this.vtabVisible) {
-                this.vtabPanelRef.expand();
-            } else {
-                this.vtabPanelRef.collapse();
-            }
-        }
-    }
-
-    // ---- Transitions ----
-
-    enableTransitions(duration: number): void {
-        if (!this.panelContainerRef) return;
-        const panels = this.panelContainerRef.querySelectorAll("[data-panel]");
-        panels.forEach((panel: HTMLElement) => {
-            panel.style.transition = "flex 0.2s ease-in-out";
-        });
-        if (this.transitionTimeoutRef) {
-            clearTimeout(this.transitionTimeoutRef);
-        }
-        this.transitionTimeoutRef = setTimeout(() => {
-            if (!this.panelContainerRef) return;
-            const panels = this.panelContainerRef.querySelectorAll("[data-panel]");
-            panels.forEach((panel: HTMLElement) => {
-                panel.style.transition = "none";
-            });
-        }, duration);
-    }
-
-    // ---- Public getters (pi-panel stubs for backward compat) ----
-
-    getPiPanelVisible(): boolean {
-        // pi-agent panel removed — always false.
-        return false;
-    }
-
-    getPiPanelWidth(): number {
-        // pi-agent panel removed — always 0.
-        return 0;
-    }
-
-    // ---- Initial percentage helpers ----
-
-    getLeftGroupInitialPercentage(windowWidth: number, showLeftTabBar: boolean): number {
-        const vtabW = showLeftTabBar && !isBuilderWindow() ? this.getResolvedVTabWidth() : 0;
-        return (vtabW / windowWidth) * 100;
-    }
-
-    getInnerVTabInitialPercentage(_windowWidth: number, showLeftTabBar: boolean): number {
-        if (!showLeftTabBar || isBuilderWindow()) return 0;
-        // pi-agent panel removed — vtab always gets 100%.
-        return 100;
-    }
-
-    getInnerPiPanelInitialPercentage(_windowWidth: number, _showLeftTabBar: boolean): number {
-        // pi-agent panel removed — always 0.
-        return 0;
-    }
-
-    // ---- Toggle visibility ----
-
-    setPiPanelVisible(_visible: boolean): void {
-        // pi-agent panel removed — no-op.
-    }
-
-    setShowLeftTabBar(showLeftTabBar: boolean): void {
-        if (this.vtabVisible === showLeftTabBar) return;
+        this.panelGroupRef = panelGroupRef;
+        this.panelGroupContainerRef = panelGroupContainerRef;
         this.vtabVisible = showLeftTabBar;
-        this.enableTransitions(250);
-        this.syncPanelCollapse();
-        this.commitLayouts(window.innerWidth);
+        this.loadWorkspaceWidth(workspaceId);
+        this.applyLayout();
+    }
+
+    getVTabInitialPercentage(windowWidth: number, showLeftTabBar: boolean, workspaceId: string): number {
+        this.loadWorkspaceWidth(workspaceId);
+        if (!showLeftTabBar || windowWidth <= 0) return 0;
+        return (clampVTabWidth(this.vtabWidth) / windowWidth) * 100;
     }
 }
 
