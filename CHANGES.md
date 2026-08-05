@@ -461,3 +461,129 @@ Cleanup pass fixing items surfaced during the post-1.3 review.
 
 Wave subsystems (durable sessions, `wsh`, connection controller, Monaco editor, terminal
 blocks, secret storage, AI/web blocks, themes) are preserved throughout.
+
+### feat/k9s-lazygit-ai-editor (2026-08-04) — k9s/lazygit/AI removed, pi-agent panel placeholder
+
+The Wave-AI assistant and the k9s/lazygit widget launcher were both removed in
+favor of a leaner Clusterdeck identity focused on terminal + editor + explorer.
+A placeholder `pi-agent` panel was added in its place — the actual integration
+is wired in the next section.
+
+- **Wave-AI subsystem removed.** `pkg/aiusechat/` (~21k lines, including
+  `usechat.go`, `usechat-backend.go`, `usechat-mode.go`, all 8 `tools_*.go`,
+  `uctypes.go`, the `waveai.json` schema, the `WebAIMode`/`AIProvider`
+  atom plumbing in `global-atoms.ts`, the `setWaveAIOpen` IPC bridge, and the
+  in-app `usechat`/`ai-mode` view component) was deleted. `frontend/app/clusterdeck/piagentpanel.{tsx,scss}`
+  replaces the AI side panel with a placeholder marked "Coming soon".
+- **k9s / lazygit app widgets removed.** The `tsunami` widget launcher used for
+  k9s and lazygit was removed from `widgets.tsx` and `widgetfilter.ts`; the
+  `appwidgets.json` / `widgets.json` `k9s`/`lazygit`/`htop` entries were
+  deleted; the `tsunami` controller and `frontend/app/view/tsunami/` were
+  removed. `htop` and the underlying `top`-style processes were also dropped
+  from the widget rail since they relied on the same launcher.
+- **pi-agent panel placeholder.** A new `frontend/app/clusterdeck/piagentpanel.{tsx,scss}`
+  provides a right-side panel placeholder and a `<PiAgentToggleButton />`
+  reusable button. `workspace.tsx` renders the panel in the same slot the AI
+  panel used to occupy, and a new `WorkspaceLayoutModel.setPiPanelVisible()`
+  method controls its opacity. The button is currently a no-op (it just
+  toggles the panel placeholder); wiring it to open a real `pi` terminal
+  is in the next section.
+- **AI-cleanup follow-ups.** `ea562a341` removes the broken `getApi().setPiAgentOpen`
+  reference, the orphaned `cdpi:panelopen` meta key handling, and the
+  `setWaveAIOpen` IPC call from `workspace-layout-model.ts`; replaces the
+  `widgetbarcontext` AI menu with a generic "Edit widgets.json" item. `4da2bee2b`
+  pins the editor at the top of the workspace and prevents the editor block
+  from collapsing when the editor zone is open.
+
+### feat/cleanup-branding-housekeeping (2026-08-04) — branch cleanup + verify script
+
+The post-merge housekeeping pass.
+
+- **Branch policy.** All non-`main` branches (local + remote-tracking)
+  have been deleted; the repo now ships with a single `main` branch. The
+  `upstream` remote (`wavetermdev/waveterm`) is removed from `.git/config`; only
+  `origin` (`clusterdeck/app`) remains. Future work should be done on
+  short-lived feature branches via PRs.
+- **`scripts/verify-clusterdeck.sh`** — a one-shot smoke test that runs the
+  Go vet/build, the TypeScript typecheck, and the vitest suite, then prints
+  a pass/fail summary. Designed to be invoked from CI before tagging a
+  release.
+- **NOTICE cleanup.** Removed the redundant "deliberately preserved Wave
+  endpoints" paragraph from `NOTICE` — it duplicated the inline comments
+  already in `pkg/aiusechat/uctypes/uctypes.go` and `pkg/wcloud/wcloud.go`.
+
+### pi-agent install/update wiring (2026-08-05) — widget-rail button auto-installs/updates pi
+
+PR #33. The widget-rail `pi-agent` button is now wired to guarantee a working
+`pi` terminal for the current workspace project.
+
+- **Go backend — `pkg/piagent/piagent.go`.** A new tested package exposing
+  `GetStatus`, `Install`, `Uninstall`, `Update`. `Status.Installed` +
+  `Status.CurrentVersion` + `Status.LatestVersion` + `Status.UpdateAvailable`
+  with JSON tags matching the TypeScript bridge. `compareVersions` does a
+  three-part numeric semver compare ignoring pre-release/build tags so
+  `0.84.0-rc1` and `0.84.0` don't trigger an upgrade prompt (npm treats
+  `latest` as stable). `pkg/piagent/piagent_test.go` covers `compareVersions`
+  (10 cases) and `extractJSONStringValue` (5 cases).
+- **Electron IPC bridge — `emain/emain-piagent.ts`.** Four `ipcMain.handle`
+  registrations: `piagent-get-status`, `piagent-install`, `piagent-uninstall`,
+  `piagent-update`. install/uninstall/update share a lock so a rapid
+  double-click can't spawn two npm processes (mirrors `configureAutoUpdater`).
+  npm is resolved via `which npm` once and cached. `preload.ts` exposes
+  `getPiAgentStatus` / `installPiAgent` / `uninstallPiAgent` /
+  `updatePiAgent` on the context bridge; `custom.d.ts` declares the
+  `PiAgentStatus` type and the four method signatures.
+- **Side panel UI — `piagentpanel.tsx`.** The placeholder panel is now a
+  real status UI: shows `installed vX.Y.Z` + `latest vA.B.C` + an "update
+  available" badge when applicable, with **Install pi** /
+  **Update to vX.Y.Z** / **Uninstall** buttons. Busy states + error messages
+  are surfaced inline.
+- **Widget-rail click.** `openOrFocusPiAgent()` runs `ensurePiAgentInstalled()`
+  before opening the terminal block. The helper calls `getPiAgentStatus`; if
+  `installed` is false it calls `installPiAgent`; if `updateavailable` is
+  true it calls `updatePiAgent`. The block is launched via
+  `controller: "cmd"` (not `shell`) so `pi` owns the block — when `pi` exits,
+  the block stays open showing its exit code. `cmd:cwd` is the workspace's
+  `clusterdeck:rootdir` so `pi` sees the project. The widget-rail click also
+  sets `piPanelVisible = true` so the install/update/uninstall controls are
+  reachable. Existing-terminal de-dup via a `piAgentBlockEnsures` map keyed
+  by `${tabId}:piagent` (same pattern as `openOrFocusZoneBlock`).
+- **Cleanup of dangling reference.** Drops `getApi().setPiAgentOpen(visible)`
+  from `workspace-layout-model.ts` — a TS error that was left over from the
+  AI-panel removal. The atom and meta-key wiring (`panelVisibleAtom`,
+  `cdpi:panelopen`) is preserved.
+
+### feat/copilot-merge-back (2026-08-05) — 5 stale agent branches merged
+
+Five stale `copilot-swe-agent` feature branches were merged into `main` after
+the AI-cleanup merge resolved most of the conflicts they had with the
+removal. None of these were PRs — they were local agent scratch branches
+left from a previous session that had drifted 100-300 commits behind main.
+Each landed as a single `--no-ff` merge commit.
+
+- `copilot/add-config-widgets-preview` — adds `frontend/app/configui/configwidgets.tsx`
+  + `configvalidation.ts` + a Vitest preview in `frontend/preview/previews/configui.preview.tsx`.
+  The config-ui widget preview is a useful starting point for future
+  theme/palette work.
+- `copilot/add-tool-definition-for-wave-config` — adds
+  `pkg/aiusechat/tools_setconfig.go` + `tools_setconfig_test.go`. Although
+  these live in the `aiusechat` package, they don't depend on the removed
+  AI chat UI and are pure `pkg/wshrpc` commands callable from `wsh` /
+  block-controller code.
+- `copilot/add-typeahead-preview` — adds
+  `frontend/app/view/preview/previewsuggestions.ts`,
+  `frontend/preview/mock/mocksuggestions.ts`, and
+  `frontend/preview/previews/suggestion.preview.{tsx,test.ts}`. The
+  typeahead suggestion preview is referenced from the preview mock env.
+- `copilot/fix-pdf-previews-electron-v41` — `frontend/app/view/preview/preview-streaming.test.tsx`
+  + a 6-line tweak to `preview-streaming.tsx`. The test file is the
+  durable part; it pins Electron-41 streaming PDF behavior.
+- `copilot/update-context-menu-callback` — a single-commit fix for the
+  in-app context-menu IPC callback wiring.
+
+The remaining 7 stale `copilot/*` branches had conflicts too complex to
+auto-resolve (most had based their work on `origin/main` from the upstream
+waveterm repo, not the clusterdeck fork, so their files now collide with
+the k9s/lazygit/AI removal). Those branches have been deleted; their
+unique commits are lost. The work was experimental ("Initial plan"
+commit message) and never reached a PR, so no production code is affected.

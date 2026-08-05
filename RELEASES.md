@@ -1,6 +1,83 @@
-# Building for release
+# Clusterdeck release notes
 
-## Step-by-step guide
+## 0.1.x line — "lean shell + editor"
+
+The 0.1.x line is the first public Clusterdeck line. It is built on the Wave Terminal
+0.14.5 line and is **macOS-first** (Apple Silicon `arm64`).
+
+### 0.1.3 — editor polish + cleanup
+
+- **Editor-at-top layout restructure.** The Monaco editor block now pins to
+  the top of the workspace; the editor zone is the canonical home for opened
+  files, never a side panel. (`4da2bee2b`)
+- **AI subsystem removed.** Wave's AI chat (~21k lines including
+  `pkg/aiusechat/`, the `waveai.json` schema, the `usechat`/`ai-mode` view,
+  and the in-app AI toggle IPC) is deleted. A placeholder `pi-agent`
+  panel replaces the right-side AI panel; a `pi-agent` button is added to
+  the widget rail.
+- **k9s / lazygit / htop app widgets removed.** The `tsunami` widget launcher
+  that backed them is removed from the widget rail and `widgets.json`.
+- **Stale editor content fix.** Switching files in the editor block no longer
+  briefly flashes the previous file's contents. (`3abcd7fa0`)
+- **Autosave.** The editor block now autosaves pending edits 600ms after
+  the last change (via Wave's existing `handleFileSave()`), and flushes
+  a pending edit when the user switches or closes files. (`31434bd46`)
+
+### 0.1.2 — first editor polish
+
+- **Editor stale-content flash on file switch eliminated.** The routed
+  editor no longer shows a stale Monaco model from the previously-opened
+  file when switching files via the explorer's open-editors list.
+  (`9e9328362`)
+- **Autosave on the editor block.** 600ms debounced autosave via Wave's
+  `handleFileSave()`; only writes to disk + updates the save-tracking
+  buffer — the Monaco model and undo stack are not touched.
+  (`31434bd46`)
+
+### 0.1.1 — k9s, kube, explorer fixes
+
+- **k9s, lazygit, htop app widgets.** A new widget-rail launcher opens
+  `k9s`, `lazygit`, or `htop` bound to the active connection
+  (`3089b021e`). Each runs in its own shell block.
+- **Explorer reconnect fix.** The explorer's SFTP reconnect-on-mount now
+  triggers when a connection status flips to connected, not only at mount
+  time. (`f770f5850`)
+- **VS Code–style file ops.** The explorer adds New File / New Folder /
+  Rename / Delete on top of the existing tree.
+- **Remember-password race fix.** The "remember password" prompt no longer
+  races with the auto-connect on first SSH handshake (`093116b05`).
+- **Workspace history.** Recent workspaces surface on the Welcome screen
+  and can be reopened with a click.
+
+### 0.1.0 — first Clusterdeck release
+
+The first public Clusterdeck release. Built on the Wave Terminal 0.14.5
+line; the Clusterdeck-specific commits are all rebased onto a single
+project identity (see [`CHANGES.md`](./CHANGES.md) for the full list).
+
+- **The connection is the workspace.** A vertical, collapsible
+  connections rail on the left of the window lists every SSH host from
+  `~/.ssh/config` (and `/etc/ssh/config`); clicking one becomes the
+  active workspace for the entire window — the file explorer, the
+  editor, and every terminal all bind to it.
+- **VS Code–style explorer + routed editor.** A full-height file
+  explorer with an open-editors list and git decorations, plus a routed
+  Monaco editor pane with tabs.
+- **Per-connection layout persistence.** The explorer/editor/terminal
+  arrangement is remembered per connection and restored on switch.
+- **`wsh` and durable SSH sessions.** Wave's command system and
+  long-running SSH sessions are preserved unchanged.
+
+## Building for release
+
+> Note: Clusterdeck currently ships via Homebrew tap rather than the
+> Wave-era GitHub release flow. The Bump Version + Build Helper +
+> Publish Release workflows in `.github/workflows/` are inherited
+> from upstream Wave and aren't wired to Clusterdeck's release cadence
+> yet. Building from source via `task package` works the same way
+> (see [`BUILD.md`](./BUILD.md)).
+
+### Step-by-step guide (legacy Wave flow)
 
 1. Go to the [Actions tab](https://github.com/wavetermdev/waveterm/actions) and select "Bump Version" from the left sidebar.
 2. Click on "Run workflow".

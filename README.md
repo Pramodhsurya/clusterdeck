@@ -34,12 +34,15 @@ A mockup per feature (animated versions in
 - **Full-height file explorer** — a VS Code–style tree over SFTP with an open-editors
   list, git decorations, and single-click open.
 - **Routed editor** — clicking a file opens it in one designated Monaco editor pane
-  (with editor tabs), never in-place or as a new floating block.
+  (with editor tabs), never in-place or as a new floating block. Autosaves on idle;
+  switching or closing a file flushes any pending edit to disk before it leaves scope.
 - **Per-connection layout** — the explorer/editor/terminal arrangement persists per
   connection and restores when you switch back.
-- **App widgets + Kubernetes clusters** — launch k9s, lazygit, or htop bound to the
-  active connection; add kubeconfigs and switch clusters from k9s's own dropdown, all
-  from one instance.
+- **pi-agent integration** — the widget-rail pi-agent button auto-installs
+  `@earendil-works/pi-coding-agent` if missing, auto-updates to the latest
+  version on every click, and opens a `pi` terminal bound to the active
+  workspace's project root. The side panel exposes install/update/uninstall
+  controls.
 
 It keeps Wave's durable SSH sessions, `wsh` command system, connection controller,
 Monaco editor, terminal blocks, secret storage, and themes intact.
