@@ -77,3 +77,101 @@
         color: var(--cd-accent);
     }
 }
+
+// Status display + action buttons live inside the body, replacing the
+// earlier "Coming soon" placeholder. Layout is a vertical stack so the
+// panel grows naturally with content.
+.cd-piagent-status {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+    color: var(--main-text-color);
+}
+
+.cd-piagent-status-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 12px;
+
+    .cd-piagent-status-label {
+        color: var(--cd-muted-text);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: 10px;
+    }
+
+    .cd-piagent-status-value {
+        font-variant-numeric: tabular-nums;
+        color: var(--main-text-color);
+    }
+}
+
+.cd-piagent-status-update {
+    justify-content: center;
+    color: var(--cd-accent);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.cd-piagent-error {
+    font-size: 11px;
+    color: var(--error-text-color, #ff6b6b);
+    background: rgba(255, 107, 107, 0.08);
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    border-radius: 4px;
+    padding: 6px 8px;
+    word-break: break-word;
+}
+
+.cd-piagent-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.cd-piagent-btn {
+    appearance: none;
+    border: 1px solid var(--border-color);
+    background: var(--panel-bg-color);
+    color: var(--main-text-color);
+    border-radius: 4px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+    text-align: center;
+
+    &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    &:disabled {
+        opacity: 0.6;
+        cursor: progress;
+    }
+}
+
+.cd-piagent-btn-primary {
+    border-color: var(--cd-accent);
+    background: var(--cd-accent-bg, rgba(60, 130, 255, 0.15));
+    color: var(--cd-accent);
+
+    &:hover:not(:disabled) {
+        background: var(--cd-accent-bg, rgba(60, 130, 255, 0.25));
+    }
+}
+
+.cd-piagent-btn-danger {
+    border-color: var(--border-color);
+    color: var(--cd-muted-text);
+
+    &:hover:not(:disabled) {
+        border-color: var(--error-text-color, #ff6b6b);
+        color: var(--error-text-color, #ff6b6b);
+    }
+}

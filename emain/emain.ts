@@ -56,6 +56,7 @@ import {
 } from "./emain-window";
 import { ElectronWshClient, initElectronWshClient } from "./emain-wsh";
 import { getLaunchSettings } from "./launchsettings";
+import "./emain-piagent";
 import { configureAutoUpdater, updater } from "./updater";
 
 const electronApp = electron.app;

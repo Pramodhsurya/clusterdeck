@@ -76,6 +76,12 @@ contextBridge.exposeInMainWorld("api", {
     getPathForFile: (file: File): string => webUtils.getPathForFile(file),
     saveTextFile: (fileName: string, content: string) => ipcRenderer.invoke("save-text-file", fileName, content),
     setIsActive: () => ipcRenderer.invoke("set-is-active"),
+    // pi-agent — installed/managed by Clusterdeck so the widget-rail
+    // button can guarantee a working pi terminal. See emain-piagent.ts.
+    getPiAgentStatus: () => ipcRenderer.invoke("piagent-get-status"),
+    installPiAgent: () => ipcRenderer.invoke("piagent-install"),
+    uninstallPiAgent: () => ipcRenderer.invoke("piagent-uninstall"),
+    updatePiAgent: () => ipcRenderer.invoke("piagent-update"),
 });
 
 // Custom event for "new-window"
