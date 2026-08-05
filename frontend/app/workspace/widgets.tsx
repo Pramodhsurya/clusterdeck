@@ -2,6 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { openOrFocusEditor, openOrFocusExplorer } from "@/app/clusterdeck/explorer";
+import { PiAgentToggleButton, openOrFocusPiAgent } from "@/app/clusterdeck/piagentpanel";
 import { Tooltip } from "@/app/element/tooltip";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { useWaveEnv, WaveEnv, WaveEnvSubset } from "@/app/waveenv/waveenv";
@@ -20,6 +21,7 @@ import {
 import clsx from "clsx";
 import { useAtomValue } from "jotai";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { WorkspaceLayoutModel } from "@/app/workspace/workspace-layout-model";
 
 export type WidgetsEnv = WaveEnvSubset<{
     isDev: WaveEnv["isDev"];
@@ -389,6 +391,8 @@ const Widgets = memo(() => {
     const [mode, setMode] = useState<"normal" | "compact" | "supercompact">("normal");
     const containerRef = useRef<HTMLDivElement>(null);
     const measurementRef = useRef<HTMLDivElement>(null);
+    const workspaceLayoutModel = WorkspaceLayoutModel.getInstance();
+    const piPanelVisible = useAtomValue(workspaceLayoutModel.panelVisibleAtom);
 
     const featureWaveAppBuilder = fullConfig?.settings?.["feature:waveappbuilder"] ?? false;
     const widgetsMap = fullConfig?.widgets ?? {};
@@ -484,6 +488,18 @@ const Widgets = memo(() => {
                         </div>
                         <div className="flex-grow" />
                         <div className="grid grid-cols-2 gap-0 w-full">
+                            <PiAgentToggleButton
+                                isOpen={piPanelVisible}
+                                onClick={() => {
+                                    openOrFocusPiAgent();
+                                    // Make the side panel visible so the
+                                    // install/update/uninstall controls
+                                    // are reachable. Without this the
+                                    // panel sits at opacity-0 forever and
+                                    // the user can never uninstall pi.
+                                    workspaceLayoutModel.setPiPanelVisible(true);
+                                }}
+                            />
                             {env.isDev() || featureWaveAppBuilder ? (
                                 <div
                                     ref={appsButtonRef}
@@ -523,6 +539,13 @@ const Widgets = memo(() => {
                             <Widget key={`widget-${idx}`} widget={data} mode={mode} env={env} />
                         ))}
                         <div className="flex-grow" />
+                        <PiAgentToggleButton
+                            isOpen={piPanelVisible}
+                            onClick={() => {
+                                openOrFocusPiAgent();
+                                workspaceLayoutModel.setPiPanelVisible(true);
+                            }}
+                        />
                         {env.isDev() || featureWaveAppBuilder ? (
                             <div
                                 ref={appsButtonRef}

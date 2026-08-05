@@ -384,7 +384,9 @@ class WorkspaceLayoutModel {
         }
         this.piPanelVisible = visible;
         globalStore.set(this.panelVisibleAtom, visible);
-        getApi().setPiAgentOpen(visible);
+        // Note: previously this also called getApi().setPiAgentOpen(visible)
+        // to mirror state to the AI panel, but that panel was removed in
+        // commit 5f32b3743 and the IPC bridge was dropped here too.
         RpcApi.SetMetaCommand(TabRpcClient, {
             oref: WOS.makeORef("tab", this.getTabId()),
             meta: { "cdpi:panelopen": visible },
