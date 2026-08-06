@@ -230,4 +230,4 @@ export { HelloWorldModel };
 
 - TypeScript code defining the **ViewModel**.
 - TypeScript code defining the **ViewComponent**.
-- Ensure alignment with the patterns in `waveai.tsx`, `preview.tsx`, `sysinfo.tsx`, and `term.tsx`.
+- Ensure alignment with the patterns in `preview.tsx`, `sysinfo.tsx`, and `term.tsx`.

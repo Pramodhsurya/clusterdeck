@@ -56,6 +56,7 @@ export type MockFilesystem = {
     entryCount: number;
     fileInfo: (data: FileData) => Promise<FileInfo>;
     fileRead: (data: FileData) => Promise<FileData>;
+    fileReadStream: (data: FileData) => AsyncGenerator<FileData, void, boolean>;
     fileList: (data: FileListData) => Promise<FileInfo[]>;
     fileJoin: (paths: string[]) => Promise<FileInfo>;
     fileListStream: (data: FileListData) => AsyncGenerator<CommandRemoteListEntriesRtnData, void, boolean>;
@@ -471,6 +472,9 @@ export function makeMockFilesystem(): MockFilesystem {
             at: { offset, size: end - offset },
         };
     };
+    const fileReadStream = async function* (data: FileData): AsyncGenerator<FileData, void, boolean> {
+        yield await fileRead(data);
+    };
     const fileList = async (data: FileListData): Promise<FileInfo[]> => {
         const dirPath = normalizeMockPath(data?.path ?? MockHomePath);
         const entry = getEntry(dirPath);
@@ -505,6 +509,7 @@ export function makeMockFilesystem(): MockFilesystem {
         entryCount: entries.size,
         fileInfo,
         fileRead,
+        fileReadStream,
         fileList,
         fileJoin,
         fileListStream,

@@ -236,7 +236,6 @@ The terminal view demonstrates:
 - **Mode switching** between terminal and vdom views
 - **Custom keyboard handling** for terminal-specific shortcuts
 - **Focus management** to focus the xterm.js instance
-- **Shell integration status** showing AI capability indicators
 
 Key features:
 

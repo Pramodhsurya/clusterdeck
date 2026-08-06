@@ -167,7 +167,7 @@ export async function fetchMockSuggestions(data: FetchSuggestionsData): Promise<
         opts: { all: true, limit: MaxMockSuggestions * 4 },
     });
     const suggestions = fileInfos
-        .map((fileInfo, idx) => {
+        .map((fileInfo, idx): SuggestionType | null => {
             if (data?.["file:dironly"] && !fileInfo.isdir) {
                 return null;
             }

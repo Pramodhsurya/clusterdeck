@@ -43,7 +43,7 @@ type SettingsType struct {
 
 **Naming Conventions:**
 
-- Use namespace prefixes (e.g., `term:`, `window:`, `ai:`, `web:`, `app:`)
+- Use namespace prefixes (e.g., `term:`, `window:`, `web:`, `app:`)
 - Use lowercase with colons as separators
 - Field names should be descriptive and follow Go naming conventions
 - Use `omitempty` tag to exclude empty values from JSON
@@ -61,7 +61,6 @@ type SettingsType struct {
 - `app:*` - Application-level settings
 - `term:*` - Terminal-specific settings
 - `window:*` - Window and UI settings
-- `ai:*` - AI-related settings
 - `web:*` - Web browser settings
 - `editor:*` - Code editor settings
 - `conn:*` - Connection settings
@@ -98,8 +97,8 @@ If your setting should have a default value, add it to `pkg/wconfig/defaultconfi
 
 ```json
 {
-  "ai:preset": "ai@global",
-  "ai:model": "gpt-5-mini",
+  "app:defaultnewblock": "term",
+  "web:defaulturl": "https://github.com/wavetermdev/waveterm",
   // ... existing defaults ...
 
   "mynew:setting": "default value",
@@ -216,14 +215,14 @@ if fullConfig.Settings.MyIntSetting != nil {
 
 ### Example 1: Simple Boolean Setting (No Block Override)
 
-**Use case:** Add a setting to hide the AI button globally
+**Use case:** Add a setting to hide the Ctrl+Shift visual indicator globally
 
 #### 1. Go Struct (`pkg/wconfig/settingsconfig.go`)
 
 ```go
 type SettingsType struct {
     // ... existing fields ...
-    AppHideAiButton bool `json:"app:hideaibutton,omitempty"`
+    AppDisableCtrlShiftDisplay bool `json:"app:disablectrlshiftdisplay,omitempty"`
 }
 ```
 
@@ -231,14 +230,14 @@ type SettingsType struct {
 
 ```json
 {
-  "app:hideaibutton": false
+  "app:disablectrlshiftdisplay": false
 }
 ```
 
 #### 3. Documentation (`docs/docs/config.mdx`)
 
 ```markdown
-| app:hideaibutton <VersionBadge version="v0.14" /> | bool | Hide the AI button in the tab bar (defaults to false) |
+| app:disablectrlshiftdisplay <VersionBadge version="v0.14" /> | bool | Disable the Ctrl+Shift visual indicator (defaults to false) |
 ```
 
 #### 4. Generate Types
@@ -252,14 +251,14 @@ task generate
 ```typescript
 import { getSettingsKeyAtom } from "@/store/global";
 
-const TabBar = () => {
-    const hideAiButton = useAtomValue(getSettingsKeyAtom("app:hideaibutton"));
+const CtrlShiftIndicator = () => {
+    const disableCtrlShiftDisplay = useAtomValue(getSettingsKeyAtom("app:disablectrlshiftdisplay"));
 
-    if (hideAiButton) {
-        return null; // Don't render AI button
+    if (disableCtrlShiftDisplay) {
+        return null;
     }
 
-    return <button>AI</button>;
+    return <div>Ctrl+Shift</div>;
 };
 ```
 
@@ -267,11 +266,11 @@ const TabBar = () => {
 
 ```bash
 # Set in settings file
-wsh setconfig app:hideaibutton=true
+wsh setconfig app:disablectrlshiftdisplay=true
 
 # Or edit ~/.config/waveterm/settings.json
 {
-  "app:hideaibutton": true
+  "app:disablectrlshiftdisplay": true
 }
 ```
 

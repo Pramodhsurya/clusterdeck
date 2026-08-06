@@ -31,7 +31,7 @@ type BlockDetails struct {
 	BlockId     string              `json:"blockid"`     // Unique identifier for the block
 	WorkspaceId string              `json:"workspaceid"` // ID of the workspace containing the block
 	TabId       string              `json:"tabid"`       // ID of the tab containing the block
-	View        string              `json:"view"`        // Canonical view type (term, web, preview, edit, sysinfo, waveai)
+	View        string              `json:"view"`        // Canonical view type
 	Meta        waveobj.MetaMapType `json:"meta"`        // Block metadata including view type
 }
 
@@ -40,7 +40,7 @@ var blocksListCmd = &cobra.Command{
 	Use:     "list",
 	Aliases: []string{"ls", "get"},
 	Short:   "List blocks in workspaces/windows",
-	Long:    `List blocks with optional filtering by workspace, window, tab, or view type.
+	Long: `List blocks with optional filtering by workspace, window, tab, or view type.
 
 Examples:
   # List blocks from all workspaces
@@ -63,8 +63,8 @@ Examples:
 
   # Set a different timeout (in milliseconds)
   wsh blocks list --timeout=10000`,
-	RunE:    blocksListRun,
-	PreRunE: preRunSetupRpcClient,
+	RunE:         blocksListRun,
+	PreRunE:      preRunSetupRpcClient,
 	SilenceUsage: true,
 }
 
@@ -74,7 +74,7 @@ func init() {
 	blocksListCmd.Flags().StringVar(&blocksWindowId, "window", "", "restrict to window id")
 	blocksListCmd.Flags().StringVar(&blocksWorkspaceId, "workspace", "", "restrict to workspace id")
 	blocksListCmd.Flags().StringVar(&blocksTabId, "tab", "", "restrict to specific tab id")
-	blocksListCmd.Flags().StringVar(&blocksView, "view", "", "restrict to view type (term/terminal, web/browser, preview/edit, sysinfo, waveai)")
+	blocksListCmd.Flags().StringVar(&blocksView, "view", "", "restrict to view type")
 	blocksListCmd.Flags().BoolVar(&blocksJSON, "json", false, "output as JSON")
 	blocksListCmd.Flags().IntVar(&blocksTimeout, "timeout", 5000, "timeout in milliseconds for RPC calls (default: 5000)")
 
@@ -86,9 +86,9 @@ func init() {
 	}
 
 	blocksCmd := &cobra.Command{
-		Use:     "blocks",
-		Short:   "Manage blocks",
-		Long:    "Commands for working with blocks",
+		Use:   "blocks",
+		Short: "Manage blocks",
+		Long:  "Commands for working with blocks",
 	}
 
 	blocksCmd.AddCommand(blocksListCmd)
@@ -98,10 +98,8 @@ func init() {
 // blocksListRun implements the 'blocks list' command
 // It retrieves and displays blocks with optional filtering by workspace, window, tab, or view type
 func blocksListRun(cmd *cobra.Command, args []string) error {
-	if v := strings.TrimSpace(blocksView); v != "" {
-		if !isKnownViewFilter(v) {
-			return fmt.Errorf("unknown --view %q; try one of: term, web, preview, edit, sysinfo, waveai", v)
-		}
+	if err := validateBlocksViewFilter(blocksView); err != nil {
+		return err
 	}
 
 	var allBlocks []BlockDetails
@@ -255,6 +253,28 @@ func blocksListRun(cmd *cobra.Command, args []string) error {
 	return nil
 }
 
+const supportedBlocksViewFilters = "term/terminal/shell/console, web/browser/url, preview/edit, sysinfo/sys/system"
+
+func validateBlocksViewFilter(filter string) error {
+	filter = strings.TrimSpace(filter)
+	if filter == "" || isKnownViewFilter(filter) {
+		return nil
+	}
+	return fmt.Errorf("unknown --view %q; supported values: %s", filter, supportedBlocksViewFilters)
+}
+
+func isKnownViewFilter(filter string) bool {
+	switch strings.ToLower(strings.TrimSpace(filter)) {
+	case "term", "terminal", "shell", "console",
+		"web", "browser", "url",
+		"preview", "edit",
+		"sysinfo", "sys", "system":
+		return true
+	default:
+		return false
+	}
+}
+
 // matchesViewType checks if a view type matches a filter, supporting aliases
 func matchesViewType(actual, filter string) bool {
 	// Direct match (case insensitive)
@@ -270,25 +290,9 @@ func matchesViewType(actual, filter string) bool {
 		return strings.EqualFold(actual, "term")
 	case "web", "browser", "url":
 		return strings.EqualFold(actual, "web")
-	case "ai", "waveai", "assistant":
-		return strings.EqualFold(actual, "waveai")
 	case "sys", "sysinfo", "system":
 		return strings.EqualFold(actual, "sysinfo")
 	}
 
 	return false
-}
-
-// isKnownViewFilter checks if a filter value is recognized
-func isKnownViewFilter(f string) bool {
-	switch strings.ToLower(strings.TrimSpace(f)) {
-	case "term", "terminal", "shell", "console",
-		"web", "browser", "url",
-		"preview", "edit",
-		"sysinfo", "sys", "system",
-		"waveai", "ai", "assistant":
-		return true
-	default:
-		return false
-	}
 }

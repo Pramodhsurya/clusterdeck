@@ -1,9 +1,8 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { isConnLockedWorkspace } from "@/app/clusterdeck/connlock";
 import { openRailConnectionByIndex } from "@/app/clusterdeck/connectionsrail";
-import { FocusManager } from "@/app/store/focusManager";
+import { isConnLockedWorkspace } from "@/app/clusterdeck/connlock";
 import {
     atoms,
     createBlock,
@@ -24,7 +23,6 @@ import {
 import { getActiveTabModel } from "@/app/store/tab-model";
 import { deleteLayoutModelForTab, getLayoutModelForStaticTab, NavigateDirection } from "@/layout/index";
 import * as keyutil from "@/util/keyutil";
-import { isWindows } from "@/util/platformutil";
 import { CHORD_TIMEOUT } from "@/util/sharedconst";
 import { fireAndForget } from "@/util/util";
 import * as jotai from "jotai";
@@ -194,7 +192,7 @@ function switchBlockByBlockNum(index: number) {
 
 function switchBlockInDirection(direction: NavigateDirection) {
     const layoutModel = getLayoutModelForStaticTab();
-    const navResult = layoutModel.switchNodeFocusInDirection(direction, false);
+    const navResult = layoutModel.switchNodeFocusInDirection(direction);
     setTimeout(() => {
         globalRefocus();
     }, 10);

@@ -59,7 +59,6 @@ When telemetry is active, we collect the following data. It is stored in the `te
 | SetTabTheme   | The number of times the tab theme is changed from the context menu                                                                                                              |
 | NumMagnify    | The number of times any block is magnified                                                                                                                                      |
 | NumPanics     | The number of backend (golang) panics caught in the current day                                                                                                                 |
-| NumAIReqs     | The number of AI requests made in the current day                                                                                                                               |
 | NumSSHConn    | The number of distinct SSH connections that have been made to distinct hosts                                                                                                    |
 | NumWSLConns   | The number of distinct WSL connections that have been made to distinct distros                                                                                                  |
 | Renderers     | The number of new block views of each type are open on a given day.                                                                                                             |
@@ -90,7 +89,7 @@ Lastly, some data is sent along with the telemetry that describes how to classif
 | Name              | Description                                                                                                                 |
 | ----------------- | --------------------------------------------------------------------------------------------------------------------------- |
 | UserId            | Currently Unused. This is an anonymous UUID intended for use in future features.                                            |
-| ClientId          | This is an anonymous UUID created when Waveterm is first launched. It is used for telemetry and sending prompts to Open AI. |
+| ClientId          | This is an anonymous UUID created when Waveterm is first launched. It is used for telemetry. |
 | AppType           | This is used to differentiate the current version of waveterm from the legacy app.                                          |
 | AutoUpdateEnabled | Whether or not auto update is turned on.                                                                                    |
 | AutoUpdateChannel | The type of auto update in use. This specifically refers to whether a latest or beta channel is selected.                   |

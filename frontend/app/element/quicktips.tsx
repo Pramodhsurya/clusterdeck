@@ -156,10 +156,6 @@ const QuickTips = () => {
                             <span className="text-[15px]">New Terminal Block</span>
                             <KeyBinding keyDecl="Cmd:n" />
                         </div>
-                        <div className="flex flex-col gap-0.5 p-2 rounded-md hover:bg-white/5 transition-colors">
-                            <span className="text-[15px]">Open AI Panel</span>
-                            <KeyBinding keyDecl="Cmd:Shift:a" />
-                        </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
@@ -191,10 +187,6 @@ const QuickTips = () => {
                         <div className="flex flex-col gap-0.5 p-2 rounded-md hover:bg-white/5 transition-colors">
                             <span className="text-[15px]">Focus Nth Block</span>
                             <KeyBinding keyDecl="Ctrl:Shift:Digit" />
-                        </div>
-                        <div className="flex flex-col gap-0.5 p-2 rounded-md hover:bg-white/5 transition-colors">
-                            <span className="text-[15px]">Focus AI</span>
-                            <KeyBinding keyDecl="Ctrl:Shift:0" />
                         </div>
                     </div>
 

@@ -56,8 +56,7 @@ Each block's `NodeModel` has an `isFocused` atom:
 isFocused: atom((get) => {
     const treeState = get(this.localTreeStateAtom);
     const isFocused = treeState.focusedNodeId === nodeid;
-    const waveAIFocused = get(atoms.waveAIFocusedAtom);
-    return isFocused && !waveAIFocused;
+    return isFocused;
 })
 ```
 

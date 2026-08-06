@@ -51,7 +51,6 @@ const UpgradeOnboardingModal_v0_1_2_Content = () => {
                     <div className="text-secondary leading-5">
                         <ul className="list-disc list-outside space-y-1 pl-5">
                             <li>Fixed a race in "remember this password" that could permanently save a rejected password</li>
-                            <li>Moved the "Toggle AI Panel" button into the widget rail, below the app widgets</li>
                             <li>Homebrew installs now clear the quarantine flag automatically after install/upgrade</li>
                             <li>Cleaned up several leftover "Wave"-branded strings in dialogs and error messages</li>
                         </ul>

@@ -82,6 +82,15 @@ describe("makeMockWaveEnv", () => {
         }
         expect(listPackets).toHaveLength(1);
         expect(listPackets[0].fileinfo).toHaveLength(4);
+
+        const readPackets: FileData[] = [];
+        for await (const packet of DefaultMockFilesystem.fileReadStream({
+            info: { path: "/Users/mike/.bashrc" },
+        })) {
+            readPackets.push(packet);
+        }
+        expect(readPackets).toHaveLength(1);
+        expect(base64ToString(readPackets[0].data64)).toContain('alias gs="git status -sb"');
     });
 
     it("implements secrets commands with in-memory storage", async () => {

@@ -26,7 +26,6 @@ import (
 	"github.com/wavetermdev/waveterm/pkg/blocklogger"
 	"github.com/wavetermdev/waveterm/pkg/buildercontroller"
 	"github.com/wavetermdev/waveterm/pkg/clusterdeck"
-	"github.com/wavetermdev/waveterm/pkg/filebackup"
 	"github.com/wavetermdev/waveterm/pkg/filestore"
 	"github.com/wavetermdev/waveterm/pkg/genconn"
 	"github.com/wavetermdev/waveterm/pkg/jobcontroller"
@@ -459,18 +458,6 @@ func (ws *WshServer) FileJoinCommand(ctx context.Context, paths []string) (*wshr
 	return wshfs.Join(ctx, paths[0], paths[1:]...)
 }
 
-func (ws *WshServer) FileRestoreBackupCommand(ctx context.Context, data wshrpc.CommandFileRestoreBackupData) error {
-	expandedBackupPath, err := wavebase.ExpandHomeDir(data.BackupFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to expand backup file path: %w", err)
-	}
-	expandedRestorePath, err := wavebase.ExpandHomeDir(data.RestoreToFileName)
-	if err != nil {
-		return fmt.Errorf("failed to expand restore file path: %w", err)
-	}
-	return filebackup.RestoreBackup(expandedBackupPath, expandedRestorePath)
-}
-
 func (ws *WshServer) GetTempDirCommand(ctx context.Context, data wshrpc.CommandGetTempDirData) (string, error) {
 	tempDir := os.TempDir()
 	if data.FileName != "" {
@@ -613,7 +600,6 @@ func (ws *WshServer) GetFullConfigCommand(ctx context.Context) (wconfig.FullConf
 	watcher := wconfig.GetWatcher()
 	return watcher.GetFullConfig(), nil
 }
-
 
 func (ws *WshServer) ConnStatusCommand(ctx context.Context) ([]wshrpc.ConnStatus, error) {
 	rtn := conncontroller.GetAllConnStatus()
@@ -1297,13 +1283,6 @@ func (ws *WshServer) RecordTEventCommand(ctx context.Context, data telemetrydata
 func (ws WshServer) SendTelemetryCommand(ctx context.Context) error {
 	return wcloud.SendAllTelemetry(wstore.GetClientId())
 }
-
-
-
-
-
-
-
 
 var wshActivityRe = regexp.MustCompile(`^[a-z:#]+$`)
 

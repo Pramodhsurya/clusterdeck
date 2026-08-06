@@ -16,7 +16,6 @@ At its core, `wsh` enables seamless interaction between your terminal commands a
 - Share data between terminal sessions and GUI components
 - Manage your workspace programmatically
 - Connect remote and local environments
-- Send CLI output and files directly to AI conversations
 - Run terminal commands in separate, isolated blocks
 
 ## Key Concepts
@@ -31,9 +30,6 @@ wsh edit config.json
 
 # Get the current file path from a preview block
 wsh getmeta -b 2 file
-
-# Send output to an AI assistant (the "-" reads from stdin)
-ls -la | wsh ai - "what are the largest files here?"
 ```
 
 ### Persistent State
@@ -133,59 +129,20 @@ wsh run -- tail -f /var/log/app.log
 wsh setvar -b tab SHARED_ENV=staging
 ```
 
-### AI-Assisted Development
-
-The `wsh ai` command appends content to the Wave AI sidebar. By default, files are attached without auto-submitting, allowing you to review and add more context before sending.
-
-```bash
-# Pipe output to AI sidebar (ask question in UI)
-git diff | wsh ai -
-
-# Attach files with a message
-wsh ai main.go utils.go -m "find bugs in these files"
-
-# Auto-submit with message
-wsh ai config.json -s -m "explain this config"
-
-# Start new chat with attached files
-wsh ai -n *.log -m "analyze these logs"
-
-# Attach multiple file types (images, PDFs, code)
-wsh ai screenshot.png report.pdf app.py -m "review these"
-
-# Debug with stdin and auto-submit
-dmesg | wsh ai -s - -m "help me understand these errors"
-```
-
-**Flags:**
-- `-` - Read from stdin instead of a file
-- `-m, --message` - Add message text along with files
-- `-s, --submit` - Auto-submit immediately (default is to wait for user)
-- `-n, --new` - Clear chat and start fresh conversation
-
-**File Limits:**
-- Text files: 200KB max
-- PDFs: 5MB max
-- Images: 7MB max
-- Maximum 15 files per command
-
 ## Tips & Features
 
 1. **Working with Blocks**
-
    - Use block numbers (1-9) to target specific blocks within a tab (hold Ctrl+Shift to see block numbers)
    - Can get full block ids by right click a block's header and selecting "Copy Block Id" (useful for scripting)
    - Use references like "this", "tab", "workspace", or "global" for different scopes
 
 2. **Data Storage**
-
    - Use `wsh setvar/getvar` for configuration and secrets
    - Store file data using `wsh file`, which can be easily referenced in all terminals (local and remote)
    - Use appropriate storage scopes (block, tab, workspace, global)
 
 3. **Command Execution**
    - Use `wsh run` to execute commands in new blocks
-   - Send command output and files quickly to AI blocks with `wsh ai`
 
 ## Scripting with wsh
 

@@ -17,11 +17,7 @@ function handleBuildPanelContextMenu(e: React.MouseEvent, selectedText: string):
         return;
     }
 
-    const menu: ContextMenuItem[] = [
-        { role: "copy" },
-        { type: "separator" },
-        // "Add to Context" removed with AI panel feature
-    ];
+    const menu: ContextMenuItem[] = [{ role: "copy" }, { type: "separator" }];
     ContextMenuModel.getInstance().showContextMenu(menu, e);
 }
 

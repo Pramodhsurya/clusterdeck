@@ -30,7 +30,7 @@ const UpgradeMinorWelcomePage = ({ onStarClick, onAlreadyStarred, onMaybeLater }
                 <div className="flex justify-center">
                     <Logo />
                 </div>
-                <div className="text-center text-[25px] font-normal text-foreground">Welcome to Clusterdeck v0.14!</div>
+                <div className="text-center text-[25px] font-normal text-foreground">Welcome to Clusterdeck</div>
             </header>
             <OverlayScrollbarsComponent
                 className="flex-1 overflow-y-auto min-h-0"
@@ -39,28 +39,23 @@ const UpgradeMinorWelcomePage = ({ onStarClick, onAlreadyStarred, onMaybeLater }
                 <div className="flex flex-col items-center gap-3 w-full mb-2 unselectable">
                     <div className="flex flex-col items-center gap-4">
                         <div className="flex flex-row gap-4 items-center">
-                            <div className="flex h-[52px] px-3 items-center rounded-lg bg-hover text-accent text-[24px]">
-                                <i className="fa fa-sparkles" />
-                                <span className="font-bold ml-2 font-mono">AI</span>
+                            <div className="flex h-[52px] px-3 items-center rounded-lg bg-hover text-accent text-[18px]">
+                                <i className="fa-sharp fa-solid fa-server" />
+                                <span className="font-bold ml-2">Connection Workspaces</span>
                             </div>
                             <div className="flex h-[52px] px-3 items-center rounded-lg bg-hover text-[18px]">
-                                <i className="fa-sharp fa-solid fa-shield text-sky-500" />
-                                <span className="font-bold ml-2 text-accent">Durable SSH Sessions</span>
+                                <i className="fa-sharp fa-solid fa-code" />
+                                <span className="font-bold ml-2 text-accent">Explorer and Editor</span>
                             </div>
                         </div>
                         <div className="text-secondary leading-relaxed max-w-[600px] text-left">
                             <p className="mb-4">
-                                AI is your terminal assistant with full context. It can read your terminal output,
-                                analyze widgets, read and write files, and help you solve problems&nbsp;faster.
+                                Clusterdeck keeps each connection in its own workspace, with an integrated file
+                                explorer, editor, and terminals for local, SSH, and WSL environments.
                             </p>
                             <p className="mb-4">
-                                <span className="font-semibold text-foreground">New in v0.13:</span> AI now
-                                supports local models and bring-your-own-key! Use Ollama, LM Studio, vLLM, OpenRouter,
-                                or any OpenAI-compatible provider.
-                            </p>
-                            <p className="mb-4">
-                                <span className="font-semibold text-foreground">New in v0.14:</span> Durable SSH
-                                sessions survive network drops, laptop sleep, and restarts — all without tmux or screen.
+                                Recent Clusterdeck releases improve connection reliability, workspace navigation, and
+                                terminal tooling while preserving your existing layouts and settings.
                             </p>
                         </div>
                     </div>
@@ -68,7 +63,9 @@ const UpgradeMinorWelcomePage = ({ onStarClick, onAlreadyStarred, onMaybeLater }
                     <div className="w-full max-w-[550px] border-t border-border my-2"></div>
 
                     <div className="flex flex-col items-center gap-3 text-center max-w-[550px]">
-                        <div className="text-foreground text-base">Thanks for being an early Clusterdeck adopter! ⭐</div>
+                        <div className="text-foreground text-base">
+                            Thanks for being an early Clusterdeck adopter! ⭐
+                        </div>
                         <div className="text-secondary text-sm text-left">
                             A GitHub star shows your support for Clusterdeck (and open-source) and helps us reach more
                             developers.

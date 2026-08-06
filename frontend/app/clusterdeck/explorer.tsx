@@ -18,7 +18,7 @@ import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { TreeNodeData, TreeView } from "@/app/treeview/treeview";
 import { Input } from "@/element/input";
 import { WaveModal } from "@/element/modal";
-import { getLayoutModelForStaticTab, LayoutTreeActionType, type LayoutTreeResizeNodeAction } from "@/layout/index";
+import { getLayoutModelForStaticTab, LayoutTreeActionType, type LayoutNode, type LayoutTreeResizeNodeAction } from "@/layout/index";
 import { findParent } from "@/layout/lib/layoutNode";
 import { atoms, createBlock, getApi, WOS, refocusNode } from "@/store/global";
 import { makeNativeLabel } from "@/util/platformutil";

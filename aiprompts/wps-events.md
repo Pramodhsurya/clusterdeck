@@ -136,58 +136,6 @@ wps.Broker.Publish(wps.WaveEvent{
 })
 ```
 
-## Complete Example: Rate Limit Updates
-
-This example shows how rate limit information is published when AI chat responses include rate limit headers.
-
-### 1. Define the Event Type
-
-In [`pkg/wps/wpstypes.go`](../pkg/wps/wpstypes.go:19):
-
-```go
-const (
-    // ... other events ...
-    Event_WaveAIRateLimit  = "waveai:ratelimit"
-)
-```
-
-### 2. Publish the Event
-
-In [`pkg/aiusechat/usechat.go`](../pkg/aiusechat/usechat.go:94-108):
-
-```go
-import "github.com/wavetermdev/waveterm/pkg/wps"
-
-func updateRateLimit(info *uctypes.RateLimitInfo) {
-    if info == nil {
-        return
-    }
-    rateLimitLock.Lock()
-    defer rateLimitLock.Unlock()
-    globalRateLimitInfo = info
-
-    // Publish event in goroutine to avoid blocking
-    go func() {
-        wps.Broker.Publish(wps.WaveEvent{
-            Event: wps.Event_WaveAIRateLimit,
-            Data:  info,  // RateLimitInfo struct
-        })
-    }()
-}
-```
-
-### 3. Subscribe to the Event (Frontend)
-
-In the frontend, subscribe to events via WebSocket:
-
-```typescript
-// Subscribe to rate limit updates
-const subscription = {
-  event: "waveai:ratelimit",
-  allscopes: true, // Receive all rate limit events
-};
-```
-
 ## Subscribing to Events
 
 ### From Go Code
@@ -226,7 +174,7 @@ wps.Broker.Subscribe(routeId, wps.SubscriptionRequest{
 
 ## Best Practices
 
-1. **Use Namespaces**: Prefix event names with a namespace (e.g., `waveai:`, `workspace:`, `block:`)
+1. **Use Namespaces**: Prefix event names with a namespace (e.g., `workspace:`, `block:`, `route:`)
 
 2. **Don't Block**: Use goroutines when publishing from performance-critical code or while holding locks
 
@@ -293,4 +241,3 @@ To debug event flow:
 ## Related Documentation
 
 - [Configuration System](config-system.md) - Uses WPS events for config updates
-- [Wave AI Architecture](waveai-architecture.md) - AI-related events

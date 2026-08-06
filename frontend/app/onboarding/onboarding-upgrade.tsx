@@ -8,7 +8,6 @@ import { useAtomValue } from "jotai";
 import { useEffect, useRef } from "react";
 import * as semver from "semver";
 import { CurrentOnboardingVersion } from "./onboarding-common";
-import { UpgradeOnboardingMinor } from "./onboarding-upgrade-minor";
 import { UpgradeOnboardingPatch } from "./onboarding-upgrade-patch";
 
 const UpgradeOnboardingModal = () => {
@@ -31,11 +30,7 @@ const UpgradeOnboardingModal = () => {
         return null;
     }
 
-    if (semver.gte(lastVersion, "v0.12.0")) {
-        return <UpgradeOnboardingPatch />;
-    }
-
-    return <UpgradeOnboardingMinor />;
+    return <UpgradeOnboardingPatch />;
 };
 
 UpgradeOnboardingModal.displayName = "UpgradeOnboardingModal";

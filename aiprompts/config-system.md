@@ -114,7 +114,7 @@ type SettingsType struct {
 
 **Naming Conventions:**
 
-- Use namespace prefixes (e.g., `term:`, `window:`, `ai:`, `web:`)
+- Use namespace prefixes (e.g., `term:`, `window:`, `web:`)
 - Use lowercase with colons as separators
 - Field names should be descriptive and follow Go naming conventions
 - Use `omitempty` tag to exclude empty values from JSON
@@ -158,8 +158,8 @@ If your setting should have a default value, add it to [`pkg/wconfig/defaultconf
 
 ```json
 {
-  "ai:preset": "ai@global",
-  "ai:model": "gpt-5-mini",
+  "app:defaultnewblock": "term",
+  "web:defaulturl": "https://github.com/wavetermdev/waveterm",
   // ... existing defaults ...
 
   "mynew:setting": "default value",
@@ -262,7 +262,6 @@ Settings are organized by namespace using colon separators:
 - `app:*` - Application-level settings
 - `term:*` - Terminal-specific settings
 - `window:*` - Window and UI settings
-- `ai:*` - AI-related settings
 - `web:*` - Web browser settings
 - `editor:*` - Code editor settings
 - `conn:*` - Connection settings

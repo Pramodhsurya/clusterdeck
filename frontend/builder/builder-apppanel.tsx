@@ -7,7 +7,6 @@ import { modalsModel } from "@/app/store/modalmodel";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { BuilderAppPanelModel, type TabType } from "@/builder/store/builder-apppanel-model";
-import { BuilderFocusManager } from "@/builder/store/builder-focusmanager";
 import { BuilderCodeTab } from "@/builder/tabs/builder-codetab";
 import { BuilderConfigDataTab } from "@/builder/tabs/builder-configdatatab";
 import { BuilderFilesTab, DeleteFileModal, RenameFileModal } from "@/builder/tabs/builder-filestab";
@@ -52,18 +51,17 @@ type TabButtonProps = {
     label: string;
     tabType: TabType;
     isActive: boolean;
-    isAppFocused: boolean;
     onClick: () => void;
     showStatusDot?: boolean;
 };
 
-const TabButton = memo(({ label, tabType, isActive, isAppFocused, onClick, showStatusDot }: TabButtonProps) => {
+const TabButton = memo(({ label, tabType, isActive, onClick, showStatusDot }: TabButtonProps) => {
     return (
         <button
             className={cn(
                 "px-4 py-2 text-sm font-medium transition-colors cursor-pointer",
                 isActive
-                    ? `text-primary border-b-2 ${isAppFocused ? "border-accent" : "border-gray-500"}`
+                    ? "text-primary border-b-2 border-accent"
                     : "text-secondary hover:text-primary border-b-2 border-transparent"
             )}
             onClick={onClick}
@@ -194,8 +192,6 @@ const BuilderAppPanel = memo(() => {
     const model = BuilderAppPanelModel.getInstance();
     const focusElemRef = useRef<HTMLInputElement>(null);
     const activeTab = useAtomValue(model.activeTab);
-    const focusType = useAtomValue(BuilderFocusManager.getInstance().focusType);
-    const isAppFocused = focusType === "app";
     const builderAppId = useAtomValue(atoms.builderAppId);
     const builderId = useAtomValue(atoms.builderId);
     const hasSecrets = useAtomValue(model.hasSecretsAtom);
@@ -210,13 +206,8 @@ const BuilderAppPanel = memo(() => {
 
     const handleTabClick = (tab: TabType) => {
         model.setActiveTab(tab);
-        BuilderFocusManager.getInstance().setAppFocused();
         model.giveFocus();
     };
-
-    const handleFocusCapture = useCallback((event: React.FocusEvent) => {
-        BuilderFocusManager.getInstance().setAppFocused();
-    }, []);
 
     const handlePanelClick = useCallback(
         (e: React.MouseEvent) => {
@@ -229,13 +220,11 @@ const BuilderAppPanel = memo(() => {
 
             const hasSelection = builderAppHasSelection();
             if (hasSelection) {
-                BuilderFocusManager.getInstance().setAppFocused();
                 return;
             }
 
             setTimeout(() => {
                 if (!builderAppHasSelection()) {
-                    BuilderFocusManager.getInstance().setAppFocused();
                     model.giveFocus();
                 }
             }, 0);
@@ -293,7 +282,6 @@ const BuilderAppPanel = memo(() => {
             className="w-full h-full flex flex-col border-b-3 border-border shadow-[0_2px_4px_rgba(0,0,0,0.1)]"
             data-builder-app-panel="true"
             onClick={handlePanelClick}
-            onFocusCapture={handleFocusCapture}
         >
             <div key="focuselem" className="h-0 w-0">
                 <input
@@ -311,7 +299,6 @@ const BuilderAppPanel = memo(() => {
                             label="Preview"
                             tabType="preview"
                             isActive={activeTab === "preview"}
-                            isAppFocused={isAppFocused}
                             onClick={() => handleTabClick("preview")}
                             showStatusDot={true}
                         />
@@ -319,21 +306,18 @@ const BuilderAppPanel = memo(() => {
                             label="Code"
                             tabType="code"
                             isActive={activeTab === "code"}
-                            isAppFocused={isAppFocused}
                             onClick={() => handleTabClick("code")}
                         />
                         <TabButton
                             label="Config/Data"
                             tabType="configdata"
                             isActive={activeTab === "configdata"}
-                            isAppFocused={isAppFocused}
                             onClick={() => handleTabClick("configdata")}
                         />
                         <TabButton
                             label="Files"
                             tabType="files"
                             isActive={activeTab === "files"}
-                            isAppFocused={isAppFocused}
                             onClick={() => handleTabClick("files")}
                         />
                         {hasSecrets && (
@@ -341,7 +325,6 @@ const BuilderAppPanel = memo(() => {
                                 label="Secrets"
                                 tabType="secrets"
                                 isActive={activeTab === "secrets"}
-                                isAppFocused={isAppFocused}
                                 onClick={() => handleTabClick("secrets")}
                             />
                         )}

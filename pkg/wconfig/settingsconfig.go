@@ -36,26 +36,6 @@ const AnySchema = `
 }
 `
 
-// old AI Widget presets (deprecated)
-type AiSettingsType struct {
-	AiClear         bool    `json:"ai:*,omitempty"`
-	AiPreset        string  `json:"ai:preset,omitempty"`
-	AiApiType       string  `json:"ai:apitype,omitempty"`
-	AiBaseURL       string  `json:"ai:baseurl,omitempty"`
-	AiApiToken      string  `json:"ai:apitoken,omitempty"`
-	AiName          string  `json:"ai:name,omitempty"`
-	AiModel         string  `json:"ai:model,omitempty"`
-	AiOrgID         string  `json:"ai:orgid,omitempty"`
-	AIApiVersion    string  `json:"ai:apiversion,omitempty"`
-	AiMaxTokens     float64 `json:"ai:maxtokens,omitempty"`
-	AiTimeoutMs     float64 `json:"ai:timeoutms,omitempty"`
-	AiProxyUrl      string  `json:"ai:proxyurl,omitempty"`
-	AiFontSize      float64 `json:"ai:fontsize,omitempty"`
-	AiFixedFontSize float64 `json:"ai:fixedfontsize,omitempty"`
-	DisplayName     string  `json:"display:name,omitempty"`
-	DisplayOrder    float64 `json:"display:order,omitempty"`
-}
-
 type SettingsType struct {
 	AppClear                      bool   `json:"app:*,omitempty"`
 	AppGlobalHotkey               string `json:"app:globalhotkey,omitempty"`
@@ -64,7 +44,6 @@ type SettingsType struct {
 	AppShowOverlayBlockNums       *bool  `json:"app:showoverlayblocknums,omitempty"`
 	AppCtrlVPaste                 *bool  `json:"app:ctrlvpaste,omitempty"`
 	AppConfirmQuit                *bool  `json:"app:confirmquit,omitempty"`
-	AppHideAiButton               bool   `json:"app:hideaibutton,omitempty"`
 	AppDisableCtrlShiftArrows     bool   `json:"app:disablectrlshiftarrows,omitempty"`
 	AppDisableCtrlShiftDisplay    bool   `json:"app:disablectrlshiftdisplay,omitempty"`
 	AppFocusFollowsCursor         string `json:"app:focusfollowscursor,omitempty" jsonschema:"enum=off,enum=on,enum=term"`
@@ -72,46 +51,28 @@ type SettingsType struct {
 
 	FeatureWaveAppBuilder bool `json:"feature:waveappbuilder,omitempty"`
 
-	AiClear         bool    `json:"ai:*,omitempty"`
-	AiPreset        string  `json:"ai:preset,omitempty"`
-	AiApiType       string  `json:"ai:apitype,omitempty"`
-	AiBaseURL       string  `json:"ai:baseurl,omitempty"`
-	AiApiToken      string  `json:"ai:apitoken,omitempty"`
-	AiName          string  `json:"ai:name,omitempty"`
-	AiModel         string  `json:"ai:model,omitempty"`
-	AiOrgID         string  `json:"ai:orgid,omitempty"`
-	AIApiVersion    string  `json:"ai:apiversion,omitempty"`
-	AiMaxTokens     float64 `json:"ai:maxtokens,omitempty"`
-	AiTimeoutMs     float64 `json:"ai:timeoutms,omitempty"`
-	AiProxyUrl      string  `json:"ai:proxyurl,omitempty"`
-	AiFontSize      float64 `json:"ai:fontsize,omitempty"`
-	AiFixedFontSize float64 `json:"ai:fixedfontsize,omitempty"`
-
-	WaveAiShowCloudModes bool   `json:"waveai:showcloudmodes,omitempty"`
-	WaveAiDefaultMode    string `json:"waveai:defaultmode,omitempty"`
-
-	TermClear               bool     `json:"term:*,omitempty"`
-	TermFontSize            float64  `json:"term:fontsize,omitempty"`
-	TermFontFamily          string   `json:"term:fontfamily,omitempty"`
-	TermTheme               string   `json:"term:theme,omitempty"`
-	TermDisableWebGl        bool     `json:"term:disablewebgl,omitempty"`
-	TermLocalShellPath      string   `json:"term:localshellpath,omitempty"`
-	TermLocalShellOpts      []string `json:"term:localshellopts,omitempty"`
-	TermGitBashPath         string   `json:"term:gitbashpath,omitempty"`
-	TermScrollback          *int64   `json:"term:scrollback,omitempty"`
-	TermCopyOnSelect        *bool    `json:"term:copyonselect,omitempty"`
-	TermTransparency        *float64 `json:"term:transparency,omitempty"`
-	TermAllowBracketedPaste *bool    `json:"term:allowbracketedpaste,omitempty"`
-	TermShiftEnterNewline   *bool    `json:"term:shiftenternewline,omitempty"`
-	TermMacOptionIsMeta     *bool    `json:"term:macoptionismeta,omitempty"`
-	TermCursor              string   `json:"term:cursor,omitempty"`
-	TermCursorBlink         *bool    `json:"term:cursorblink,omitempty"`
-	TermBellSound           *bool    `json:"term:bellsound,omitempty"`
-	TermBellIndicator       *bool    `json:"term:bellindicator,omitempty"`
-	TermOsc52               string   `json:"term:osc52,omitempty" jsonschema:"enum=focus,enum=always"`
-	TermDurable                    *bool    `json:"term:durable,omitempty"`
-	TermShowSplitButtons           bool     `json:"term:showsplitbuttons,omitempty"`
-	TermTrimTrailingWhitespace     *bool    `json:"term:trimtrailingwhitespace,omitempty"`
+	TermClear                  bool     `json:"term:*,omitempty"`
+	TermFontSize               float64  `json:"term:fontsize,omitempty"`
+	TermFontFamily             string   `json:"term:fontfamily,omitempty"`
+	TermTheme                  string   `json:"term:theme,omitempty"`
+	TermDisableWebGl           bool     `json:"term:disablewebgl,omitempty"`
+	TermLocalShellPath         string   `json:"term:localshellpath,omitempty"`
+	TermLocalShellOpts         []string `json:"term:localshellopts,omitempty"`
+	TermGitBashPath            string   `json:"term:gitbashpath,omitempty"`
+	TermScrollback             *int64   `json:"term:scrollback,omitempty"`
+	TermCopyOnSelect           *bool    `json:"term:copyonselect,omitempty"`
+	TermTransparency           *float64 `json:"term:transparency,omitempty"`
+	TermAllowBracketedPaste    *bool    `json:"term:allowbracketedpaste,omitempty"`
+	TermShiftEnterNewline      *bool    `json:"term:shiftenternewline,omitempty"`
+	TermMacOptionIsMeta        *bool    `json:"term:macoptionismeta,omitempty"`
+	TermCursor                 string   `json:"term:cursor,omitempty"`
+	TermCursorBlink            *bool    `json:"term:cursorblink,omitempty"`
+	TermBellSound              *bool    `json:"term:bellsound,omitempty"`
+	TermBellIndicator          *bool    `json:"term:bellindicator,omitempty"`
+	TermOsc52                  string   `json:"term:osc52,omitempty" jsonschema:"enum=focus,enum=always"`
+	TermDurable                *bool    `json:"term:durable,omitempty"`
+	TermShowSplitButtons       bool     `json:"term:showsplitbuttons,omitempty"`
+	TermTrimTrailingWhitespace *bool    `json:"term:trimtrailingwhitespace,omitempty"`
 
 	EditorMinimapEnabled      bool    `json:"editor:minimapenabled,omitempty"`
 	EditorStickyScrollEnabled bool    `json:"editor:stickyscrollenabled,omitempty"`
@@ -184,91 +145,6 @@ type SettingsType struct {
 	TsunamiGoPath         string `json:"tsunami:gopath,omitempty"`
 }
 
-func (s *SettingsType) GetAiSettings() *AiSettingsType {
-	return &AiSettingsType{
-		AiClear:         s.AiClear,
-		AiPreset:        s.AiPreset,
-		AiApiType:       s.AiApiType,
-		AiBaseURL:       s.AiBaseURL,
-		AiApiToken:      s.AiApiToken,
-		AiName:          s.AiName,
-		AiModel:         s.AiModel,
-		AiOrgID:         s.AiOrgID,
-		AIApiVersion:    s.AIApiVersion,
-		AiMaxTokens:     s.AiMaxTokens,
-		AiTimeoutMs:     s.AiTimeoutMs,
-		AiProxyUrl:      s.AiProxyUrl,
-		AiFontSize:      s.AiFontSize,
-		AiFixedFontSize: s.AiFixedFontSize,
-	}
-}
-
-func MergeAiSettings(settings ...*AiSettingsType) *AiSettingsType {
-	result := &AiSettingsType{}
-
-	for _, s := range settings {
-		if s == nil {
-			continue
-		}
-
-		// If this setting has AiClear=true, replace result with this entire setting
-		if s.AiClear {
-			result = s
-			result.AiClear = false
-			continue
-		}
-
-		// Merge non-empty values
-		if s.AiPreset != "" {
-			result.AiPreset = s.AiPreset
-		}
-		if s.AiApiType != "" {
-			result.AiApiType = s.AiApiType
-		}
-		if s.AiBaseURL != "" {
-			result.AiBaseURL = s.AiBaseURL
-		}
-		if s.AiApiToken != "" {
-			result.AiApiToken = s.AiApiToken
-		}
-		if s.AiName != "" {
-			result.AiName = s.AiName
-		}
-		if s.AiModel != "" {
-			result.AiModel = s.AiModel
-		}
-		if s.AiOrgID != "" {
-			result.AiOrgID = s.AiOrgID
-		}
-		if s.AIApiVersion != "" {
-			result.AIApiVersion = s.AIApiVersion
-		}
-		if s.AiProxyUrl != "" {
-			result.AiProxyUrl = s.AiProxyUrl
-		}
-		if s.AiMaxTokens != 0 {
-			result.AiMaxTokens = s.AiMaxTokens
-		}
-		if s.AiTimeoutMs != 0 {
-			result.AiTimeoutMs = s.AiTimeoutMs
-		}
-		if s.AiFontSize != 0 {
-			result.AiFontSize = s.AiFontSize
-		}
-		if s.AiFixedFontSize != 0 {
-			result.AiFixedFontSize = s.AiFixedFontSize
-		}
-		if s.DisplayName != "" {
-			result.DisplayName = s.DisplayName
-		}
-		if s.DisplayOrder != 0 {
-			result.DisplayOrder = s.DisplayOrder
-		}
-	}
-
-	return result
-}
-
 type ConfigError struct {
 	File string `json:"file"`
 	Err  string `json:"err"`
@@ -281,34 +157,6 @@ type WebBookmark struct {
 	IconColor    string  `json:"iconcolor,omitempty"`
 	IconUrl      string  `json:"iconurl,omitempty"`
 	DisplayOrder float64 `json:"display:order,omitempty"`
-}
-
-// Wave AI panel mode configuration (NEW)
-type AIModeConfigType struct {
-	DisplayName        string   `json:"display:name"`
-	DisplayOrder       float64  `json:"display:order,omitempty"`
-	DisplayIcon        string   `json:"display:icon,omitempty"`
-	DisplayDescription string   `json:"display:description,omitempty"`
-	Provider           string   `json:"ai:provider,omitempty" jsonschema:"enum=wave,enum=google,enum=groq,enum=openrouter,enum=nanogpt,enum=openai,enum=azure,enum=azure-legacy,enum=custom"`
-	APIType            string   `json:"ai:apitype,omitempty" jsonschema:"enum=google-gemini,enum=openai-responses,enum=openai-chat"`
-	Model              string   `json:"ai:model,omitempty"`
-	ThinkingLevel      string   `json:"ai:thinkinglevel,omitempty" jsonschema:"enum=low,enum=medium,enum=high"`
-	Verbosity          string   `json:"ai:verbosity,omitempty" jsonschema:"enum=low,enum=medium,enum=high,description=Text verbosity level (OpenAI Responses API only)"`
-	Endpoint           string   `json:"ai:endpoint,omitempty"`
-	ProxyURL           string   `json:"ai:proxyurl,omitempty"`
-	AzureAPIVersion    string   `json:"ai:azureapiversion,omitempty"`
-	APIToken           string   `json:"ai:apitoken,omitempty"`
-	APITokenSecretName string   `json:"ai:apitokensecretname,omitempty"`
-	AzureResourceName  string   `json:"ai:azureresourcename,omitempty"`
-	AzureDeployment    string   `json:"ai:azuredeployment,omitempty"`
-	Capabilities       []string `json:"ai:capabilities,omitempty" jsonschema:"enum=pdfs,enum=images,enum=tools"`
-	SwitchCompat       []string `json:"ai:switchcompat,omitempty"`
-	WaveAICloud        bool     `json:"waveai:cloud,omitempty"`
-	WaveAIPremium      bool     `json:"waveai:premium,omitempty"`
-}
-
-type AIModeConfigUpdate struct {
-	Configs map[string]AIModeConfigType `json:"configs"`
 }
 
 type WidgetConfigType struct {
@@ -375,7 +223,6 @@ type FullConfigType struct {
 	TermThemes     map[string]TermThemeType        `json:"termthemes"`
 	Connections    map[string]ConnKeywords         `json:"connections"`
 	Bookmarks      map[string]WebBookmark          `json:"bookmarks"`
-	WaveAIModes    map[string]AIModeConfigType     `json:"waveai"`
 	ConfigErrors   []ConfigError                   `json:"configerrors" configfile:"-"`
 	Version        string                          `json:"version" configfile:"-"`
 	BuildTime      string                          `json:"buildtime" configfile:"-"`
@@ -952,30 +799,6 @@ func (fc *FullConfigType) CountCustomWidgets() int {
 	count := 0
 	for widgetID := range fc.Widgets {
 		if !strings.HasPrefix(widgetID, "defwidget@") {
-			count++
-		}
-	}
-	return count
-}
-
-// CountCustomAIPresets returns the number of custom AI presets the user has defined.
-// Custom AI presets are identified as presets that start with "ai@" but aren't "ai@global" or "ai@wave".
-func (fc *FullConfigType) CountCustomAIPresets() int {
-	count := 0
-	for presetID := range fc.Presets {
-		if strings.HasPrefix(presetID, "ai@") && presetID != "ai@global" && presetID != "ai@wave" {
-			count++
-		}
-	}
-	return count
-}
-
-// CountCustomAIModes returns the number of custom AI modes the user has defined.
-// Custom AI modes are identified as modes that don't start with "waveai@".
-func (fc *FullConfigType) CountCustomAIModes() int {
-	count := 0
-	for modeID := range fc.WaveAIModes {
-		if !strings.HasPrefix(modeID, "waveai@") {
 			count++
 		}
 	}

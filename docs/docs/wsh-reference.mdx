@@ -39,7 +39,7 @@ wsh edit [path]
 wsh edit -m [path]           # opens in magnified block
 ```
 
-This will open up a codeedit block for the specified file. This is useful for quickly editing files on a local or remote machine in Wave's graphical editor. This command returns immediately after opening the block. 
+This will open up a codeedit block for the specified file. This is useful for quickly editing files on a local or remote machine in Wave's graphical editor. This command returns immediately after opening the block.
 
 For `$EDITOR` integration (e.g. with `git commit`), see [`wsh editor`](#editor) which blocks until the editor is closed.
 
@@ -130,49 +130,6 @@ wsh getmeta -b [other-tab-id] "bg:*" --clear-prefix | wsh setmeta -b tab --json 
 
 ---
 
-## ai
-
-Append content to the Wave AI sidebar. Files are attached as proper file attachments (supporting images, PDFs, and text), not encoded as text. By default, content is added to the sidebar without auto-submitting, allowing you to review and add more context before sending to the AI.
-
-You can attach multiple files at once (up to 15 files). Use `-m` to add a message along with files, `-s` to auto-submit immediately, and `-n` to start a new chat conversation. Use "-" to read from stdin.
-
-```sh
-# Pipe command output to AI (ask question in UI)
-git diff | wsh ai -
-docker logs mycontainer | wsh ai -
-
-# Attach files without auto-submit (review in UI first)
-wsh ai main.go utils.go
-wsh ai screenshot.png logs.txt
-
-# Attach files with message
-wsh ai app.py -m "find potential bugs"
-wsh ai *.log -m "analyze these error logs"
-
-# Auto-submit immediately
-wsh ai config.json -s -m "explain this configuration"
-tail -n 50 app.log | wsh ai -s - -m "what's causing these errors?"
-
-# Start new chat and attach files
-wsh ai -n report.pdf data.csv -m "summarize these reports"
-
-# Attach different file types (images, PDFs, code)
-wsh ai architecture.png api-spec.pdf server.go -m "review the system design"
-```
-
-**File Size Limits:**
-- Text files: 200KB maximum
-- PDF files: 5MB maximum
-- Image files: 7MB maximum (accounts for base64 encoding overhead)
-- Maximum 15 files per command
-
-**Flags:**
-- `-m, --message <text>` - Add message text along with files
-- `-s, --submit` - Auto-submit immediately (default waits for user)
-- `-n, --new` - Clear current chat and start fresh conversation
-
----
-
 ## editconfig
 
 You can easily open up any of Wave's config files using this command.
@@ -188,9 +145,6 @@ wsh editconfig presets.json
 
 # opens widgets.json
 wsh editconfig widgets.json
-
-# opens ai presets
-wsh editconfig presets/ai.json
 ```
 
 ---
@@ -987,10 +941,11 @@ wsh blocks list [flags]
 List all blocks with optional filtering by workspace, window, tab, or view type. Output can be formatted as a table (default) or JSON for scripting.
 
 Flags:
+
 - `--workspace <id>` - restrict to specific workspace id
 - `--window <id>` - restrict to specific window id
 - `--tab <id>` - restrict to specific tab id
-- `--view <type>` - filter by view type (term, web, preview, edit, sysinfo, waveai)
+- `--view <type>` - filter by view type
 - `--json` - output results as JSON
 - `--timeout <ms>` - RPC timeout in milliseconds (default: 5000)
 
@@ -1009,7 +964,6 @@ wsh blocks list --workspace=12d0c067-378e-454c-872e-77a314248114
 # Output as JSON for scripting
 wsh blocks list --json
 ```
-
 
 ---
 
@@ -1120,4 +1074,5 @@ The secrets UI provides a convenient visual way to browse, add, edit, and delete
 :::tip
 Use secrets in your scripts to avoid hardcoding sensitive values. Secrets work across remote machines - store an API key locally with `wsh secret set`, then access it from any SSH or WSL connection with `wsh secret get`. The secret is securely retrieved from your local machine without needing to duplicate it on remote systems.
 :::
+
 </PlatformProvider>

@@ -24,12 +24,6 @@ export class RpcApiType {
         return client.wshRpcCall("activity", data, opts);
     }
 
-    // command "aisendmessage" [call]
-    AiSendMessageCommand(client: WshClient, data: AiMessageData, opts?: RpcOpts): Promise<void> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "aisendmessage", data, opts);
-        return client.wshRpcCall("aisendmessage", data, opts);
-    }
-
     // command "authenticate" [call]
     AuthenticateCommand(client: WshClient, data: string, opts?: RpcOpts): Promise<CommandAuthenticateRtnData> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "authenticate", data, opts);
@@ -394,12 +388,6 @@ export class RpcApiType {
     FileReadCommand(client: WshClient, data: FileData, opts?: RpcOpts): Promise<FileData> {
         if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "fileread", data, opts);
         return client.wshRpcCall("fileread", data, opts);
-    }
-
-    // command "filerestorebackup" [call]
-    FileRestoreBackupCommand(client: WshClient, data: CommandFileRestoreBackupData, opts?: RpcOpts): Promise<void> {
-        if (this.mockClient) return this.mockClient.mockWshRpcCall(client, "filerestorebackup", data, opts);
-        return client.wshRpcCall("filerestorebackup", data, opts);
     }
 
     // command "filestream" [call]

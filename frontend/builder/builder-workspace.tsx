@@ -5,9 +5,7 @@ import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { BuilderAppPanel } from "@/builder/builder-apppanel";
 import { BuilderBuildPanel } from "@/builder/builder-buildpanel";
-import { BuilderFocusManager } from "@/builder/store/builder-focusmanager";
 import { atoms } from "@/store/global";
-import { cn } from "@/util/util";
 import { useAtomValue } from "jotai";
 import { memo, useCallback, useEffect, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
@@ -27,8 +25,6 @@ const BuilderWorkspace = memo(() => {
     const builderId = useAtomValue(atoms.builderId);
     const [layout, setLayout] = useState<BuilderLayout>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const focusType = useAtomValue(BuilderFocusManager.getInstance().focusType);
-    const isAppFocused = focusType === "app";
 
     useEffect(() => {
         const loadLayout = async () => {
@@ -90,10 +86,7 @@ const BuilderWorkspace = memo(() => {
     return (
         <div className="flex-1 overflow-hidden">
             <div
-                className={cn(
-                    "flex flex-col relative h-full",
-                    isAppFocused ? "border-2 border-accent" : "border-2 border-transparent"
-                )}
+                className="flex flex-col relative h-full border-2 border-transparent"
                 style={{ borderBottomRightRadius: 8 }}
             >
                 <PanelGroup direction="vertical" onLayout={handleVerticalLayout}>

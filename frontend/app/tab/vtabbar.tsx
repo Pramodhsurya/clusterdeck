@@ -14,7 +14,6 @@ import { buildTabBarContextMenu, buildTabContextMenu } from "./tabcontextmenu";
 import { UpdateStatusBanner } from "./updatebanner";
 import { VTab, VTabItem } from "./vtab";
 import { VTabBarEnv } from "./vtabbarenv";
-import { WorkspaceSwitcher } from "./workspaceswitcher";
 export type { VTabItem } from "./vtab";
 
 const MacOSHeader = memo(() => {
@@ -38,8 +37,7 @@ const MacOSHeader = memo(() => {
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
             >
                 {/* Clusterdeck: Wave's native workspace switcher is hidden — the
-                    connections rail is the single workspace switcher. The AI panel
-                    toggle moved to the widget rail (see widgets.tsx). */}
+                    connections rail is the single workspace switcher. */}
                 <UpdateStatusBanner />
             </div>
         </>

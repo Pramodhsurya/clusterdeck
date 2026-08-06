@@ -66,7 +66,6 @@ type WshRpcInterface interface {
 	EventUnsubAllCommand(ctx context.Context) error
 	EventReadHistoryCommand(ctx context.Context, data CommandEventReadHistoryData) ([]*wps.WaveEvent, error)
 
-	FileRestoreBackupCommand(ctx context.Context, data CommandFileRestoreBackupData) error
 	GetTempDirCommand(ctx context.Context, data CommandGetTempDirData) (string, error)
 	WriteTempFileCommand(ctx context.Context, data CommandWriteTempFileData) (string, error)
 	StreamTestCommand(ctx context.Context) chan RespOrErrorUnion[int]
@@ -155,9 +154,6 @@ type WshRpcInterface interface {
 	VDomCreateContextCommand(ctx context.Context, data vdom.VDomCreateContext) (*waveobj.ORef, error)
 	VDomAsyncInitiationCommand(ctx context.Context, data vdom.VDomAsyncInitiationRequest) error
 
-	// ai
-	AiSendMessageCommand(ctx context.Context, data AiMessageData) error
-
 	// screenshot
 	CaptureBlockScreenshotCommand(ctx context.Context, data CommandCaptureBlockScreenshotData) (string, error)
 
@@ -238,7 +234,6 @@ func (rc RpcContext) GenerateRouteId() string {
 	}
 	return "proc:" + uuid.New().String()
 }
-
 
 type CommandAuthenticateRtnData struct {
 	RouteId string `json:"routeid"`
@@ -339,7 +334,6 @@ type CommandEventReadHistoryData struct {
 	MaxItems int    `json:"maxitems"`
 }
 
-
 type CpuDataRequest struct {
 	Id    string `json:"id"`
 	Count int    `json:"count"`
@@ -348,11 +342,6 @@ type CpuDataRequest struct {
 type CpuDataType struct {
 	Time  int64   `json:"time"`
 	Value float64 `json:"value"`
-}
-
-type CommandFileRestoreBackupData struct {
-	BackupFilePath    string `json:"backupfilepath"`
-	RestoreToFileName string `json:"restoretofilename"`
 }
 
 type CommandGetTempDirData struct {
@@ -493,27 +482,6 @@ type BlocksListEntry struct {
 	Meta        waveobj.MetaMapType `json:"meta"`
 }
 
-type AiMessageData struct {
-	Message string `json:"message,omitempty"`
-}
-
-
-
-
-
-type AIAttachedFile struct {
-	Name   string `json:"name"`
-	Type   string `json:"type"`
-	Size   int    `json:"size"`
-	Data64 string `json:"data64"`
-}
-
-
-
-
-
-
-
 type CommandCaptureBlockScreenshotData struct {
 	BlockId string `json:"blockid"`
 }
@@ -557,32 +525,29 @@ type ActivityDisplayType struct {
 }
 
 type ActivityUpdate struct {
-	FgMinutes           int                   `json:"fgminutes,omitempty"`
-	ActiveMinutes       int                   `json:"activeminutes,omitempty"`
-	OpenMinutes         int                   `json:"openminutes,omitempty"`
-	WaveAIFgMinutes     int                   `json:"waveaifgminutes,omitempty"`
-	WaveAIActiveMinutes int                   `json:"waveaiactiveminutes,omitempty"`
-	NumTabs             int                   `json:"numtabs,omitempty"`
-	NewTab              int                   `json:"newtab,omitempty"`
-	NumBlocks           int                   `json:"numblocks,omitempty"`
-	NumWindows          int                   `json:"numwindows,omitempty"`
-	NumWS               int                   `json:"numws,omitempty"`
-	NumWSNamed          int                   `json:"numwsnamed,omitempty"`
-	NumSSHConn          int                   `json:"numsshconn,omitempty"`
-	NumWSLConn          int                   `json:"numwslconn,omitempty"`
-	NumMagnify          int                   `json:"nummagnify,omitempty"`
-	TermCommandsRun     int                   `json:"termcommandsrun,omitempty"`
-	NumPanics           int                   `json:"numpanics,omitempty"`
-	NumAIReqs           int                   `json:"numaireqs,omitempty"`
-	Startup             int                   `json:"startup,omitempty"`
-	Shutdown            int                   `json:"shutdown,omitempty"`
-	SetTabTheme         int                   `json:"settabtheme,omitempty"`
-	BuildTime           string                `json:"buildtime,omitempty"`
-	Displays            []ActivityDisplayType `json:"displays,omitempty"`
-	Renderers           map[string]int        `json:"renderers,omitempty"`
-	Blocks              map[string]int        `json:"blocks,omitempty"`
-	WshCmds             map[string]int        `json:"wshcmds,omitempty"`
-	Conn                map[string]int        `json:"conn,omitempty"`
+	FgMinutes       int                   `json:"fgminutes,omitempty"`
+	ActiveMinutes   int                   `json:"activeminutes,omitempty"`
+	OpenMinutes     int                   `json:"openminutes,omitempty"`
+	NumTabs         int                   `json:"numtabs,omitempty"`
+	NewTab          int                   `json:"newtab,omitempty"`
+	NumBlocks       int                   `json:"numblocks,omitempty"`
+	NumWindows      int                   `json:"numwindows,omitempty"`
+	NumWS           int                   `json:"numws,omitempty"`
+	NumWSNamed      int                   `json:"numwsnamed,omitempty"`
+	NumSSHConn      int                   `json:"numsshconn,omitempty"`
+	NumWSLConn      int                   `json:"numwslconn,omitempty"`
+	NumMagnify      int                   `json:"nummagnify,omitempty"`
+	TermCommandsRun int                   `json:"termcommandsrun,omitempty"`
+	NumPanics       int                   `json:"numpanics,omitempty"`
+	Startup         int                   `json:"startup,omitempty"`
+	Shutdown        int                   `json:"shutdown,omitempty"`
+	SetTabTheme     int                   `json:"settabtheme,omitempty"`
+	BuildTime       string                `json:"buildtime,omitempty"`
+	Displays        []ActivityDisplayType `json:"displays,omitempty"`
+	Renderers       map[string]int        `json:"renderers,omitempty"`
+	Blocks          map[string]int        `json:"blocks,omitempty"`
+	WshCmds         map[string]int        `json:"wshcmds,omitempty"`
+	Conn            map[string]int        `json:"conn,omitempty"`
 }
 
 type ConnExtData struct {

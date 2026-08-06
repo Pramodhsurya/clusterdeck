@@ -1,9 +1,6 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-// Focus manager — simplified for Clusterdeck. The Wave AI panel focus
-// management was removed; only node (block) focus remains.
-
 import { getBlockComponentModel } from "@/app/store/global";
 import { globalStore } from "@/app/store/jotaiStore";
 import { getLayoutModelForStaticTab } from "@/layout/index";

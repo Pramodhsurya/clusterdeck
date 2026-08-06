@@ -46,7 +46,7 @@ const SettingsGroups = [
     {
         id: "application",
         label: "Application",
-        items: ["AI button", "Focus behavior", "Localhost label"],
+        items: ["Focus behavior", "Localhost label"],
     },
     {
         id: "terminal",
@@ -98,7 +98,6 @@ export function ConfiguiPreview() {
     const overriddenEntries = useMemo(() => Object.entries(settings).sort(([a], [b]) => a.localeCompare(b)), [settings]);
     const previewJson = useMemo(() => JSON.stringify(settings, null, 2), [settings]);
 
-    const hideAiButton = getEffectiveSetting(settings, "app:hideaibutton");
     const focusFollowsCursor = getEffectiveSetting(settings, "app:focusfollowscursor");
     const cursorStyle = getEffectiveSetting(settings, "term:cursor");
     const cursorBlink = getEffectiveSetting(settings, "term:cursorblink");
@@ -167,18 +166,8 @@ export function ConfiguiPreview() {
                     {selectedGroup.id === "application" && (
                         <ConfigSection
                             title="Application"
-                            description="Wave-specific settings with a layout inspired by VS Code: the setting title, description, and metadata have room to breathe, while the control stays aligned underneath."
+                            description="Application settings with a layout inspired by VS Code: the setting title, description, and metadata have room to breathe, while the control stays aligned underneath."
                         >
-                            <ConfigBooleanField
-                                configKey="app:hideaibutton"
-                                label="Hide Wave AI button"
-                                description="When enabled, the AI button is hidden from the tab bar."
-                                value={settings["app:hideaibutton"]}
-                                defaultValue={DefaultSettings["app:hideaibutton"]}
-                                onValueChange={(value) => setSettingsValue(setSettings, "app:hideaibutton", value)}
-                                trueLabel="True"
-                                falseLabel="False"
-                            />
                             <ConfigSelectField
                                 configKey="app:focusfollowscursor"
                                 label="Focus follows cursor"
@@ -207,7 +196,7 @@ export function ConfiguiPreview() {
                     {selectedGroup.id === "terminal" && (
                         <ConfigSection
                             title="Terminal"
-                            description="This section mirrors the familiar VS Code rhythm of stacked settings rows while keeping Wave’s explicit default state and override indicators."
+                            description="This section mirrors the familiar VS Code rhythm of stacked settings rows while keeping explicit default-state and override indicators."
                         >
                             <ConfigSelectField
                                 configKey="term:cursor"
@@ -300,10 +289,10 @@ export function ConfiguiPreview() {
                                     {sampleLabel === "" ? "connection label hidden by explicit empty-string override" : `connection label: ${sampleLabel}`}
                                 </div>
                                 <div className="mb-3 text-xs text-muted">
-                                    hide AI button: {String(hideAiButton)} · focus follows cursor: {focusFollowsCursor}
+                                    focus follows cursor: {focusFollowsCursor}
                                 </div>
                                 <div className="text-muted" style={{ fontFamily, fontSize: terminalFontSize }}>
-                                    <div>$ echo &quot;waveterm config preview&quot;</div>
+                                    <div>$ echo &quot;clusterdeck config preview&quot;</div>
                                     <div>cursor: {cursorStyle}</div>
                                     <div>blink: {String(cursorBlink)}</div>
                                     <div>preview sort: {previewSort}</div>

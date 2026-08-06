@@ -16,8 +16,12 @@ func TestGenerateWaveEventTypes(t *testing.T) {
 	tsTypesMap := make(map[reflect.Type]string)
 	waveEventTypeDecl := GenerateWaveEventTypes(tsTypesMap)
 
-	if !strings.Contains(waveEventTypeDecl, `type WaveEventName = "blockclose"`) {
-		t.Fatalf("expected WaveEventName declaration, got:\n%s", waveEventTypeDecl)
+	if !strings.Contains(waveEventTypeDecl, "type WaveEventName =\n") || !strings.Contains(waveEventTypeDecl, `| "blockclose"`) {
+		t.Fatalf("expected multiline WaveEventName declaration, got:\n%s", waveEventTypeDecl)
+	}
+	removedEventPrefix := "wave" + "ai:"
+	if strings.Contains(waveEventTypeDecl, removedEventPrefix) {
+		t.Fatalf("generated events must not include removed AI events, got:\n%s", waveEventTypeDecl)
 	}
 	if !strings.Contains(waveEventTypeDecl, `{ event: "block:jobstatus"; data?: BlockJobStatusData; }`) {
 		t.Fatalf("expected typed block:jobstatus event, got:\n%s", waveEventTypeDecl)

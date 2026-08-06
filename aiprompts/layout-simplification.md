@@ -51,7 +51,6 @@ React re-renders with updated state
 
 1. **Generation tracking**: [`layoutState.generation++`](../frontend/layout/lib/layoutTree.ts:294) appears in 10+ places, only to trigger atom writes
 2. **Bidirectional atoms**: [`withLayoutTreeStateAtomFromTab()`](../frontend/layout/lib/layoutAtom.ts:18-60) has complex read/write logic
-3. **Timing coordination**: The entire Section 8 of the WaveAI focus proposal exists only because of race conditions between focus updates and atom commits
 4. **False reactivity**: Changes to `focusedNodeId` trigger full tree state propagation even though they're unrelated to tree structure
 
 ## Proposed "Write Cache" Architecture
@@ -296,43 +295,6 @@ export function getLayoutStateAtomFromTab(
 4. **Faster updates**: No round-trip through WaveObject for every change
 5. **Easier debugging**: Clear separation between runtime state (local atoms) and persistence (WaveObject)
 
-### Impact on WaveAI Focus Proposal
-
-The entire Section 8 ("Layout Model Focus Integration - CRITICAL TIMING") **becomes unnecessary**:
-
-**BEFORE** (complex timing coordination):
-```typescript
-treeReducer(action: LayoutTreeAction) {
-  insertNode(this.treeState, action);  // generation++
-  
-  // CRITICAL: Must update focus manager BEFORE atom commits
-  if (action.focused) {
-    focusManager.requestNodeFocus();  // Synchronous!
-  }
-  
-  // Then atom commits
-  this.setter(this.treeStateAtom, ...);
-  // Now isFocused sees correct focusType
-}
-```
-
-**AFTER** (trivial):
-```typescript
-treeReducer(action: LayoutTreeAction) {
-  insertNode(this.treeState, action);  // Just mutates local state
-  
-  // Update local atom (synchronous)
-  this.setter(this.localTreeStateAtom, { ...this.treeState });
-  
-  // Update focus manager (order doesn't matter - both updated synchronously)
-  if (action.focused) {
-    focusManager.setBlockFocus();
-  }
-  
-  // Both updates happen in same tick, no race condition possible!
-}
-```
-
 ### Code Deletion
 
 **Can delete**:
@@ -463,8 +425,7 @@ The NodeModel creates derived atoms that depend on `treeStateAtom`:
 isFocused: atom((get) => {
     const treeState = get(this.treeStateAtom);  // Subscribe to treeStateAtom
     const isFocused = treeState.focusedNodeId === nodeid;
-    const waveAIFocused = get(atoms.waveAIFocusedAtom);
-    return isFocused && !waveAIFocused;
+    return isFocused;
 }),
 
 isMagnified: atom((get) => {
@@ -480,8 +441,7 @@ isMagnified: atom((get) => {
 isFocused: atom((get) => {
     const treeState = get(this.localTreeStateAtom);  // Subscribe to localTreeStateAtom
     const isFocused = treeState.focusedNodeId === nodeid;
-    const waveAIFocused = get(atoms.waveAIFocusedAtom);
-    return isFocused && !waveAIFocused;
+    return isFocused;
 }),
 ```
 
@@ -676,11 +636,9 @@ The "write cache" pattern can simplify the layout system by ~70% while maintaini
 - **Keep**: All tree logic, backend integration, persistence
 - **Gain**: Simpler code, faster updates, easier debugging
 
-This also makes the WaveAI focus integration trivial, eliminating the need for complex timing coordination.
 
 ## Recommendation
 
-Implement this simplification **before** adding WaveAI focus features. The cleaner foundation will make the focus work much easier and the codebase more maintainable long-term.
 # Wave Terminal Layout System - Simplification via Write Cache Pattern
 
 ## Risk Assessment: LOW RISK, Well-Contained Change

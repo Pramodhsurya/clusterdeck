@@ -1,13 +1,13 @@
-# Wave Terminal - High Level Architecture Overview
+# Clusterdeck - High Level Architecture Overview
 
 ## Project Description
 
-Wave Terminal is an open-source AI-native terminal built for seamless workflows. It's an Electron application that serves as a command line terminal host (it hosts CLI applications rather than running inside a CLI). The application combines a React frontend with a Go backend server to provide a modern terminal experience with advanced features.
+Clusterdeck is a macOS-first connection-workspace IDE built on Wave Terminal. It combines an Electron/React frontend with a Go backend to provide an integrated connection rail, file explorer, editor, and terminal experience.
 
 ## Top-Level Directory Structure
 
 ```
-waveterm/
+clusterdeck/
 ├── emain/              # Electron main process code
 ├── frontend/           # React application (renderer process)
 ├── cmd/                # Go command-line applications
@@ -51,7 +51,6 @@ The React application runs in the Electron renderer process:
 frontend/
 ├── app/                # Main application code
 │   ├── app.tsx         # Root App component
-│   ├── aipanel/        # AI panel UI
 │   ├── block/          # Block-based UI components
 │   ├── element/        # Reusable UI elements
 │   ├── hook/           # Custom React hooks
@@ -65,7 +64,6 @@ frontend/
 │   │   ├── term/       # Terminal view
 │   │   ├── tsunami/    # Tsunami builder view
 │   │   ├── vdom/       # Virtual DOM view
-│   │   ├── waveai/     # AI chat integration
 │   │   ├── waveconfig/ # Config editor view
 │   │   └── webview/    # Web view
 │   └── workspace/      # Workspace management
@@ -113,7 +111,6 @@ The Go codebase is organized into modular packages:
 - `waveobj/` - Core data objects
 - `service/` - Service layer
 - `wps/` - Wave PubSub event system
-- `waveai/` - AI functionality
 - `shellexec/` - Shell execution
 - `util/` - Common utilities
 
@@ -133,7 +130,7 @@ The core communication system is built around the **WSH RPC (Wave Shell RPC)** s
 
 ### WSH RPC System (`pkg/wshrpc/`)
 
-The WSH RPC system is the backbone of Wave Terminal's communication architecture:
+The WSH RPC system is the backbone of Clusterdeck's communication architecture:
 
 **Key Components:**
 
