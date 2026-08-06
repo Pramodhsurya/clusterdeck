@@ -13,8 +13,8 @@ import clsx from "clsx";
 import { useAtomValue } from "jotai";
 import { forwardRef, memo, useCallback, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { makeORef } from "../store/wos";
-import { TabBadges } from "./tabbadges";
 import "./tab.scss";
+import { TabBadges } from "./tabbadges";
 import { buildTabContextMenu } from "./tabcontextmenu";
 
 export type TabEnv = WaveEnvSubset<{
@@ -187,31 +187,44 @@ const TabV = forwardRef<HTMLDivElement, TabVProps>((props, ref) => {
                 "new-tab": isNew,
             })}
             onMouseDown={onDragStart}
-            onClick={onClick}
             onContextMenu={onContextMenu}
             data-tab-id={tabId}
         >
             {showDivider && <div className="tab-divider" />}
             <div className="tab-inner">
                 <div
-                    ref={editableRef}
-                    className={clsx("name", { focused: isEditable })}
-                    contentEditable={isEditable}
-                    onDoubleClick={handleRenameTab}
-                    onBlur={handleBlur}
-                    onKeyDown={handleKeyDown}
-                    suppressContentEditableWarning={true}
+                    className="tab-selectable"
+                    role={isEditable ? undefined : "tab"}
+                    aria-label={isEditable ? undefined : tabName || "Untitled tab"}
+                    aria-selected={isEditable ? undefined : active}
+                    tabIndex={isEditable ? -1 : active ? 0 : -1}
+                    onClick={onClick}
                 >
-                    {displayName}
+                    <div
+                        ref={editableRef}
+                        className={clsx("name", { focused: isEditable })}
+                        contentEditable={isEditable}
+                        role={isEditable ? "textbox" : undefined}
+                        aria-label={isEditable ? "Tab name" : undefined}
+                        onDoubleClick={handleRenameTab}
+                        onBlur={handleBlur}
+                        onKeyDown={handleKeyDown}
+                        suppressContentEditableWarning={true}
+                    >
+                        {displayName}
+                    </div>
+                    <TabBadges badges={badges} flagColor={flagColor} />
                 </div>
-                <TabBadges badges={badges} flagColor={flagColor} />
                 <Button
+                    type="button"
                     className="ghost grey close"
                     onClick={onClose}
                     onMouseDown={handleMouseDownOnClose}
+                    tabIndex={active ? 0 : -1}
+                    aria-label={`Close ${tabName || "untitled"} tab`}
                     title="Close Tab"
                 >
-                    <i className="fa fa-solid fa-xmark" />
+                    <i className="fa fa-solid fa-xmark" aria-hidden="true" />
                 </Button>
             </div>
         </div>

@@ -180,42 +180,57 @@ export function VTab({
                     !showDivider && "opacity-0"
                 )}
             />
-            <TabBadges
-                badges={badges}
-                flagColor={flagColor}
-                className="mr-1 min-w-[16px] shrink-0 static top-auto left-auto z-auto h-[16px] w-auto translate-y-0 justify-start px-[2px] py-[1px] [&_i]:text-[10px]"
-            />
             <div
-                ref={editableRef}
-                className={cn(
-                    "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap transition-[padding-right] pr-3",
-                    onClose && !isReordering && "group-hover:pr-6",
-                    isEditable && "rounded-[2px] bg-white/15 outline-none"
-                )}
-                contentEditable={isEditable}
-                role="textbox"
-                aria-label="Tab name"
-                aria-readonly={!isEditable}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                suppressContentEditableWarning={true}
+                className="relative flex h-full min-w-0 flex-1 items-center"
+                role={isEditable ? undefined : "tab"}
+                aria-label={isEditable ? undefined : tab.name || "Untitled tab"}
+                aria-selected={isEditable ? undefined : active}
+                tabIndex={isEditable ? -1 : active ? 0 : -1}
             >
-                {tab.name}
+                <TabBadges
+                    badges={badges}
+                    flagColor={flagColor}
+                    className="mr-1 min-w-[16px] shrink-0 static top-auto left-auto z-auto h-[16px] w-auto translate-y-0 justify-start px-[2px] py-[1px] [&_i]:text-[10px]"
+                />
+                <div
+                    ref={editableRef}
+                    className={cn(
+                        "min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap transition-[padding-right] pr-3",
+                        onClose && !isReordering && "group-hover:pr-6",
+                        isEditable && "rounded-[2px] bg-white/15 outline-none"
+                    )}
+                    contentEditable={isEditable}
+                    role={isEditable ? "textbox" : undefined}
+                    aria-label={isEditable ? "Tab name" : undefined}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                    suppressContentEditableWarning={true}
+                >
+                    {tab.name}
+                </div>
             </div>
             {onClose && (
                 <button
                     type="button"
                     className={cn(
                         "absolute top-1/2 right-0 shrink-0 -translate-y-1/2 cursor-pointer py-1 pl-1 pr-3 text-secondary transition",
-                        isReordering ? "opacity-0" : "opacity-0 group-hover:opacity-100 hover:text-primary"
+                        isReordering
+                            ? "pointer-events-none opacity-0"
+                            : "opacity-0 group-hover:opacity-100 hover:text-primary focus-visible:opacity-100"
                     )}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onDragStart={(event) => {
+                        event.preventDefault();
+                        event.stopPropagation();
+                    }}
                     onClick={(event) => {
                         event.stopPropagation();
                         onClose();
                     }}
-                    aria-label="Close tab"
+                    tabIndex={active && !isReordering ? 0 : -1}
+                    aria-label={`Close ${tab.name || "untitled"} tab`}
                 >
-                    <i className="fa fa-solid fa-xmark" />
+                    <i className="fa fa-solid fa-xmark" aria-hidden="true" />
                 </button>
             )}
         </div>

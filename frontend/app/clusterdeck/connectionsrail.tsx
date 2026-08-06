@@ -339,28 +339,36 @@ const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyN
     const onClick = useCallback(() => switchToWorkspace(workspace.oid), [workspace.oid]);
 
     return (
-        <div
+        <button
+            type="button"
             className={clsx("rail-item", { active: isActive })}
             onClick={onClick}
             onContextMenu={(e) => showWorkspaceMenu(e, workspace)}
+            aria-current={isActive ? "page" : undefined}
+            aria-label={
+                collapsed
+                    ? `${workspace.name}, ${local ? "local folder" : isConnected ? "connected" : "disconnected"}`
+                    : undefined
+            }
             title={title}
         >
-            <div className="rail-item-row">
-                <span className={clsx("status-dot", { connected: isConnected, available: local })} />
-                <i className={makeIconClass(iconName, true)} />
+            <span className="rail-item-row">
+                <span className={clsx("status-dot", { connected: isConnected, available: local })} aria-hidden="true" />
+                <span className="sr-only">{local ? "Local folder" : isConnected ? "Connected" : "Disconnected"}</span>
+                <i className={makeIconClass(iconName, true)} aria-hidden="true" />
                 {!collapsed && (
                     <>
                         <span className="label">{workspace.name}</span>
                         {hotkeyNum != null && <span className="hotkey">{hotkeyLabel(hotkeyNum)}</span>}
                     </>
                 )}
-            </div>
+            </span>
             {!collapsed && isActive && termCount > 0 && (
-                <div className="subline">
+                <span className="subline">
                     {termCount} terminal{termCount == 1 ? "" : "s"}
-                </div>
+                </span>
             )}
-        </div>
+        </button>
     );
 });
 RailItem.displayName = "RailItem";
@@ -400,6 +408,8 @@ const ConnectionsRail = memo(() => {
     const setWorkspaces = useSetAtom(railWorkspacesAtom);
     const [collapsed, setCollapsed] = useAtom(railCollapsedAtom);
     const connectedCount = useAtomValue(connectedCountAtom);
+    const activeWorkspace = useAtomValue(atoms.workspace);
+    const isWelcomeActive = activeWorkspace?.meta?.["clusterdeck:home"] != null;
 
     const refreshCoordinator = useMemo(
         () =>
@@ -426,45 +436,73 @@ const ConnectionsRail = memo(() => {
     }, [updateWorkspaces, refreshCoordinator]);
 
     return (
-        <div className={clsx("cd-connections-rail", { collapsed })}>
+        <nav className={clsx("cd-connections-rail", { collapsed })} aria-label="Connections">
             <div className="rail-header">
                 {!collapsed && <span className="rail-title">Connections</span>}
                 <div className="rail-actions">
                     {!collapsed && (
-                        <i
-                            className={makeIconClass("plus", true)}
+                        <button
+                            type="button"
+                            className="rail-action"
+                            aria-label="Open folder or add connection"
                             title="Open folder or add connection"
                             onClick={(e) => openAddMenu(e)}
-                        />
+                        >
+                            <i className={makeIconClass("plus", true)} aria-hidden="true" />
+                        </button>
                     )}
                     {!collapsed && (
-                        <i
-                            className={makeIconClass("gear", true)}
+                        <button
+                            type="button"
+                            className="rail-action"
+                            aria-label="Edit connections configuration"
                             title="Edit connections.json"
                             onClick={() => openConnectionsConfig()}
-                        />
+                        >
+                            <i className={makeIconClass("gear", true)} aria-hidden="true" />
+                        </button>
                     )}
-                    <i
-                        className={makeIconClass(collapsed ? "angles-right" : "angles-left", true)}
+                    <button
+                        type="button"
+                        className="rail-action"
+                        aria-label={collapsed ? "Expand connections" : "Collapse connections"}
                         title={collapsed ? "Expand connections" : "Collapse connections"}
                         onClick={() => setCollapsed(!collapsed)}
-                    />
+                    >
+                        <i
+                            className={makeIconClass(collapsed ? "angles-right" : "angles-left", true)}
+                            aria-hidden="true"
+                        />
+                    </button>
                 </div>
             </div>
             <OverlayScrollbarsComponent className="rail-list" options={{ scrollbars: { autoHide: "leave" } }}>
-                <div className="rail-item rail-welcome" onClick={() => openHome()} title="Welcome">
-                    <div className="rail-item-row">
-                        <span className="status-dot placeholder" />
-                        <i className={makeIconClass("house", true)} />
+                <button
+                    type="button"
+                    className={clsx("rail-item rail-welcome", { active: isWelcomeActive })}
+                    onClick={() => openHome()}
+                    aria-current={isWelcomeActive ? "page" : undefined}
+                    aria-label="Welcome"
+                    title="Welcome"
+                >
+                    <span className="rail-item-row">
+                        <span className="status-dot placeholder" aria-hidden="true" />
+                        <i className={makeIconClass("house", true)} aria-hidden="true" />
                         {!collapsed && <span className="label">Welcome</span>}
-                    </div>
-                </div>
+                    </span>
+                </button>
                 {workspaces.map((ws, i) => (
                     <RailItem key={ws.oid} workspace={ws} hotkeyNum={i < 9 ? i + 1 : null} />
                 ))}
             </OverlayScrollbarsComponent>
-            <div className="rail-footer" title={`${connectedCount} connected`}>
-                <i className={makeIconClass("plug", true)} />
+            <div
+                className="rail-footer"
+                role="status"
+                aria-live="polite"
+                aria-label={`${connectedCount} connections connected`}
+                title={`${connectedCount} connected`}
+            >
+                <i className={makeIconClass("plug", true)} aria-hidden="true" />
                 {!collapsed && (
                     <span>
                         {connectedCount} connected{connectedCount > 0 ? " · wsh" : ""}
@@ -473,7 +511,7 @@ const ConnectionsRail = memo(() => {
             </div>
             <AddConnectionModal />
             <WorkspaceEditorPopup />
-        </div>
+        </nav>
     );
 });
 ConnectionsRail.displayName = "ConnectionsRail";

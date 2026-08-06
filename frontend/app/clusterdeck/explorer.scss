@@ -10,6 +10,11 @@
     font-size: 12px;
 
     &.collapsed {
+        min-width: 24px;
+        min-height: 24px;
+        padding: 0;
+        border: 0;
+        background: transparent;
         align-items: center;
         justify-content: center;
         cursor: pointer;
@@ -48,10 +53,20 @@
             gap: 8px;
             flex-shrink: 0;
 
-            i {
+            button {
+                width: 24px;
+                height: 24px;
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: inherit;
                 cursor: pointer;
-                font-size: 11px;
                 opacity: 0.7;
+
+                i {
+                    font-size: 11px;
+                }
+
                 &:hover {
                     opacity: 1;
                 }
@@ -81,6 +96,11 @@
                 gap: 8px;
 
                 .cd-open-editors-action {
+                    width: 24px;
+                    height: 24px;
+                    padding: 0;
+                    border: 0;
+                    background: transparent;
                     font-size: 12px;
                     cursor: pointer;
                     opacity: 0.7;
@@ -111,17 +131,38 @@
             }
 
             .cd-open-editor-close {
-                width: 13px;
+                width: 24px;
+                height: 24px;
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: inherit;
                 font-size: 10px;
                 opacity: 0;
                 flex-shrink: 0;
-                &:hover {
+                &:hover,
+                &:focus-visible {
                     opacity: 1 !important;
                 }
             }
             &:hover .cd-open-editor-close,
             &.active .cd-open-editor-close {
                 opacity: 0.6;
+            }
+
+            .cd-open-editor-selectable {
+                display: flex;
+                min-width: 0;
+                min-height: 24px;
+                flex: 1;
+                align-items: center;
+                gap: 6px;
+                padding: 0;
+                border: 0;
+                background: transparent;
+                color: inherit;
+                font: inherit;
+                text-align: left;
             }
 
             .cd-open-editor-name {
@@ -163,6 +204,10 @@
 
     .cd-rootpicker-header {
         display: flex;
+        width: 100%;
+        background: transparent;
+        color: inherit;
+        text-align: left;
         align-items: center;
         gap: 8px;
         padding: 8px 10px;

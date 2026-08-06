@@ -10,6 +10,7 @@ import { validateCssColor } from "@/util/color-validator";
 import { cn, fireAndForget } from "@/util/util";
 import { useAtomValue } from "jotai";
 import { memo, useCallback, useEffect, useRef, useState } from "react";
+import { AccessibleTabList } from "./tabaccessibility";
 import { buildTabBarContextMenu, buildTabContextMenu } from "./tabcontextmenu";
 import { UpdateStatusBanner } from "./updatebanner";
 import { VTab, VTabItem } from "./vtab";
@@ -297,9 +298,11 @@ export function VTabBar({ workspace, className }: VTabBarProps) {
             onContextMenu={handleTabBarContextMenu}
         >
             {env.isMacOS() && <MacOSHeader />}
-            <div
+            <AccessibleTabList
                 ref={scrollContainerRef}
                 className="relative flex min-h-0 flex-col overflow-y-auto"
+                aria-label="Application tabs"
+                orientation="vertical"
                 onDragOver={(event) => {
                     event.preventDefault();
                     updateScrollFromDragY(event.clientY);
@@ -384,7 +387,7 @@ export function VTabBar({ workspace, className }: VTabBarProps) {
                         style={{ top: dropLineTop, transform: "translateY(-1px)" }}
                     />
                 )}
-            </div>
+            </AccessibleTabList>
             <button
                 type="button"
                 className="group relative flex h-9 w-full shrink-0 cursor-pointer items-center gap-1.5 pl-3 pr-3 text-xs text-secondary/60 transition-colors hover:text-primary select-none whitespace-nowrap"

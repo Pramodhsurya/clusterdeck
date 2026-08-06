@@ -6,14 +6,15 @@
 // clusterdeck:openfiles) above the embedded preview/Monaco of the active file.
 
 import { baseName, fileStyle } from "@/app/clusterdeck/explorer";
+import { ClusterdeckFileTab } from "@/app/clusterdeck/filetabs";
 import { globalStore } from "@/app/store/jotaiStore";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
+import { AccessibleTabList } from "@/app/tab/tabaccessibility";
 import { PreviewView } from "@/app/view/preview/preview";
 import { PreviewModel } from "@/app/view/preview/preview-model";
 import { WOS } from "@/store/global";
-import { fireAndForget, makeIconClass, stringToBase64 } from "@/util/util";
-import clsx from "clsx";
+import { fireAndForget, stringToBase64 } from "@/util/util";
 import * as jotai from "jotai";
 import { useAtomValue } from "jotai";
 import { memo, useEffect, useRef } from "react";
@@ -73,6 +74,43 @@ class ClusterdeckEditorModel extends PreviewModel {
             console.log("autosave flush-on-switch failed", filePath, e);
         }
     }
+}
+
+export function ClusterdeckEditorTabs({
+    blockId,
+    openFiles,
+    activeFile,
+    onSelect,
+    onClose,
+}: {
+    blockId: string;
+    openFiles: string[];
+    activeFile: string | null;
+    onSelect: (path: string) => void;
+    onClose: (path: string) => void;
+}) {
+    if (openFiles.length === 0) return null;
+    return (
+        <AccessibleTabList className="cd-editor-tabs" aria-label="Open editor files" orientation="horizontal">
+            {openFiles.map((file) => {
+                const style = fileStyle(baseName(file));
+                return (
+                    <ClusterdeckFileTab
+                        key={file}
+                        variant="editor"
+                        path={file}
+                        label={baseName(file)}
+                        icon={style.icon}
+                        iconColor={style.color}
+                        active={file === activeFile}
+                        controls={`cd-editor-panel-${blockId}`}
+                        onSelect={() => onSelect(file)}
+                        onClose={() => onClose(file)}
+                    />
+                );
+            })}
+        </AccessibleTabList>
+    );
 }
 
 const ClusterdeckEditorView = memo(
@@ -142,31 +180,13 @@ const ClusterdeckEditorView = memo(
 
         return (
             <div className="cd-editor">
-                {openFiles.length > 0 && (
-                    <div className="cd-editor-tabs">
-                        {openFiles.map((f) => {
-                            const style = fileStyle(baseName(f));
-                            return (
-                                <div
-                                    key={f}
-                                    className={clsx("cd-editor-tab", { active: f === activeFile })}
-                                    onClick={() => model.setActiveFile(f)}
-                                    title={f}
-                                >
-                                    <i className={makeIconClass(style.icon, true)} style={{ color: style.color }} />
-                                    <span className="cd-editor-tab-name">{baseName(f)}</span>
-                                    <i
-                                        className={clsx(makeIconClass("xmark", true), "cd-editor-tab-close")}
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            model.closeFile(f);
-                                        }}
-                                    />
-                                </div>
-                            );
-                        })}
-                    </div>
-                )}
+                <ClusterdeckEditorTabs
+                    blockId={blockId}
+                    openFiles={openFiles}
+                    activeFile={activeFile}
+                    onSelect={(file) => model.setActiveFile(file)}
+                    onClose={(file) => model.closeFile(file)}
+                />
                 {/* key on the active file so the whole preview subtree (Monaco
                     included) remounts per file. The block is shared across every
                     file opened from the explorer, and Monaco keeps one model per
@@ -176,7 +196,13 @@ const ClusterdeckEditorView = memo(
                     synchronous activeFile (meta.file) is more reliable than the
                     async statFilePath key Wave uses internally, which resolves
                     later and can briefly be undefined. */}
-                <div className="cd-editor-content" key={activeFile ?? ""}>
+                <div
+                    id={`cd-editor-panel-${blockId}`}
+                    className="cd-editor-content"
+                    role="tabpanel"
+                    aria-label={activeFile ? baseName(activeFile) : "Editor"}
+                    key={activeFile ?? ""}
+                >
                     <PreviewView blockId={blockId} blockRef={blockRef} contentRef={contentRef} model={model} />
                 </div>
             </div>

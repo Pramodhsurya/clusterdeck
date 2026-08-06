@@ -8,14 +8,15 @@ import { VTab, VTabItem } from "./vtab";
 const OriginalCss = globalThis.CSS;
 const HexColorRegex = /^#([\da-f]{3}|[\da-f]{4}|[\da-f]{6}|[\da-f]{8})$/i;
 
-function renderVTab(tab: VTabItem): string {
+function renderVTab(tab: VTabItem, active = false, closable = false): string {
     return renderToStaticMarkup(
         <VTab
             tab={tab}
-            active={false}
+            active={active}
             isDragging={false}
             isReordering={false}
             onSelect={() => null}
+            onClose={closable ? () => null : undefined}
             onDragStart={() => null}
             onDragOver={() => null}
             onDrop={() => null}
@@ -46,6 +47,15 @@ describe("VTab badges", () => {
         expect(markup).toContain("#429DFF");
         expect(markup).toContain("#f59e0b");
         expect(markup).toContain("rounded-full");
+    });
+
+    it("exposes tab selection and an independent labelled close button", () => {
+        const markup = renderVTab({ id: "tab-a11y", name: "Build Logs" }, true, true);
+        expect(markup).toContain('role="tab"');
+        expect(markup).toContain('aria-selected="true"');
+        expect(markup).toContain('tabindex="0"');
+        expect(markup).toContain('aria-label="Close Build Logs tab"');
+        expect(markup).not.toContain('role="textbox"');
     });
 
     it("ignores invalid flag colors", () => {

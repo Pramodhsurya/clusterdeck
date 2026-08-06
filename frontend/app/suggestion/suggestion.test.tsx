@@ -1,9 +1,32 @@
 // Copyright 2026, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
-import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
+import { act, create, ReactTestRenderer } from "react-test-renderer";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { clampSuggestionIndex, SuggestionControlInner, SuggestionRequestCoordinator } from "./suggestion";
+
+vi.mock("@floating-ui/react", () => ({
+    offset: () => ({}),
+    useFloating: () => ({
+        refs: { setReference: vi.fn(), setFloating: vi.fn() },
+        floatingStyles: {},
+        middlewareData: { offset: {} },
+    }),
+}));
+
+const OriginalDocument = globalThis.document;
+
+beforeAll(() => {
+    (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+    globalThis.document = {
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+    } as unknown as Document;
+});
+
+afterAll(() => {
+    globalThis.document = OriginalDocument;
+});
 
 function deferred<T>() {
     let resolve!: (value: T) => void;
@@ -76,20 +99,96 @@ describe("SuggestionRequestCoordinator", () => {
         expect(clampSuggestionIndex(1, 0)).toBe(0);
     });
 
-    it("renders the combobox/listbox ARIA contract with linked IDs", () => {
-        const html = renderToStaticMarkup(
-            <SuggestionControlInner
-                anchorRef={{ current: {} as HTMLElement }}
-                onClose={vi.fn()}
-                onSelect={() => true}
-                fetchSuggestions={async () => ({ reqnum: 1, suggestions: [] })}
-                placeholderText="Open File"
-            />
+    it("renders only options in the listbox and consumes Tab only when autocomplete handles it", async () => {
+        const fetchSuggestions = vi.fn(async (_query: string, context: SuggestionRequestContext) =>
+            context.dispose
+                ? null
+                : {
+                      reqnum: context.reqnum,
+                      suggestions: [{ suggestionid: "alpha", type: "url", display: "Alpha" }],
+                  }
         );
-        expect(html).toContain('role="combobox"');
-        expect(html).toContain('aria-label="Open File"');
-        expect(html).toContain('aria-expanded="true"');
-        expect(html).toMatch(/aria-controls="([^"]+)-listbox"/);
-        expect(html).toMatch(/id="([^"]+)-listbox" role="listbox"/);
+        const onTab = vi.fn(() => "Alpha/");
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <SuggestionControlInner
+                    anchorRef={{ current: {} as HTMLElement }}
+                    onClose={vi.fn()}
+                    onSelect={() => true}
+                    onTab={onTab}
+                    fetchSuggestions={fetchSuggestions}
+                    placeholderText="Open File"
+                />,
+                {
+                    createNodeMock: () => ({
+                        focus: vi.fn(),
+                        contains: vi.fn(() => false),
+                        children: [],
+                        scrollIntoView: vi.fn(),
+                    }),
+                }
+            );
+            await Promise.resolve();
+        });
+        const input = renderer!.root.findByType("input");
+        const listbox = renderer!.root.find((node) => node.props.role === "listbox");
+        expect(input.props.role).toBe("combobox");
+        expect(input.props["aria-controls"]).toBe(listbox.props.id);
+        expect(listbox.findAll((node) => node.props.role === "option")).toHaveLength(1);
+        expect(listbox.findAll((node) => ["status", "alert"].includes(node.props.role))).toHaveLength(0);
+
+        const consumedTab = { key: "Tab", preventDefault: vi.fn(), stopPropagation: vi.fn() };
+        await act(async () => input.props.onKeyDown(consumedTab));
+        expect(onTab).toHaveBeenCalledOnce();
+        expect(consumedTab.preventDefault).toHaveBeenCalledOnce();
+        expect(consumedTab.stopPropagation).toHaveBeenCalledOnce();
+        await act(async () => renderer!.unmount());
+    });
+
+    it("leaves Tab unconsumed on errors so Retry is sequentially reachable outside the listbox", async () => {
+        const fetchSuggestions = vi.fn(async (_query: string, context: SuggestionRequestContext) => {
+            if (context.dispose) return null;
+            throw new Error("offline");
+        });
+        let renderer: ReactTestRenderer;
+        await act(async () => {
+            renderer = create(
+                <SuggestionControlInner
+                    anchorRef={{ current: {} as HTMLElement }}
+                    onClose={vi.fn()}
+                    onSelect={() => false}
+                    fetchSuggestions={fetchSuggestions}
+                    placeholderText="Open File"
+                />,
+                {
+                    createNodeMock: () => ({
+                        focus: vi.fn(),
+                        contains: vi.fn(() => false),
+                        children: [],
+                        scrollIntoView: vi.fn(),
+                    }),
+                }
+            );
+            await Promise.resolve();
+        });
+        const input = renderer!.root.findByType("input");
+        const retry = renderer!.root.findAllByType("button").find((button) => button.children.includes("Retry"));
+        expect(retry).toBeDefined();
+        expect(renderer!.root.findAll((node) => node.props.role === "listbox")).toHaveLength(0);
+        expect(renderer!.root.findAll((node) => node.props.role === "alert")).toHaveLength(1);
+        const focusables = renderer!.root.findAll((node) => node.type === "input" || node.type === "button");
+        expect(focusables.indexOf(input)).toBeLessThan(focusables.indexOf(retry!));
+
+        const tab = { key: "Tab", preventDefault: vi.fn(), stopPropagation: vi.fn() };
+        await act(async () => input.props.onKeyDown(tab));
+        expect(tab.preventDefault).not.toHaveBeenCalled();
+        expect(tab.stopPropagation).not.toHaveBeenCalled();
+        await act(async () => {
+            retry!.props.onClick();
+            await Promise.resolve();
+        });
+        expect(fetchSuggestions.mock.calls.filter(([, context]) => !context.dispose)).toHaveLength(2);
+        await act(async () => renderer!.unmount());
     });
 });

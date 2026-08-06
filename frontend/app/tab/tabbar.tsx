@@ -11,6 +11,7 @@ import { OverlayScrollbars } from "overlayscrollbars";
 import { createRef, memo, useCallback, useEffect, useRef, useState } from "react";
 import { debounce } from "throttle-debounce";
 import { Tab } from "./tab";
+import { AccessibleTabList } from "./tabaccessibility";
 import "./tabbar.scss";
 import { TabBarEnv } from "./tabbarenv";
 import { UpdateStatusBanner } from "./updatebanner";
@@ -89,7 +90,7 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
     const draggerLeftRef = useRef<HTMLDivElement>(null);
     const rightContainerRef = useRef<HTMLDivElement>(null);
     const workspaceSwitcherRef = useRef<HTMLDivElement>(null);
-    const appMenuButtonRef = useRef<HTMLDivElement>(null);
+    const appMenuButtonRef = useRef<HTMLButtonElement>(null);
     const tabWidthRef = useRef<number>(TabDefaultWidth);
     const scrollableRef = useRef<boolean>(false);
     const prevAllLoadedRef = useRef<boolean>(false);
@@ -551,21 +552,25 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
                 style={{ width: windowDragLeftWidth, WebkitAppRegion: "drag" } as any}
             />
             {showAppMenuButton && (
-                <div
+                <button
                     ref={appMenuButtonRef}
+                    type="button"
+                    aria-label="Workspace application menu"
                     className="flex items-center justify-center pr-1.5 text-[26px] select-none cursor-pointer text-secondary hover:text-primary"
                     style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                     onClick={onEllipsisClick}
                 >
-                    <i className="fa fa-ellipsis" />
-                </div>
+                    <i className="fa fa-ellipsis" aria-hidden="true" />
+                </button>
             )}
             {/* Clusterdeck: Wave's native workspace switcher is hidden — the
                 connections rail is the single workspace switcher. */}
             <div className="tab-bar" ref={tabBarRef} data-overlayscrollbars-initialize>
-                <div
+                <AccessibleTabList
                     className="tabs-wrapper"
                     ref={tabsWrapperRef}
+                    aria-label="Application tabs"
+                    orientation="horizontal"
                     style={{
                         width: noTabs ? 0 : tabsWrapperWidth,
                         ...(noTabs ? ({ WebkitAppRegion: "drag" } as React.CSSProperties) : {}),
@@ -592,12 +597,14 @@ const TabBar = memo(({ workspace, noTabs }: TabBarProps) => {
                                 />
                             );
                         })}
-                </div>
+                </AccessibleTabList>
             </div>
             <button
                 ref={addBtnRef}
+                type="button"
                 title="Add Tab"
-                className={`flex h-[22px] px-2 mb-1 mx-1 items-center rounded-md box-border cursor-pointer hover:bg-hoverbg transition-colors text-[12px] text-secondary hover:text-primary${noTabs ? " invisible" : ""}`}
+                aria-label="Add tab"
+                className={`flex h-6 min-w-6 px-2 mb-1 mx-1 items-center justify-center rounded-md box-border cursor-pointer hover:bg-hoverbg transition-colors text-[12px] text-secondary hover:text-primary${noTabs ? " invisible" : ""}`}
                 style={{ WebkitAppRegion: "no-drag" } as React.CSSProperties}
                 onClick={handleAddTab}
             >

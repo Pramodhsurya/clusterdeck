@@ -9,12 +9,14 @@
 import { BlockNodeModel } from "@/app/block/blocktypes";
 import { ClusterdeckZone_Editor, ClusterdeckZone_Explorer, ClusterdeckZoneMetaKey } from "@/app/clusterdeck/connlock";
 import { DirectoryVerificationCoordinator } from "@/app/clusterdeck/directory-verification";
+import { ClusterdeckFileTab } from "@/app/clusterdeck/filetabs";
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import type { TabModel } from "@/app/store/tab-model";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { SuggestionControl } from "@/app/suggestion/suggestion";
+import { AccessibleTabList } from "@/app/tab/tabaccessibility";
 import { TreeNodeData, TreeView } from "@/app/treeview/treeview";
 import { fetchPreviewFileSuggestions } from "@/app/view/preview/previewsuggestions";
 import { WaveEnv } from "@/app/waveenv/waveenv";
@@ -31,7 +33,6 @@ import { atoms, createBlock, getApi, refocusNode, WOS } from "@/store/global";
 import { makeNativeLabel } from "@/util/platformutil";
 import { fireAndForget, isLocalConnName, makeIconClass } from "@/util/util";
 import { formatRemoteUri } from "@/util/waveutil";
-import clsx from "clsx";
 import * as jotai from "jotai";
 import { useAtomValue } from "jotai";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -755,7 +756,7 @@ const ChangeRootModal = memo(
         const [isOpen, setIsOpen] = useState(true);
         const [pickerError, setPickerError] = useState<string | null>(null);
         const verification = useRef(new DirectoryVerificationCoordinator());
-        const headerRef = useRef<HTMLDivElement>(null);
+        const headerRef = useRef<HTMLButtonElement>(null);
         const suggestionsEnv = useMemo(() => ({ rpc: RpcApi }), []);
 
         const fetchSuggestionsFn = useCallback(
@@ -840,10 +841,17 @@ const ChangeRootModal = memo(
                 buttonLabel="Use This Folder"
             >
                 <div className="cd-rootpicker">
-                    <div className="cd-rootpicker-header" ref={headerRef} onClick={() => setIsOpen(true)}>
-                        <i className={makeIconClass("folder-open", true)} />
+                    <button
+                        type="button"
+                        className="cd-rootpicker-header"
+                        ref={headerRef}
+                        aria-label={`Browse current folder ${currentDir}`}
+                        aria-expanded={isOpen}
+                        onClick={() => setIsOpen(true)}
+                    >
+                        <i className={makeIconClass("folder-open", true)} aria-hidden="true" />
                         <span>{currentDir}</span>
-                    </div>
+                    </button>
                     {pickerError && (
                         <div role="alert" className="text-error text-sm">
                             {pickerError}
@@ -865,6 +873,72 @@ const ChangeRootModal = memo(
     }
 );
 ChangeRootModal.displayName = "ChangeRootModal";
+
+export function ClusterdeckOpenEditors({
+    openFiles,
+    activeFile,
+    onNewFile,
+    onCloseAll,
+    onSelect,
+    onClose,
+    onContextMenu,
+}: {
+    openFiles: string[];
+    activeFile: string | null;
+    onNewFile: () => void;
+    onCloseAll: () => void;
+    onSelect: (path: string) => void;
+    onClose: (path: string) => void;
+    onContextMenu: (path: string, event: React.MouseEvent<HTMLDivElement>) => void;
+}) {
+    if (openFiles.length === 0) return null;
+    return (
+        <div className="cd-open-editors">
+            <div className="cd-open-editors-title">
+                <span>OPEN EDITORS</span>
+                <span className="cd-open-editors-actions">
+                    <button
+                        type="button"
+                        className="cd-open-editors-action"
+                        aria-label="New file"
+                        title="New file"
+                        onClick={onNewFile}
+                    >
+                        <i className={makeIconClass("file-circle-plus", true)} aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        className="cd-open-editors-action"
+                        aria-label="Close all editors"
+                        title="Close all editors"
+                        onClick={onCloseAll}
+                    >
+                        <i className={makeIconClass("xmark", true)} aria-hidden="true" />
+                    </button>
+                </span>
+            </div>
+            <AccessibleTabList aria-label="Open editors" orientation="vertical">
+                {openFiles.map((file) => {
+                    const style = fileStyle(baseName(file));
+                    return (
+                        <ClusterdeckFileTab
+                            key={file}
+                            variant="open-editor"
+                            path={file}
+                            label={baseName(file)}
+                            icon={style.icon}
+                            iconColor={style.color}
+                            active={file === activeFile}
+                            onSelect={() => onSelect(file)}
+                            onClose={() => onClose(file)}
+                            onContextMenu={(event) => onContextMenu(file, event)}
+                        />
+                    );
+                })}
+            </AccessibleTabList>
+        </div>
+    );
+}
 
 const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: ClusterdeckExplorerModel }) => {
     const connection = useAtomValue(model.connectionAtom);
@@ -1090,9 +1164,15 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
 
     if (collapsed) {
         return (
-            <div className="cd-explorer collapsed" onClick={() => model.toggleCollapse()} title="Expand explorer">
-                <i className={makeIconClass("angles-right", false)} />
-            </div>
+            <button
+                type="button"
+                className="cd-explorer collapsed"
+                onClick={() => model.toggleCollapse()}
+                aria-label="Expand explorer"
+                title="Expand explorer"
+            >
+                <i className={makeIconClass("angles-right", false)} aria-hidden="true" />
+            </button>
         );
     }
 
@@ -1101,80 +1181,55 @@ const ClusterdeckExplorerView = memo(({ model }: { blockId: string; model: Clust
             <div className="cd-explorer-header">
                 <span className="cd-explorer-root">{header}</span>
                 <span className="cd-explorer-actions">
-                    <i
-                        className={makeIconClass("folder-open", false)}
-                        title="Change folder"
-                        onClick={openChangeRootFlow}
-                    />
-                    <i
-                        className={makeIconClass("file-circle-plus", false)}
+                    <button type="button" aria-label="Change folder" title="Change folder" onClick={openChangeRootFlow}>
+                        <i className={makeIconClass("folder-open", false)} aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="New file"
                         title="New file"
                         onClick={() => model.newUntitledFile()}
-                    />
-                    <i
-                        className={makeIconClass("arrows-rotate", false)}
-                        title="Refresh"
-                        onClick={() => model.refresh()}
-                    />
-                    <i
-                        className={makeIconClass("angles-left", false)}
+                    >
+                        <i className={makeIconClass("file-circle-plus", false)} aria-hidden="true" />
+                    </button>
+                    <button type="button" aria-label="Refresh explorer" title="Refresh" onClick={() => model.refresh()}>
+                        <i className={makeIconClass("arrows-rotate", false)} aria-hidden="true" />
+                    </button>
+                    <button
+                        type="button"
+                        aria-label="Collapse explorer"
                         title="Collapse explorer"
                         onClick={() => model.toggleCollapse()}
-                    />
+                    >
+                        <i className={makeIconClass("angles-left", false)} aria-hidden="true" />
+                    </button>
                 </span>
             </div>
-            {openFiles.length > 0 && (
-                <div className="cd-open-editors">
-                    <div className="cd-open-editors-title">
-                        <span>OPEN EDITORS</span>
-                        <span className="cd-open-editors-actions">
-                            <i
-                                className={clsx(makeIconClass("file-circle-plus", true), "cd-open-editors-action")}
-                                title="New file"
-                                onClick={() => model.newUntitledFile()}
-                            />
-                            <i
-                                className={clsx(makeIconClass("xmark", true), "cd-open-editors-action")}
-                                title="Close all editors"
-                                onClick={() => model.closeAllEditorFiles()}
-                            />
-                        </span>
-                    </div>
-                    {openFiles.map((f) => {
-                        const style = fileStyle(baseName(f));
-                        return (
-                            <div
-                                key={f}
-                                className={clsx("cd-open-editor", { active: f === openFile })}
-                                onClick={() => model.setActiveEditorFile(f)}
-                                onContextMenu={(e) => {
-                                    e.preventDefault();
-                                    ContextMenuModel.getInstance().showContextMenu(buildOpenEditorContextMenu(f), e);
-                                }}
-                                title={f}
-                            >
-                                <i
-                                    className={clsx(makeIconClass("xmark", true), "cd-open-editor-close")}
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        model.closeEditorFile(f);
-                                    }}
-                                />
-                                <i className={makeIconClass(style.icon, true)} style={{ color: style.color }} />
-                                <span className="cd-open-editor-name">{baseName(f)}</span>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
+            <ClusterdeckOpenEditors
+                openFiles={openFiles}
+                activeFile={openFile}
+                onNewFile={() => model.newUntitledFile()}
+                onCloseAll={() => model.closeAllEditorFiles()}
+                onSelect={(file) => model.setActiveEditorFile(file)}
+                onClose={(file) => model.closeEditorFile(file)}
+                onContextMenu={(file, event) => {
+                    event.preventDefault();
+                    ContextMenuModel.getInstance().showContextMenu(buildOpenEditorContextMenu(file), event);
+                }}
+            />
             <div className="cd-explorer-tree">
                 {error != null ? (
-                    <div className="cd-explorer-error">{error}</div>
+                    <div className="cd-explorer-error" role="alert" aria-live="assertive">
+                        {error}
+                    </div>
                 ) : connecting && rootIds.length === 0 ? (
-                    <div className="cd-explorer-connecting">Connecting to {connection}…</div>
+                    <div className="cd-explorer-connecting" role="status" aria-live="polite">
+                        Connecting to {connection}…
+                    </div>
                 ) : (
                     <TreeView
                         key={`${connection}:${rootPath}`}
+                        ariaLabel={`Files in ${baseName(rootPath)}`}
                         rootIds={rootIds}
                         initialNodes={initialNodes}
                         fetchDir={fetchDir}

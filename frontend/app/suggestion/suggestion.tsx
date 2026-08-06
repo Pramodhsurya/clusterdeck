@@ -89,17 +89,17 @@ function getMimeTypeIconAndColor(fullConfig: FullConfigType, mimeType: string): 
 
 function SuggestionIcon({ suggestion }: { suggestion: SuggestionType }) {
     if (suggestion.iconsrc) {
-        return <img src={suggestion.iconsrc} alt="favicon" className="w-4 h-4 object-contain" />;
+        return <img src={suggestion.iconsrc} alt="" aria-hidden="true" className="w-4 h-4 object-contain" />;
     }
     if (suggestion.icon) {
         const iconClass = makeIconClass(suggestion.icon, true);
         const iconColor = suggestion.iconcolor;
-        return <i className={iconClass} style={{ color: iconColor }} />;
+        return <i className={iconClass} style={{ color: iconColor }} aria-hidden="true" />;
     }
     if (suggestion.type === "url") {
         const iconClass = makeIconClass("globe", true);
         const iconColor = suggestion.iconcolor;
-        return <i className={iconClass} style={{ color: iconColor }} />;
+        return <i className={iconClass} style={{ color: iconColor }} aria-hidden="true" />;
     } else if (suggestion.type === "file") {
         // For file suggestions, use the existing logic.
         const fullConfig = useAtomValue(atoms.fullConfigAtom);
@@ -109,10 +109,10 @@ function SuggestionIcon({ suggestion }: { suggestion: SuggestionType }) {
             [icon, iconColor] = getMimeTypeIconAndColor(fullConfig, suggestion["file:mimetype"]);
         }
         const iconClass = makeIconClass(icon, true, { defaultIcon: "file" });
-        return <i className={iconClass} style={{ color: iconColor }} />;
+        return <i className={iconClass} style={{ color: iconColor }} aria-hidden="true" />;
     }
     const iconClass = makeIconClass("file", true);
-    return <i className={iconClass} />;
+    return <i className={iconClass} aria-hidden="true" />;
 }
 
 function SuggestionContent({ suggestion }: { suggestion: SuggestionType }) {
@@ -318,14 +318,12 @@ export function SuggestionControlInner({
             e.stopPropagation();
             onClose();
         } else if (e.key === "Tab") {
-            e.preventDefault();
-            e.stopPropagation();
             const suggestion = suggestions[selectedIndex];
-            if (suggestion != null) {
-                const tabResult = onTab?.(suggestion, query);
-                if (tabResult != null) {
-                    setQuery(tabResult);
-                }
+            const tabResult = suggestion == null ? null : onTab?.(suggestion, query);
+            if (tabResult != null) {
+                e.preventDefault();
+                e.stopPropagation();
+                setQuery(tabResult);
             }
         } else if (e.key === "PageDown") {
             e.preventDefault();
@@ -337,6 +335,7 @@ export function SuggestionControlInner({
             setSelectedIndex((prev) => Math.max(prev - 10, 0));
         }
     };
+    const hasOptions = fetched && !loading && error == null && suggestions.length > 0;
     return (
         <div
             className={clsx(
@@ -356,11 +355,13 @@ export function SuggestionControlInner({
                     type="text"
                     role="combobox"
                     aria-label={placeholderText ?? "Suggestions"}
-                    aria-expanded={true}
-                    aria-controls={listboxId}
+                    aria-expanded={hasOptions}
+                    aria-controls={hasOptions ? listboxId : undefined}
                     aria-autocomplete="list"
                     aria-activedescendant={
-                        suggestions[selectedIndex] ? `${listboxId}-option-${selectedIndex}` : undefined
+                        !loading && !error && suggestions[selectedIndex]
+                            ? `${listboxId}-option-${selectedIndex}`
+                            : undefined
                     }
                     value={query}
                     onChange={(e) => {
@@ -372,59 +373,70 @@ export function SuggestionControlInner({
                     placeholder={placeholderText}
                 />
             </div>
-            <div id={listboxId} role="listbox" aria-label="Suggestions">
-                {loading ? (
-                    <div
-                        role="status"
-                        aria-live="polite"
-                        className="flex items-center justify-center min-h-[120px] p-4 text-gray-500"
-                    >
-                        Loading suggestions…
-                    </div>
-                ) : error ? (
-                    <div
-                        role="alert"
-                        className="flex flex-col gap-2 items-center justify-center min-h-[120px] p-4 text-error"
-                    >
-                        <span>{error}</span>
-                        <button
-                            type="button"
-                            onClick={() => setRetryVersion((value) => value + 1)}
-                            className="text-accent underline"
+            {hasOptions && (
+                <div
+                    id={listboxId}
+                    ref={dropdownRef}
+                    role="listbox"
+                    aria-label="Suggestions"
+                    className="max-h-96 overflow-y-auto divide-y divide-gray-700"
+                >
+                    {suggestions.map((suggestion, index) => (
+                        <div
+                            id={`${listboxId}-option-${index}`}
+                            role="option"
+                            aria-selected={index === selectedIndex}
+                            key={suggestion.suggestionid ?? index}
+                            className={clsx(
+                                "flex items-center gap-3 px-4 py-2 cursor-pointer",
+                                index === selectedIndex ? "bg-accentbg" : "hover:bg-hoverbg",
+                                "text-gray-100"
+                            )}
+                            onClick={() => {
+                                setSelectedIndex(index);
+                                if (onSelect(suggestion, query)) onClose();
+                            }}
                         >
-                            Retry
-                        </button>
-                    </div>
-                ) : fetched && suggestions.length > 0 ? (
-                    <div ref={dropdownRef} className="max-h-96 overflow-y-auto divide-y divide-gray-700">
-                        {suggestions.map((suggestion, index) => (
-                            <div
-                                id={`${listboxId}-option-${index}`}
-                                role="option"
-                                aria-selected={index === selectedIndex}
-                                key={suggestion.suggestionid ?? index}
-                                className={clsx(
-                                    "flex items-center gap-3 px-4 py-2 cursor-pointer",
-                                    index === selectedIndex ? "bg-accentbg" : "hover:bg-hoverbg",
-                                    "text-gray-100"
-                                )}
-                                onClick={() => {
-                                    if (onSelect(suggestion, query)) onClose();
-                                }}
-                            >
-                                <SuggestionIcon suggestion={suggestion} />
-                                <SuggestionContent suggestion={suggestion} />
-                            </div>
-                        ))}
-                    </div>
-                ) : fetched ? (
-                    <div key="empty" className="flex items-center justify-center min-h-[120px] p-4">
-                        {query === ""
-                            ? (noDataChild ?? <SuggestionControlNoData />)
-                            : (emptyStateChild ?? <SuggestionControlNoResults />)}
-                    </div>
-                ) : null}
-            </div>
+                            <SuggestionIcon suggestion={suggestion} />
+                            <SuggestionContent suggestion={suggestion} />
+                        </div>
+                    ))}
+                </div>
+            )}
+            {loading ? (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    className="flex items-center justify-center min-h-[120px] p-4 text-gray-500"
+                >
+                    Loading suggestions…
+                </div>
+            ) : error ? (
+                <div
+                    role="alert"
+                    className="flex flex-col gap-2 items-center justify-center min-h-[120px] p-4 text-error"
+                >
+                    <span>{error}</span>
+                    <button
+                        type="button"
+                        onClick={() => setRetryVersion((value) => value + 1)}
+                        className="text-accent underline"
+                    >
+                        Retry
+                    </button>
+                </div>
+            ) : fetched && !hasOptions ? (
+                <div
+                    key="empty"
+                    role="status"
+                    aria-live="polite"
+                    className="flex items-center justify-center min-h-[120px] p-4"
+                >
+                    {query === ""
+                        ? (noDataChild ?? <SuggestionControlNoData />)
+                        : (emptyStateChild ?? <SuggestionControlNoResults />)}
+                </div>
+            ) : null}
         </div>
     );
 }

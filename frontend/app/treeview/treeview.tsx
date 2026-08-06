@@ -2,14 +2,16 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { makeIconClass } from "@/util/util";
-import { useVirtualizer } from "@tanstack/react-virtual";
+import { defaultRangeExtractor, useVirtualizer, type Range } from "@tanstack/react-virtual";
 import clsx from "clsx";
-import React, {
+import {
     CSSProperties,
     KeyboardEvent,
     MouseEvent,
     forwardRef,
+    useCallback,
     useEffect,
+    useId,
     useImperativeHandle,
     useMemo,
     useRef,
@@ -55,6 +57,8 @@ export interface TreeViewVisibleRow {
 }
 
 export interface TreeViewProps {
+    /** Accessible name announced for the tree composite. */
+    ariaLabel?: string;
     rootIds: string[];
     initialNodes: Record<string, TreeNodeData>;
     fetchDir?: (id: string, limit: number) => Promise<FetchDirResult>;
@@ -104,7 +108,7 @@ export interface TreeViewRef {
 const DefaultRowHeight = 24;
 const DefaultIndentWidth = 16;
 const DefaultOverscan = 10;
-const ChevronWidth = 16;
+const ChevronWidth = 24;
 
 function normalizeLabel(node: TreeNodeData): string {
     if (node.label?.trim()) {
@@ -221,7 +225,11 @@ function getNodeIcon(node: TreeNodeData, isExpanded: boolean): string {
         return "file-pdf";
     }
     const extension = normalizeLabel(node).split(".").pop()?.toLocaleLowerCase();
-    if (["js", "jsx", "ts", "tsx", "go", "py", "java", "c", "cpp", "h", "hpp", "json", "yaml", "yml"].includes(extension)) {
+    if (
+        ["js", "jsx", "ts", "tsx", "go", "py", "java", "c", "cpp", "h", "hpp", "json", "yaml", "yml"].includes(
+            extension
+        )
+    ) {
         return "file-code";
     }
     if (["md", "txt", "log"].includes(extension)) {
@@ -236,11 +244,23 @@ function gitColor(status?: string): string | undefined {
     return undefined;
 }
 
+export function findTypeaheadRowIndex(rows: TreeViewVisibleRow[], currentIndex: number, query: string): number | null {
+    const normalizedQuery = query.trim().toLocaleLowerCase();
+    if (!normalizedQuery || rows.length === 0) return null;
+    for (let offset = 1; offset <= rows.length; offset++) {
+        const index = (Math.max(currentIndex, -1) + offset) % rows.length;
+        const row = rows[index];
+        if (row.kind === "node" && row.label.toLocaleLowerCase().startsWith(normalizedQuery)) return index;
+    }
+    return null;
+}
+
 type CachedTreeState = { nodesById: Map<string, TreeNodeData>; expandedIds: Set<string>; selectedId: string };
 const treeStateCache = new Map<string, CachedTreeState>();
 
 export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
     const {
+        ariaLabel = "File tree",
         rootIds,
         initialNodes,
         fetchDir,
@@ -282,6 +302,10 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
     );
     const [selectedId, setSelectedId] = useState<string>(() => cached?.selectedId ?? rootIds[0]);
     const scrollRef = useRef<HTMLDivElement>(null);
+    const treeRef = useRef<HTMLDivElement>(null);
+    const treeId = useId();
+    const typeaheadRef = useRef("");
+    const typeaheadTimeRef = useRef(0);
 
     // Persist state so it survives re-mounts (expansion holds when a file opens).
     useEffect(() => {
@@ -314,17 +338,34 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         });
     }, [initialNodes]);
 
-    const visibleRows = useMemo(() => buildVisibleRows(nodesById, rootIds, expandedIds), [nodesById, rootIds, expandedIds]);
-    const idToIndex = useMemo(
-        () => new Map(visibleRows.map((row, index) => [row.id, index])),
-        [visibleRows]
+    const visibleRows = useMemo(
+        () => buildVisibleRows(nodesById, rootIds, expandedIds),
+        [nodesById, rootIds, expandedIds]
+    );
+    const idToIndex = useMemo(() => new Map(visibleRows.map((row, index) => [row.id, index])), [visibleRows]);
+    const selectedRowIndex = selectedId != null ? idToIndex.get(selectedId) : undefined;
+    const rangeExtractor = useCallback(
+        (range: Range) => {
+            const indexes = defaultRangeExtractor(range);
+            if (selectedRowIndex == null || indexes.includes(selectedRowIndex)) return indexes;
+            return [...indexes, selectedRowIndex].sort((left, right) => left - right);
+        },
+        [selectedRowIndex]
     );
     const virtualizer = useVirtualizer({
         count: visibleRows.length,
         getScrollElement: () => scrollRef.current,
         estimateSize: () => rowHeight,
+        initialRect: {
+            width: typeof width === "number" ? width : maxWidth,
+            height: typeof height === "number" ? height : 360,
+        },
         overscan,
+        rangeExtractor,
     });
+    const virtualRows = virtualizer.getVirtualItems();
+    const selectedRowIsMounted =
+        selectedRowIndex != null && virtualRows.some((virtualRow) => virtualRow.index === selectedRowIndex);
 
     const commitSelection = (id: string) => {
         const node = nodesById.get(id);
@@ -361,7 +402,13 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
 
     const loadChildren = async (id: string) => {
         const currentNode = nodesById.get(id);
-        if (currentNode == null || !currentNode.isDirectory || currentNode.notfound || currentNode.staterror || fetchDir == null) {
+        if (
+            currentNode == null ||
+            !currentNode.isDirectory ||
+            currentNode.notfound ||
+            currentNode.staterror ||
+            fetchDir == null
+        ) {
             return;
         }
         const status = currentNode.childrenStatus ?? "unloaded";
@@ -485,32 +532,79 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
         scrollToId(row.id);
     };
 
+    const dispatchSelectedContextMenu = (clientX = 0, clientY = 0): boolean => {
+        if (selectedId == null || selectedRowIndex == null || !selectedRowIsMounted || treeRef.current == null)
+            return false;
+        const node = nodesById.get(selectedId);
+        const item = treeRef.current.ownerDocument?.getElementById(`${treeId}-item-${selectedRowIndex}`);
+        if (node == null || item == null) return false;
+        const rect = item.getBoundingClientRect();
+        const x = clientX || rect.left;
+        const y = clientY || rect.bottom;
+        const NativeMouseEvent = treeRef.current.ownerDocument?.defaultView?.MouseEvent;
+        if (NativeMouseEvent != null && typeof item.dispatchEvent === "function") {
+            item.dispatchEvent(
+                new NativeMouseEvent("contextmenu", {
+                    bubbles: true,
+                    cancelable: true,
+                    clientX: x,
+                    clientY: y,
+                })
+            );
+            return true;
+        }
+        const contextEvent = {
+            clientX: x,
+            clientY: y,
+            currentTarget: item,
+            target: item,
+            preventDefault: () => undefined,
+            stopPropagation: () => undefined,
+        } as unknown as MouseEvent<HTMLDivElement>;
+        onContextMenu?.(selectedId, node, contextEvent);
+        return true;
+    };
+
     const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+        if (event.target !== event.currentTarget) return;
         const selectedIndex = selectedId != null ? idToIndex.get(selectedId) : undefined;
-        if (event.key === "ArrowDown") {
+        if (event.key === "ArrowDown" || event.key === "ArrowUp") {
             event.preventDefault();
-            const nextIndex = (selectedIndex ?? -1) + 1;
-            for (let idx = nextIndex; idx < visibleRows.length; idx++) {
-                if (visibleRows[idx].kind === "node") {
-                    selectVisibleNodeAt(idx);
+            const direction = event.key === "ArrowDown" ? 1 : -1;
+            let index = (selectedIndex ?? (direction > 0 ? -1 : visibleRows.length)) + direction;
+            while (index >= 0 && index < visibleRows.length) {
+                if (visibleRows[index].kind === "node") {
+                    selectVisibleNodeAt(index);
+                    break;
+                }
+                index += direction;
+            }
+            return;
+        }
+        if (event.key === "Home" || event.key === "End") {
+            event.preventDefault();
+            const start = event.key === "Home" ? 0 : visibleRows.length - 1;
+            const direction = event.key === "Home" ? 1 : -1;
+            for (let index = start; index >= 0 && index < visibleRows.length; index += direction) {
+                if (visibleRows[index].kind === "node") {
+                    selectVisibleNodeAt(index);
                     break;
                 }
             }
             return;
         }
-        if (event.key === "ArrowUp") {
+        if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
             event.preventDefault();
-            const previousIndex = (selectedIndex ?? visibleRows.length) - 1;
-            for (let idx = previousIndex; idx >= 0; idx--) {
-                if (visibleRows[idx].kind === "node") {
-                    selectVisibleNodeAt(idx);
-                    break;
-                }
-            }
+            event.stopPropagation();
+            dispatchSelectedContextMenu();
             return;
         }
         const node = selectedId ? nodesById.get(selectedId) : null;
-        if (node == null) {
+        if (node == null) return;
+        if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            if (node.isDirectory) toggleExpand(node.id);
+            else onOpenFile?.(node.id, node);
             return;
         }
         if (event.key === "ArrowLeft") {
@@ -535,6 +629,25 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                 commitSelection(node.childrenIds[0]);
                 scrollToId(node.childrenIds[0]);
             }
+            return;
+        }
+        if (event.key.length === 1 && !event.altKey && !event.ctrlKey && !event.metaKey) {
+            const now = Date.now();
+            const nextBuffer = now - typeaheadTimeRef.current > 700 ? event.key : typeaheadRef.current + event.key;
+            typeaheadTimeRef.current = now;
+            typeaheadRef.current = nextBuffer;
+            const repeatedCharacter = [...nextBuffer].every(
+                (character) => character.toLocaleLowerCase() === event.key.toLocaleLowerCase()
+            );
+            const matchIndex = findTypeaheadRowIndex(
+                visibleRows,
+                selectedIndex ?? -1,
+                repeatedCharacter ? event.key : nextBuffer
+            );
+            if (matchIndex != null) {
+                event.preventDefault();
+                selectVisibleNodeAt(matchIndex);
+            }
         }
     };
 
@@ -547,10 +660,21 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
 
     return (
         <div
+            ref={treeRef}
             className={clsx("rounded-md border border-border bg-panel", className)}
             style={containerStyle}
+            role="tree"
+            aria-label={ariaLabel}
+            aria-activedescendant={
+                selectedRowIndex != null && selectedRowIsMounted ? `${treeId}-item-${selectedRowIndex}` : undefined
+            }
             tabIndex={0}
             onKeyDown={onKeyDown}
+            onContextMenu={(event) => {
+                if (event.target !== event.currentTarget) return;
+                event.preventDefault();
+                if (!dispatchSelectedContextMenu(event.clientX, event.clientY)) onBackgroundContextMenu?.(event);
+            }}
         >
             <div ref={scrollRef} className="h-full overflow-auto">
                 <div
@@ -561,22 +685,32 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                         onBackgroundContextMenu?.(e);
                     }}
                 >
-                    {virtualizer.getVirtualItems().map((virtualRow) => {
+                    {virtualRows.map((virtualRow) => {
                         const row = visibleRows[virtualRow.index];
                         if (row.kind === "node" && row.node == null) {
                             return null;
                         }
                         const selected = row.id === selectedId;
-                        const gitState =
-                            row.kind === "node" && row.node?.path ? gitStatus?.[row.node.path] : undefined;
+                        const gitState = row.kind === "node" && row.node?.path ? gitStatus?.[row.node.path] : undefined;
                         const gs = gitState ? { status: gitState, color: gitColor(gitState) } : undefined;
                         return (
                             <div
                                 key={row.id}
+                                id={row.kind === "node" ? `${treeId}-item-${virtualRow.index}` : undefined}
+                                role={row.kind === "node" ? "treeitem" : row.kind === "error" ? "alert" : "status"}
+                                aria-live={
+                                    row.kind === "node" ? undefined : row.kind === "error" ? "assertive" : "polite"
+                                }
+                                aria-level={row.kind === "node" ? row.depth + 1 : undefined}
+                                aria-selected={row.kind === "node" ? selected : undefined}
+                                aria-expanded={row.kind === "node" && row.isDirectory ? !!row.isExpanded : undefined}
                                 className={clsx(
                                     "absolute left-0 right-0 flex items-center whitespace-nowrap text-sm",
                                     row.kind === "node" ? "cursor-pointer" : "text-muted",
-                                    selected ? "bg-accent/25 text-foreground" : "text-foreground hover:bg-muted/50"
+                                    row.kind === "node" &&
+                                        (selected
+                                            ? "bg-accent/25 text-foreground"
+                                            : "text-foreground hover:bg-muted/50")
                                 )}
                                 style={{
                                     top: 0,
@@ -587,6 +721,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                     if (row.kind !== "node") {
                                         return;
                                     }
+                                    treeRef.current?.focus();
                                     commitSelection(row.id);
                                     if (singleClickOpen) {
                                         if (row.isDirectory) {
@@ -620,17 +755,27 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                             >
                                 <div
                                     className="flex items-center"
-                                    style={{ paddingLeft: row.depth * indentWidth, width: ChevronWidth + row.depth * indentWidth }}
+                                    style={{
+                                        paddingLeft: row.depth * indentWidth,
+                                        width: ChevronWidth + row.depth * indentWidth,
+                                    }}
                                 >
                                     {row.kind === "node" && row.isDirectory && row.hasChildren ? (
                                         <button
-                                            className="h-4 w-4 rounded text-muted hover:text-foreground cursor-pointer"
+                                            type="button"
+                                            tabIndex={-1}
+                                            className="h-6 w-6 rounded text-muted hover:text-foreground cursor-pointer"
+                                            aria-label={`${row.isExpanded ? "Collapse" : "Expand"} ${row.label}`}
+                                            onMouseDown={(event) => event.preventDefault()}
                                             onClick={(event: MouseEvent<HTMLButtonElement>) => {
                                                 event.stopPropagation();
+                                                treeRef.current?.focus();
+                                                commitSelection(row.id);
                                                 toggleExpand(row.id);
                                             }}
                                         >
                                             <i
+                                                aria-hidden="true"
                                                 className={clsx(
                                                     "fa-sharp fa-solid text-[11px]",
                                                     row.isExpanded ? "fa-chevron-down" : "fa-chevron-right"
@@ -638,7 +783,7 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                             />
                                         </button>
                                     ) : (
-                                        <span className="inline-block h-4 w-4" />
+                                        <span className="inline-block h-6 w-6" />
                                     )}
                                 </div>
                                 {row.kind === "node" ? (
@@ -647,10 +792,8 @@ export const TreeView = forwardRef<TreeViewRef, TreeViewProps>((props, ref) => {
                                             <span className="inline-block h-4 w-4" />
                                         ) : (
                                             <i
-                                                className={makeIconClass(
-                                                    getNodeIcon(row.node, row.isExpanded),
-                                                    true
-                                                )}
+                                                className={makeIconClass(getNodeIcon(row.node, row.isExpanded), true)}
+                                                aria-hidden="true"
                                                 style={{
                                                     color:
                                                         row.node.notfound || row.node.staterror

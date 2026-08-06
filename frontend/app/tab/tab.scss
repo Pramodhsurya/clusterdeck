@@ -4,7 +4,8 @@
 .tab {
     position: absolute;
     width: 130px;
-    height: calc(100% - 3px);
+    height: calc(100% - 2px);
+    min-height: 24px;
     padding: 0 0 0 0;
     box-sizing: border-box;
     font-weight: bold;
@@ -28,6 +29,13 @@
         height: 100%;
         white-space: nowrap;
         border-radius: 6px;
+    }
+
+    .tab-selectable {
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        outline-offset: -2px;
     }
 
     &.animate {
@@ -77,8 +85,8 @@
         top: 50%;
         right: 4px;
         transform: translate3d(0, -50%, 0);
-        width: 20px;
-        height: 20px;
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -90,6 +98,10 @@
 
     .close {
         visibility: hidden;
+
+        &:focus-visible {
+            visibility: visible;
+        }
     }
 }
 
@@ -138,4 +150,3 @@ body.nohover .tab.active .close {
 .tab.new-tab {
     animation: expandWidthAndFadeIn 0.1s forwards;
 }
-
