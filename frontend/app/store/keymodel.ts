@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { openRailConnectionByIndex } from "@/app/clusterdeck/connectionsrail";
-import { isConnLockedWorkspace } from "@/app/clusterdeck/connlock";
+import { isClusterdeckPinnedEditorMeta, isConnLockedWorkspace } from "@/app/clusterdeck/connlock";
 import {
     atoms,
     createBlock,
@@ -145,6 +145,9 @@ function simpleCloseStaticTab() {
 function uxCloseBlock(blockId: string) {
     const blockAtom = WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", blockId));
     const blockData = globalStore.get(blockAtom);
+    if (isClusterdeckPinnedEditorMeta(blockData?.meta)) {
+        return;
+    }
 
     // If this is the last block, closing it will close the tab — route through simpleCloseStaticTab
     // so the tab:confirmclose setting is respected.
@@ -161,6 +164,13 @@ function uxCloseBlock(blockId: string) {
 }
 
 function genericClose() {
+    const layoutModel = getLayoutModelForStaticTab();
+    const focusedNode = layoutModel ? globalStore.get(layoutModel.focusedNode) : null;
+    if (focusedNode?.data?.blockId) {
+        const block = globalStore.get(WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", focusedNode.data.blockId)));
+        if (isClusterdeckPinnedEditorMeta(block?.meta)) return;
+    }
+
     const blockCount = getStaticTabBlockCount();
     if (blockCount === 0) {
         simpleCloseStaticTab();
@@ -174,8 +184,6 @@ function genericClose() {
         return;
     }
 
-    const layoutModel = getLayoutModelForStaticTab();
-    const focusedNode = globalStore.get(layoutModel.focusedNode);
     fireAndForget(layoutModel.closeFocusedNode.bind(layoutModel));
 }
 
@@ -553,14 +561,18 @@ function registerGlobalKeys() {
         if (blockId == null) {
             return true;
         }
-        replaceBlock(
-            blockId,
-            {
-                meta: {
-                    view: "launcher",
+        const block = globalStore.get(WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", blockId)));
+        if (isClusterdeckPinnedEditorMeta(block?.meta)) return true;
+        fireAndForget(() =>
+            replaceBlock(
+                blockId,
+                {
+                    meta: {
+                        view: "launcher",
+                    },
                 },
-            },
-            true
+                true
+            )
         );
         return true;
     });

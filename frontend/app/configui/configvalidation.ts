@@ -33,6 +33,26 @@ export function normalizeConfigStringInput(value: string, options?: ConfigString
     return value.trim();
 }
 
+export type ResolvedConfigStringDraft = {
+    normalized: string;
+    value: string | undefined;
+    error?: string;
+};
+
+export function resolveConfigStringDraft(
+    draftValue: string,
+    options?: ConfigStringValidationOptions,
+    blankValue?: string
+): ResolvedConfigStringDraft {
+    const normalized = normalizeConfigStringInput(draftValue, options);
+    const error = validateConfigStringInput(draftValue, options);
+    return {
+        normalized,
+        value: error == null ? (normalized.length === 0 ? blankValue : normalized) : undefined,
+        error,
+    };
+}
+
 export function validateConfigStringInput(value: string, options?: ConfigStringValidationOptions): string | undefined {
     const normalizedValue = normalizeConfigStringInput(value, options);
 

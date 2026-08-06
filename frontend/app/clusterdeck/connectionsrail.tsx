@@ -7,10 +7,10 @@
 // replaces Wave's native workspace switcher.
 
 import { ContextMenuModel } from "@/app/store/contextmenu";
-import { WorkspaceEditor } from "@/app/tab/workspaceeditor";
 import { globalStore } from "@/app/store/jotaiStore";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
+import { WorkspaceEditor } from "@/app/tab/workspaceeditor";
 import { Input } from "@/element/input";
 import { WaveModal } from "@/element/modal";
 import { atoms, createBlock, getApi, getConnStatusAtom, WOS } from "@/store/global";
@@ -22,8 +22,7 @@ import clsx from "clsx";
 import { atom, useAtom, useAtomValue, useSetAtom } from "jotai";
 import { atomWithStorage } from "jotai/utils";
 import { OverlayScrollbarsComponent } from "overlayscrollbars-react";
-import { memo, useCallback, useEffect } from "react";
-import { useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import "./connectionsrail.scss";
 
 export const ClusterdeckConnectionMetaKey = "clusterdeck:connection";
@@ -100,37 +99,75 @@ async function recordWorkspaceOpened(oid: string): Promise<void> {
     }
 }
 
-// Open a workspace for a target — a local folder path (e.g. ~/Documents/proj)
-// OR a connection (user@host) — creating + seeding the IDE layout if needed,
-// then switch the window to it. Also used to "reopen" a connection from the
-// Welcome "Recent" list whose workspace was since deleted.
-export function openTargetWorkspace(target: string) {
-    fireAndForget(async () => {
-        const workspaceId = await RpcApi.ClusterdeckOpenTargetCommand(TabRpcClient, target);
-        if (workspaceId) {
-            await recordWorkspaceOpened(workspaceId);
-            getApi().switchWorkspace(workspaceId);
-        }
-    });
+export class WorkspaceSelectionCoordinator {
+    private generation = 0;
+
+    constructor(
+        private readonly switchWorkspace: (workspaceId: string) => void,
+        private readonly recordOpened: (workspaceId: string) => Promise<void>,
+        private readonly openTarget: (target: string) => Promise<string>,
+        private readonly openHomeWorkspace: () => Promise<string>
+    ) {}
+
+    private beginIntent(): number {
+        return ++this.generation;
+    }
+
+    selectExisting(workspaceId: string): void {
+        this.beginIntent();
+        this.switchWorkspace(workspaceId);
+        void this.recordOpened(workspaceId).catch((error) =>
+            console.warn("Failed to record workspace recency:", error)
+        );
+    }
+
+    selectByIndex(workspaces: Workspace[], oneBasedIndex: number): void {
+        const workspace = workspaces[oneBasedIndex - 1];
+        if (workspace) this.selectExisting(workspace.oid);
+    }
+
+    selectTarget(target: string): void {
+        const generation = this.beginIntent();
+        void this.openTarget(target)
+            .then((workspaceId) => {
+                if (!workspaceId || generation !== this.generation) return;
+                this.switchWorkspace(workspaceId);
+                void this.recordOpened(workspaceId).catch((error) =>
+                    console.warn("Failed to record workspace recency:", error)
+                );
+            })
+            .catch((error) => console.warn("Failed to open workspace target:", error));
+    }
+
+    selectHome(): void {
+        const generation = this.beginIntent();
+        void this.openHomeWorkspace()
+            .then((workspaceId) => {
+                if (workspaceId && generation === this.generation) this.switchWorkspace(workspaceId);
+            })
+            .catch((error) => console.warn("Failed to open Home workspace:", error));
+    }
 }
 
-// Switch to a workspace, recording recency for the Welcome "Recent" list.
+const workspaceSelection = new WorkspaceSelectionCoordinator(
+    (workspaceId) => getApi().switchWorkspace(workspaceId),
+    recordWorkspaceOpened,
+    (target) => RpcApi.ClusterdeckOpenTargetCommand(TabRpcClient, target),
+    () => RpcApi.ClusterdeckOpenHomeCommand(TabRpcClient)
+);
+
+export function openTargetWorkspace(target: string) {
+    workspaceSelection.selectTarget(target);
+}
+
+// Navigation is immediate; recency persistence is deliberately best-effort.
 export function switchToWorkspace(oid: string) {
-    if (globalStore.get(atoms.workspace)?.oid === oid) {
-        return;
-    }
-    fireAndForget(async () => {
-        await recordWorkspaceOpened(oid);
-        getApi().switchWorkspace(oid);
-    });
+    workspaceSelection.selectExisting(oid);
 }
 
 // Switch to the nth workspace in rail order (1-based) — used by Cmd+1..9.
 export function openRailConnectionByIndex(index: number) {
-    const ws = globalStore.get(railWorkspacesAtom)[index - 1];
-    if (ws != null) {
-        switchToWorkspace(ws.oid);
-    }
+    workspaceSelection.selectByIndex(globalStore.get(railWorkspacesAtom), index);
 }
 
 // "Open Folder" — native folder picker, then open it as a workspace.
@@ -150,12 +187,7 @@ export function openNewConnection() {
 
 // Open the Welcome/home workspace (creating it if needed).
 export function openHome() {
-    fireAndForget(async () => {
-        const oid = await RpcApi.ClusterdeckOpenHomeCommand(TabRpcClient);
-        if (oid) {
-            getApi().switchWorkspace(oid);
-        }
-    });
+    workspaceSelection.selectHome();
 }
 
 // Open connections.json inside Clusterdeck's own editor (a local preview block,
@@ -260,7 +292,11 @@ const WorkspaceEditorPopup = memo(() => {
     return (
         <>
             <div className="cd-editor-backdrop" onClick={close} />
-            <div className="cd-editor-popup" style={{ top: target.y, left: target.x }} onClick={(e) => e.stopPropagation()}>
+            <div
+                className="cd-editor-popup"
+                style={{ top: target.y, left: target.x }}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <WorkspaceEditor
                     title={ws.name ?? ""}
                     icon={ws.icon ?? ""}
@@ -329,34 +365,65 @@ const RailItem = memo(({ workspace, hotkeyNum }: { workspace: Workspace; hotkeyN
 });
 RailItem.displayName = "RailItem";
 
+export class WorkspaceRefreshCoordinator {
+    private generation = 0;
+    private disposed = false;
+
+    constructor(
+        private readonly listWorkspaces: () => Promise<Array<{ workspaceid: string }>>,
+        private readonly getWorkspace: (workspaceId: string) => Promise<Workspace>,
+        private readonly commit: (workspaces: Workspace[]) => void
+    ) {}
+
+    activate(): void {
+        this.disposed = false;
+        this.generation++;
+    }
+
+    async refresh(): Promise<void> {
+        const generation = ++this.generation;
+        const list = await this.listWorkspaces();
+        if (!list || this.disposed || generation !== this.generation) return;
+        const details = await Promise.all(list.map((entry) => this.getWorkspace(entry.workspaceid)));
+        if (this.disposed || generation !== this.generation) return;
+        this.commit(details.filter((workspace) => workspace && isClusterdeckWorkspace(workspace)));
+    }
+
+    dispose(): void {
+        this.disposed = true;
+        this.generation++;
+    }
+}
+
 const ConnectionsRail = memo(() => {
     const workspaces = useAtomValue(railWorkspacesAtom);
     const setWorkspaces = useSetAtom(railWorkspacesAtom);
     const [collapsed, setCollapsed] = useAtom(railCollapsedAtom);
     const connectedCount = useAtomValue(connectedCountAtom);
 
-    const updateWorkspaces = useCallback(async () => {
-        const list = await WorkspaceService.ListWorkspaces();
-        if (!list) {
-            return;
-        }
-        const result: Workspace[] = [];
-        for (const entry of list) {
-            const ws = await WorkspaceService.GetWorkspace(entry.workspaceid);
-            if (ws && isClusterdeckWorkspace(ws)) {
-                result.push(ws);
-            }
-        }
-        setWorkspaces(result);
-    }, [setWorkspaces]);
+    const refreshCoordinator = useMemo(
+        () =>
+            new WorkspaceRefreshCoordinator(
+                () => WorkspaceService.ListWorkspaces(),
+                (workspaceId) => WorkspaceService.GetWorkspace(workspaceId),
+                setWorkspaces
+            ),
+        [setWorkspaces]
+    );
+    const updateWorkspaces = useCallback(() => refreshCoordinator.refresh(), [refreshCoordinator]);
 
     useEffect(() => {
+        refreshCoordinator.activate();
         fireAndForget(updateWorkspaces);
-        return waveEventSubscribeSingle({
+        const unsubscribe = waveEventSubscribeSingle({
             eventType: "workspace:update",
             handler: () => fireAndForget(updateWorkspaces),
         });
-    }, [updateWorkspaces]);
+        return () => {
+            refreshCoordinator.dispose();
+            unsubscribe();
+        };
+    }, [updateWorkspaces, refreshCoordinator]);
 
     return (
         <div className={clsx("cd-connections-rail", { collapsed })}>

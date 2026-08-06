@@ -16,7 +16,7 @@ import { MarkdownPreview } from "./preview-markdown";
 import type { PreviewModel } from "./preview-model";
 import { StreamingPreview } from "./preview-streaming";
 import type { PreviewEnv } from "./previewenv";
-import { fetchPreviewFileSuggestions } from "./previewsuggestions";
+import { fetchPreviewFileSuggestions, getPreviewSuggestionCwd } from "./previewsuggestions";
 
 export type SpecializedViewProps = {
     model: PreviewModel;
@@ -113,7 +113,7 @@ function PreviewView({
     const fetchSuggestionsFn = async (query, ctx) => {
         const conn = await globalStore.get(model.connection);
         const file = await globalStore.get(model.statFile);
-        const cwd = file?.path;
+        const cwd = getPreviewSuggestionCwd(file);
         return await fetchPreviewFileSuggestions(env, query, ctx, { cwd, connection: conn });
     };
 

@@ -6,6 +6,7 @@ import {
     getEffectiveConfigValue,
     isConfigValueOverridden,
     normalizeConfigStringInput,
+    resolveConfigStringDraft,
     validateConfigNumberInput,
     validateConfigStringInput,
 } from "./configvalidation";
@@ -14,10 +15,34 @@ describe("configvalidation", () => {
     it("normalizes and validates config strings", () => {
         expect(normalizeConfigStringInput("  wave  ")).toBe("wave");
         expect(validateConfigStringInput("   ", { required: true })).toBe("Required");
-        expect(validateConfigStringInput("missing-placeholder", { validate: (value) => (!value.includes("{query}") ? "Must include {query}" : undefined) })).toBe(
-            "Must include {query}"
-        );
-        expect(validateConfigStringInput("https://example.com/?q={query}", { validate: (value) => (!value.includes("{query}") ? "Must include {query}" : undefined) })).toBeUndefined();
+        expect(
+            validateConfigStringInput("missing-placeholder", {
+                validate: (value) => (!value.includes("{query}") ? "Must include {query}" : undefined),
+            })
+        ).toBe("Must include {query}");
+        expect(
+            validateConfigStringInput("https://example.com/?q={query}", {
+                validate: (value) => (!value.includes("{query}") ? "Must include {query}" : undefined),
+            })
+        ).toBeUndefined();
+    });
+
+    it("resolves string drafts consistently without substituting inherited defaults", () => {
+        const validation = {
+            validate: (draft: string) => (draft.includes("{query}") ? undefined : "Must include {query}"),
+        };
+        expect(resolveConfigStringDraft("invalid", validation)).toEqual({
+            normalized: "invalid",
+            value: undefined,
+            error: "Must include {query}",
+        });
+        expect(resolveConfigStringDraft("  https://host/{query}  ", validation)).toEqual({
+            normalized: "https://host/{query}",
+            value: "https://host/{query}",
+            error: undefined,
+        });
+        expect(resolveConfigStringDraft("", undefined)).toEqual({ normalized: "", value: undefined, error: undefined });
+        expect(resolveConfigStringDraft("", undefined, "")).toEqual({ normalized: "", value: "", error: undefined });
     });
 
     it("validates config numbers with integer and range constraints", () => {

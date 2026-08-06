@@ -233,7 +233,7 @@ const DisplayNode = ({ layoutModel, node }: DisplayNodeProps) => {
     const [{ isDragging }, drag, dragPreview] = useDrag(
         () => ({
             type: tileItemType,
-            canDrag: () => !(isEphemeral || isMagnified),
+            canDrag: () => !(isEphemeral || isMagnified) && layoutModel.canMoveNode(node.data),
             item: () => node,
             collect: (monitor) => ({
                 isDragging: monitor.isDragging(),
@@ -364,13 +364,16 @@ const OverlayNode = memo(({ node, layoutModel }: OverlayNodeProps) => {
             canDrop: (_, monitor) => {
                 const dragItem = monitor.getItem<LayoutNode>();
                 if (monitor.isOver({ shallow: true }) && dragItem.id !== node.id) {
-                    return true;
+                    return layoutModel.canMoveNode(dragItem.data, node.data);
                 }
                 return false;
             },
             drop: (_, monitor) => {
-                if (!monitor.didDrop()) {
+                const dragItem = monitor.getItem<LayoutNode>();
+                if (!monitor.didDrop() && layoutModel.canMoveNode(dragItem?.data, node.data)) {
                     layoutModel.onDrop();
+                } else {
+                    layoutModel.treeReducer({ type: LayoutTreeActionType.ClearPendingAction });
                 }
             },
             hover: throttle(50, (_, monitor: DropTargetMonitor<unknown, unknown>) => {

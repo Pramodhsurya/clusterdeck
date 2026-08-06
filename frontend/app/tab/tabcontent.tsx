@@ -2,6 +2,8 @@
 // SPDX-License-Identifier: Apache-2.0
 
 import { Block } from "@/app/block/block";
+import { isClusterdeckPinnedEditorMeta } from "@/app/clusterdeck/connlock";
+import { globalStore } from "@/app/store/jotaiStore";
 import { CenteredDiv } from "@/element/quickelems";
 import { ContentRenderer, NodeModel, PreviewRenderer, TileLayout } from "@/layout/index";
 import { TileLayoutContents } from "@/layout/lib/types";
@@ -38,11 +40,19 @@ const TabContent = React.memo(({ tabId, noTopPadding }: { tabId: string; noTopPa
             return services.ObjectService.DeleteBlock(data.blockId);
         }
 
+        function isPinned(data: TabLayoutData): boolean {
+            if (!data?.blockId) return false;
+            const block = globalStore.get(WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", data.blockId)));
+            return isClusterdeckPinnedEditorMeta(block?.meta);
+        }
+
         return {
             renderContent,
             renderPreview,
             tabId,
             onNodeDelete,
+            canCloseNode: (data) => !isPinned(data),
+            canMoveNode: (source, target) => !isPinned(source) && !isPinned(target),
             gapSizePx: tileGapSize,
         } as TileLayoutContents;
     }, [tabId, tileGapSize]);
@@ -67,7 +77,9 @@ const TabContent = React.memo(({ tabId, noTopPadding }: { tabId: string; noTopPa
     }
 
     return (
-        <div className={`flex flex-row flex-grow min-h-0 w-full items-center justify-center overflow-hidden relative ${noTopPadding ? "" : "pt-[3px]"} pr-[3px]`}>
+        <div
+            className={`flex flex-row flex-grow min-h-0 w-full items-center justify-center overflow-hidden relative ${noTopPadding ? "" : "pt-[3px]"} pr-[3px]`}
+        >
             {innerContent}
         </div>
     );

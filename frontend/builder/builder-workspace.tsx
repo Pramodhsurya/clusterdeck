@@ -5,83 +5,74 @@ import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import { BuilderAppPanel } from "@/builder/builder-apppanel";
 import { BuilderBuildPanel } from "@/builder/builder-buildpanel";
+import {
+    BuilderLayout,
+    BuilderLayoutLoadCoordinator,
+    BuilderLayoutWriter,
+    DefaultBuilderLayout,
+    normalizeBuilderLayout,
+} from "@/builder/builder-workspace-model";
 import { atoms } from "@/store/global";
 import { useAtomValue } from "jotai";
-import { memo, useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Panel, PanelGroup, PanelResizeHandle } from "react-resizable-panels";
-import { debounce } from "throttle-debounce";
-
-type BuilderLayout = {
-    app: number;
-    build: number;
-};
-
-const DefaultLayoutPercentages: BuilderLayout = {
-    app: 80,
-    build: 20,
-};
 
 const BuilderWorkspace = memo(() => {
     const builderId = useAtomValue(atoms.builderId);
     const [layout, setLayout] = useState<BuilderLayout>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const layoutLoader = useRef(new BuilderLayoutLoadCoordinator());
+    const layoutWriter = useMemo(
+        () =>
+            new BuilderLayoutWriter((capturedBuilderId, newLayout) =>
+                RpcApi.SetRTInfoCommand(TabRpcClient, {
+                    oref: `builder:${capturedBuilderId}`,
+                    data: { "builder:layout": newLayout },
+                }).catch((error) => console.error("Failed to save builder layout:", error))
+            ),
+        []
+    );
 
     useEffect(() => {
-        const loadLayout = async () => {
-            if (!builderId) {
-                setLayout(DefaultLayoutPercentages);
-                setIsLoading(false);
-                return;
-            }
+        let cancelled = false;
+        layoutWriter.flush();
+        setIsLoading(true);
+        setLayout(null);
 
-            try {
-                const rtInfo = await RpcApi.GetRTInfoCommand(TabRpcClient, {
-                    oref: `builder:${builderId}`,
-                });
-                const savedLayout = rtInfo?.["builder:layout"] as Partial<BuilderLayout> | undefined;
-                setLayout({
-                    app: savedLayout?.app ?? DefaultLayoutPercentages.app,
-                    build: savedLayout?.build ?? DefaultLayoutPercentages.build,
-                });
-            } catch (error) {
+        void layoutLoader.current
+            .load(builderId, async () => {
+                const rtInfo = await RpcApi.GetRTInfoCommand(TabRpcClient, { oref: `builder:${builderId}` });
+                return rtInfo?.["builder:layout"];
+            })
+            .then((loadedLayout) => {
+                if (cancelled || loadedLayout == null) return;
+                setLayout(loadedLayout);
+                setIsLoading(false);
+            })
+            .catch((error) => {
+                if (cancelled) return;
                 console.error("Failed to load builder layout:", error);
-                setLayout(DefaultLayoutPercentages);
-            } finally {
+                setLayout({ ...DefaultBuilderLayout });
                 setIsLoading(false);
-            }
-        };
-
-        loadLayout();
-    }, [builderId]);
-
-    const saveLayout = useCallback(
-        debounce(500, (newLayout: BuilderLayout) => {
-            if (!builderId) return;
-
-            RpcApi.SetRTInfoCommand(TabRpcClient, {
-                oref: `builder:${builderId}`,
-                data: {
-                    "builder:layout": newLayout,
-                },
-            }).catch((error) => {
-                console.error("Failed to save builder layout:", error);
             });
-        }),
-        [builderId]
-    );
+        return () => {
+            cancelled = true;
+            layoutLoader.current.cancel();
+            layoutWriter.flush();
+        };
+    }, [builderId, layoutWriter]);
 
     const handleVerticalLayout = useCallback(
         (sizes: number[]) => {
-            const newLayout = { app: sizes[0], build: sizes[1] };
+            if (!builderId || sizes.length < 2 || !Number.isFinite(sizes[0]) || !Number.isFinite(sizes[1])) return;
+            const newLayout = normalizeBuilderLayout({ app: sizes[0], build: sizes[1] });
             setLayout(newLayout);
-            saveLayout(newLayout);
+            layoutWriter.schedule(builderId, newLayout);
         },
-        [saveLayout]
+        [builderId, layoutWriter]
     );
 
-    if (isLoading || !layout) {
-        return null;
-    }
+    if (isLoading || !layout) return null;
 
     return (
         <div className="flex-1 overflow-hidden">
@@ -89,8 +80,8 @@ const BuilderWorkspace = memo(() => {
                 className="flex flex-col relative h-full border-2 border-transparent"
                 style={{ borderBottomRightRadius: 8 }}
             >
-                <PanelGroup direction="vertical" onLayout={handleVerticalLayout}>
-                    <Panel defaultSize={layout.app} minSize={20}>
+                <PanelGroup key={builderId || "default"} direction="vertical" onLayout={handleVerticalLayout}>
+                    <Panel defaultSize={layout.app} minSize={50}>
                         <BuilderAppPanel />
                     </Panel>
                     <PanelResizeHandle className="h-0.5 bg-transparent hover:bg-gray-500/20 transition-colors" />

@@ -8,21 +8,28 @@
 
 import { BlockNodeModel } from "@/app/block/blocktypes";
 import { ClusterdeckZone_Editor, ClusterdeckZone_Explorer, ClusterdeckZoneMetaKey } from "@/app/clusterdeck/connlock";
+import { DirectoryVerificationCoordinator } from "@/app/clusterdeck/directory-verification";
 import { ContextMenuModel } from "@/app/store/contextmenu";
 import { globalStore } from "@/app/store/jotaiStore";
 import type { TabModel } from "@/app/store/tab-model";
-import { SuggestionControl } from "@/app/suggestion/suggestion";
-import { WaveEnv } from "@/app/waveenv/waveenv";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
+import { SuggestionControl } from "@/app/suggestion/suggestion";
 import { TreeNodeData, TreeView } from "@/app/treeview/treeview";
+import { fetchPreviewFileSuggestions } from "@/app/view/preview/previewsuggestions";
+import { WaveEnv } from "@/app/waveenv/waveenv";
 import { Input } from "@/element/input";
 import { WaveModal } from "@/element/modal";
-import { getLayoutModelForStaticTab, LayoutTreeActionType, type LayoutNode, type LayoutTreeResizeNodeAction } from "@/layout/index";
+import {
+    getLayoutModelForStaticTab,
+    LayoutTreeActionType,
+    type LayoutNode,
+    type LayoutTreeResizeNodeAction,
+} from "@/layout/index";
 import { findParent } from "@/layout/lib/layoutNode";
-import { atoms, createBlock, getApi, WOS, refocusNode } from "@/store/global";
+import { atoms, createBlock, getApi, refocusNode, WOS } from "@/store/global";
 import { makeNativeLabel } from "@/util/platformutil";
-import { fireAndForget, isLocalConnName, makeConnRoute, makeIconClass } from "@/util/util";
+import { fireAndForget, isLocalConnName, makeIconClass } from "@/util/util";
 import { formatRemoteUri } from "@/util/waveutil";
 import clsx from "clsx";
 import * as jotai from "jotai";
@@ -160,7 +167,12 @@ function ensureConnection(connection: string): Promise<void> {
 
 // List a directory over SFTP and map its entries to tree nodes. `parentId` is
 // undefined for the top level so those rows render as roots.
-async function listDir(path: string, connection: string, parentId: string | undefined, limit: number): Promise<TreeNodeData[]> {
+async function listDir(
+    path: string,
+    connection: string,
+    parentId: string | undefined,
+    limit: number
+): Promise<TreeNodeData[]> {
     await ensureConnection(connection);
     const uri = formatRemoteUri(path, connection);
     const files = await RpcApi.FileListCommand(TabRpcClient, { path: uri, opts: { limit } });
@@ -302,7 +314,9 @@ class ClusterdeckExplorerModel implements ViewModel {
         });
         // Directories the user expanded, persisted to meta so the tree survives a
         // full reload / app restart (not just a re-mount).
-        this.expandedAtom = jotai.atom((get) => (get(this.blockAtom)?.meta?.["clusterdeck:expanded"] as string[]) ?? []);
+        this.expandedAtom = jotai.atom(
+            (get) => (get(this.blockAtom)?.meta?.["clusterdeck:expanded"] as string[]) ?? []
+        );
         // Git decorations: absolute path -> "modified" | "added" (change #6 G#).
         this.gitStatusAtom = jotai.atom<Record<string, string>>({});
     }
@@ -739,35 +753,26 @@ const ChangeRootModal = memo(
     }) => {
         const [currentDir, setCurrentDir] = useState(initialPath);
         const [isOpen, setIsOpen] = useState(true);
+        const [pickerError, setPickerError] = useState<string | null>(null);
+        const verification = useRef(new DirectoryVerificationCoordinator());
         const headerRef = useRef<HTMLDivElement>(null);
+        const suggestionsEnv = useMemo(() => ({ rpc: RpcApi }), []);
 
         const fetchSuggestionsFn = useCallback(
             async (query: string, ctx: SuggestionRequestContext): Promise<FetchSuggestionsResponse> => {
-                const route = makeConnRoute(connection);
-                if (ctx?.dispose) {
-                    RpcApi.DisposeSuggestionsCommand(TabRpcClient, ctx.widgetid, { noresponse: true, route });
-                    return null;
-                }
-                const sdata: FetchSuggestionsData = {
-                    suggestiontype: "file",
-                    "file:cwd": currentDir,
-                    query,
-                    widgetid: ctx.widgetid,
-                    reqnum: ctx.reqnum,
-                    "file:connection": connection,
-                };
-                const resp = await RpcApi.FetchSuggestionsCommand(TabRpcClient, sdata, { route });
-                // The backend suggestion endpoint doesn't support a dirs-only
-                // filter (file:dironly isn't wired up server-side), so filter
-                // client-side — this picker is folders only.
+                const resp = await fetchPreviewFileSuggestions(suggestionsEnv, query, ctx, {
+                    cwd: currentDir,
+                    connection,
+                });
+                if (resp == null) return null;
                 return {
                     ...resp,
-                    suggestions: (resp?.suggestions ?? []).filter(
+                    suggestions: (resp.suggestions ?? []).filter(
                         (s) => s["file:mimetype"] === "directory" || s.display === ".."
                     ),
                 };
             },
-            [currentDir, connection]
+            [currentDir, connection, suggestionsEnv]
         );
 
         // Enter: a selected folder (or a typed path with none selected) becomes
@@ -784,15 +789,32 @@ const ChangeRootModal = memo(
                         typed.startsWith("/") || typed.startsWith("~")
                             ? typed
                             : `${currentDir.replace(/\/+$/, "")}/${typed}`;
-                    setCurrentDir(next);
+                    setPickerError(null);
+                    verification.current.verify(
+                        (requestNumber) =>
+                            fetchPreviewFileSuggestions(
+                                suggestionsEnv,
+                                "",
+                                { widgetid: "clusterdeck-root-verify", reqnum: requestNumber },
+                                { cwd: next, connection }
+                            ),
+                        (result) => {
+                            if (result == null) throw new Error("Unable to verify directory");
+                            setCurrentDir(next);
+                        },
+                        (error) => setPickerError(error instanceof Error ? error.message : "Unable to verify directory")
+                    );
+                    return false;
+                }
+                if (s["file:path"] && (s["file:mimetype"] === "directory" || s.display === "..")) {
+                    verification.current.invalidate();
+                    setPickerError(null);
+                    setCurrentDir(s["file:path"]);
                     return true;
                 }
-                if (s["file:path"]) {
-                    setCurrentDir(s["file:path"]);
-                }
-                return true;
+                return false;
             },
-            [currentDir]
+            [connection, currentDir, suggestionsEnv]
         );
 
         // Tab: autocomplete into a directory without leaving the popup, same as
@@ -807,6 +829,7 @@ const ChangeRootModal = memo(
         // Enter/click closes the popup after committing a directory; reopen it
         // for the new one automatically so drilling down feels continuous.
         useEffect(() => setIsOpen(true), [currentDir]);
+        useEffect(() => () => verification.current.dispose(), []);
 
         return (
             <WaveModal
@@ -821,6 +844,11 @@ const ChangeRootModal = memo(
                         <i className={makeIconClass("folder-open", true)} />
                         <span>{currentDir}</span>
                     </div>
+                    {pickerError && (
+                        <div role="alert" className="text-error text-sm">
+                            {pickerError}
+                        </div>
+                    )}
                     <SuggestionControl
                         key={currentDir}
                         anchorRef={headerRef}

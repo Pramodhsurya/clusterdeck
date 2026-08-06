@@ -9,8 +9,8 @@ import {
     renderHeaderElements,
 } from "@/app/block/blockutil";
 import { ConnectionButton } from "@/app/block/connectionbutton";
-import { workspaceConnLockedAtom } from "@/app/clusterdeck/connlock";
 import { DurableSessionFlyover } from "@/app/block/durable-session-flyover";
+import { isClusterdeckPinnedEditorMeta, workspaceConnLockedAtom } from "@/app/clusterdeck/connlock";
 import { getBlockBadgeAtom } from "@/app/store/badge";
 import {
     createBlockSplitHorizontally,
@@ -42,6 +42,8 @@ function handleHeaderContextMenu(
     e.preventDefault();
     e.stopPropagation();
     const magnified = globalStore.get(nodeModel.isMagnified);
+    const block = globalStore.get(WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", blockId)));
+    const pinned = isClusterdeckPinnedEditorMeta(block?.meta);
     const menu: ContextMenuItem[] = [
         {
             label: magnified ? "Un-Magnify Block" : "Magnify Block",
@@ -59,13 +61,15 @@ function handleHeaderContextMenu(
     ];
     const extraItems = viewModel?.getSettingsMenuItems?.();
     if (extraItems && extraItems.length > 0) menu.push({ type: "separator" }, ...extraItems);
-    menu.push(
-        { type: "separator" },
-        {
-            label: "Close Block",
-            click: () => uxCloseBlock(blockId),
-        }
-    );
+    if (!pinned) {
+        menu.push(
+            { type: "separator" },
+            {
+                label: "Close Block",
+                click: () => uxCloseBlock(blockId),
+            }
+        );
+    }
     blockEnv.showContextMenu(menu, e);
 }
 
@@ -196,9 +200,8 @@ const HeaderEndIcons = React.memo(({ viewModel, nodeModel, blockId }: HeaderEndI
         );
     }
 
-    // Clusterdeck: suppress the close button on the cdeditor block so the
-    // editor stays pinned at the top of the layout (like VS Code's editor area).
-    if (viewModel?.viewType !== "cdeditor") {
+    const block = globalStore.get(WOS.getWaveObjectAtom<Block>(WOS.makeORef("block", blockId)));
+    if (!isClusterdeckPinnedEditorMeta(block?.meta)) {
         const closeDecl: IconButtonDecl = {
             elemtype: "iconbutton",
             icon: "xmark-large",

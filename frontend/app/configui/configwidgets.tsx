@@ -8,9 +8,8 @@ import {
     ConfigNumberValidationOptions,
     ConfigStringValidationOptions,
     isConfigValueOverridden,
-    normalizeConfigStringInput,
+    resolveConfigStringDraft,
     validateConfigNumberInput,
-    validateConfigStringInput,
 } from "./configvalidation";
 
 export type ConfigSelectOption = {
@@ -31,6 +30,7 @@ type ConfigFieldFrameProps = {
     hint?: string;
     message?: string;
     messageTone?: ConfigFieldTone;
+    messageId?: string;
     defaultText?: string;
     isOverridden?: boolean;
     showUseDefault?: boolean;
@@ -38,7 +38,17 @@ type ConfigFieldFrameProps = {
     children: ReactNode;
 };
 
-type ConfigBooleanFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId" | "message" | "messageTone" | "defaultText" | "isOverridden" | "showUseDefault" | "onUseDefault"> & {
+type ConfigBooleanFieldProps = Omit<
+    ConfigFieldFrameProps,
+    | "children"
+    | "fieldId"
+    | "message"
+    | "messageTone"
+    | "defaultText"
+    | "isOverridden"
+    | "showUseDefault"
+    | "onUseDefault"
+> & {
     value?: boolean;
     defaultValue?: boolean;
     onValueChange: (value: boolean | undefined) => void;
@@ -46,7 +56,17 @@ type ConfigBooleanFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId
     falseLabel?: string;
 };
 
-type ConfigSelectFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId" | "message" | "messageTone" | "defaultText" | "isOverridden" | "showUseDefault" | "onUseDefault"> & {
+type ConfigSelectFieldProps = Omit<
+    ConfigFieldFrameProps,
+    | "children"
+    | "fieldId"
+    | "message"
+    | "messageTone"
+    | "defaultText"
+    | "isOverridden"
+    | "showUseDefault"
+    | "onUseDefault"
+> & {
     value?: string;
     defaultValue?: string;
     options: ConfigSelectOption[];
@@ -55,7 +75,17 @@ type ConfigSelectFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId"
     onValueChange: (value: string | undefined) => void;
 };
 
-type ConfigStringFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId" | "message" | "messageTone" | "defaultText" | "isOverridden" | "showUseDefault" | "onUseDefault"> & {
+type ConfigStringFieldProps = Omit<
+    ConfigFieldFrameProps,
+    | "children"
+    | "fieldId"
+    | "message"
+    | "messageTone"
+    | "defaultText"
+    | "isOverridden"
+    | "showUseDefault"
+    | "onUseDefault"
+> & {
     value?: string;
     defaultValue?: string;
     placeholder?: string;
@@ -65,7 +95,17 @@ type ConfigStringFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId"
     validation?: ConfigStringValidationOptions;
 };
 
-type ConfigNumberFieldProps = Omit<ConfigFieldFrameProps, "children" | "fieldId" | "message" | "messageTone" | "defaultText" | "isOverridden" | "showUseDefault" | "onUseDefault"> & {
+type ConfigNumberFieldProps = Omit<
+    ConfigFieldFrameProps,
+    | "children"
+    | "fieldId"
+    | "message"
+    | "messageTone"
+    | "defaultText"
+    | "isOverridden"
+    | "showUseDefault"
+    | "onUseDefault"
+> & {
     value?: number;
     defaultValue?: number;
     placeholder?: string;
@@ -84,7 +124,10 @@ function formatBooleanLabel(value: boolean, trueLabel = "True", falseLabel = "Fa
     return value ? trueLabel : falseLabel;
 }
 
-function formatDefaultText<T>(defaultValue: T | undefined, valueFormatter?: ConfigValueFormatter<T>): string | undefined {
+function formatDefaultText<T>(
+    defaultValue: T | undefined,
+    valueFormatter?: ConfigValueFormatter<T>
+): string | undefined {
     if (defaultValue == null) {
         return;
     }
@@ -129,6 +172,7 @@ function ConfigFieldFrame({
     hint,
     message,
     messageTone = "muted",
+    messageId,
     defaultText,
     isOverridden,
     showUseDefault,
@@ -170,7 +214,14 @@ function ConfigFieldFrame({
                     )}
                 </div>
                 {defaultText != null && <div className="text-xs text-muted">Default: {defaultText}</div>}
-                {(message || hint) && <div className={cn("text-xs", message ? messageClassName : "text-muted")}>{message ?? hint}</div>}
+                {(message || hint) && (
+                    <div
+                        id={message ? messageId : undefined}
+                        className={cn("text-xs", message ? messageClassName : "text-muted")}
+                    >
+                        {message ?? hint}
+                    </div>
+                )}
             </div>
         </div>
     );
@@ -189,7 +240,9 @@ export function ConfigBooleanField({
 }: ConfigBooleanFieldProps) {
     const fieldId = useId();
     const isOverridden = isConfigValueOverridden(value);
-    const defaultText = formatDefaultText(defaultValue, (defaultBool) => formatBooleanLabel(defaultBool, trueLabel, falseLabel));
+    const defaultText = formatDefaultText(defaultValue, (defaultBool) =>
+        formatBooleanLabel(defaultBool, trueLabel, falseLabel)
+    );
 
     return (
         <ConfigFieldFrame
@@ -278,38 +331,29 @@ export function ConfigStringField({
     description,
 }: ConfigStringFieldProps) {
     const fieldId = useId();
+    const errorId = `${fieldId}-error`;
     const [draftValue, setDraftValue] = useState(value ?? "");
+    const [touched, setTouched] = useState(false);
     const isOverridden = isConfigValueOverridden(value);
     const defaultText = formatDefaultText(defaultValue, valueFormatter);
 
     useEffect(() => {
         setDraftValue(value ?? "");
-    }, [value]);
+        setTouched(false);
+    }, [value, defaultValue]);
 
-    const validationValue = useMemo(() => {
-        if (isOverridden || defaultValue == null) {
-            return draftValue;
-        }
-        return defaultValue;
-    }, [defaultValue, draftValue, isOverridden]);
-    const error = useMemo(() => validateConfigStringInput(validationValue, validation), [validationValue, validation]);
+    const result = useMemo(
+        () => resolveConfigStringDraft(draftValue, validation, blankValue),
+        [blankValue, draftValue, validation]
+    );
+
+    const displayedError = touched ? result.error : undefined;
 
     const applyValue = (nextValue: string) => {
         setDraftValue(nextValue);
-        const nextError = validateConfigStringInput(nextValue, validation);
-        if (nextError != null) {
-            return;
-        }
-        const normalizedValue = normalizeConfigStringInput(nextValue, validation);
-        if (normalizedValue.length === 0) {
-            if (blankValue != null) {
-                onValueChange(blankValue);
-                return;
-            }
-            onValueChange(undefined);
-            return;
-        }
-        onValueChange(normalizedValue);
+        setTouched(true);
+        const nextResult = resolveConfigStringDraft(nextValue, validation, blankValue);
+        if (nextResult.error == null) onValueChange(nextResult.value);
     };
 
     return (
@@ -318,13 +362,20 @@ export function ConfigStringField({
             configKey={configKey}
             label={label}
             description={description}
-            hint={hint ?? "Blank means inherit the default unless this field explicitly allows an empty string override"}
-            message={error}
-            messageTone={error ? "error" : "muted"}
+            hint={
+                hint ?? "Blank means inherit the default unless this field explicitly allows an empty string override"
+            }
+            message={displayedError}
+            messageTone={displayedError ? "error" : "muted"}
+            messageId={errorId}
             defaultText={defaultText}
             isOverridden={isOverridden}
             showUseDefault={isOverridden}
-            onUseDefault={() => onValueChange(undefined)}
+            onUseDefault={() => {
+                setDraftValue("");
+                setTouched(false);
+                onValueChange(undefined);
+            }}
         >
             <input
                 id={fieldId}
@@ -332,14 +383,14 @@ export function ConfigStringField({
                 value={draftValue}
                 onChange={(event) => applyValue(event.target.value)}
                 onBlur={() => {
-                    if (error == null) {
-                        setDraftValue(normalizeConfigStringInput(draftValue, validation));
-                    }
+                    if (result.error == null) setDraftValue(result.normalized);
                 }}
+                aria-invalid={displayedError != null}
+                aria-describedby={displayedError ? errorId : undefined}
                 placeholder={placeholder ?? (defaultText == null ? undefined : `Default: ${defaultText}`)}
                 className={cn(
                     "w-full rounded-md border bg-panel px-3 py-2 text-sm text-foreground placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-accent/60",
-                    error ? "border-error" : "border-border"
+                    displayedError ? "border-error" : "border-border"
                 )}
             />
         </ConfigFieldFrame>
@@ -385,7 +436,10 @@ export function ConfigNumberField({
             configKey={configKey}
             label={label}
             description={description}
-            hint={hint ?? "Numeric fields may still be overridden to the same value as the default; the override badge makes that visible"}
+            hint={
+                hint ??
+                "Numeric fields may still be overridden to the same value as the default; the override badge makes that visible"
+            }
             message={result.error}
             messageTone={result.error ? "error" : "muted"}
             defaultText={defaultText}
@@ -500,7 +554,10 @@ export function ConfigFontSizeField({
                         </button>
                     ))}
                 </div>
-                <div className="rounded-md border border-border bg-panel px-3 py-2 text-foreground" style={{ fontSize: sampleFontSize }}>
+                <div
+                    className="rounded-md border border-border bg-panel px-3 py-2 text-foreground"
+                    style={{ fontSize: sampleFontSize }}
+                >
                     {sampleText}
                 </div>
             </div>

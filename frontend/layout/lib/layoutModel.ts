@@ -118,6 +118,8 @@ export class LayoutModel {
      * Callback that is invoked when a node is closed.
      */
     onNodeDelete?: (data: TabLayoutData) => Promise<void>;
+    canCloseNode: (data: TabLayoutData) => boolean = () => true;
+    canMoveNode: (source: TabLayoutData, target?: TabLayoutData) => boolean = () => true;
     /**
      * The size of the gap between nodes in CSS pixels.
      */
@@ -245,7 +247,9 @@ export class LayoutModel {
         renderPreview?: PreviewRenderer,
         onNodeDelete?: (data: TabLayoutData) => Promise<void>,
         gapSizePx?: number,
-        animationTimeS?: number
+        animationTimeS?: number,
+        canCloseNode?: (data: TabLayoutData) => boolean,
+        canMoveNode?: (source: TabLayoutData, target?: TabLayoutData) => boolean
     ) {
         this.tabAtom = tabAtom;
         this.getter = getter;
@@ -253,6 +257,8 @@ export class LayoutModel {
         this.renderContent = renderContent;
         this.renderPreview = renderPreview;
         this.onNodeDelete = onNodeDelete;
+        this.canCloseNode = canCloseNode ?? (() => true);
+        this.canMoveNode = canMoveNode ?? (() => true);
         this.gapSizePx = atom(gapSizePx ?? DefaultGapSizePx);
         this.resizeHandleSizePx = atom((get) => {
             const gapSizePx = get(this.gapSizePx);
@@ -423,10 +429,11 @@ export class LayoutModel {
         });
 
         for (const blockId of tab.blockids || []) {
-            if (!layoutBlockIds.has(blockId)) {
+            const data = { blockId };
+            if (!layoutBlockIds.has(blockId) && this.canCloseNode(data)) {
                 console.log("Cleaning up orphaned block:", blockId);
                 if (this.onNodeDelete) {
-                    await this.onNodeDelete({ blockId });
+                    await this.onNodeDelete(data);
                 }
             }
         }
@@ -601,6 +608,8 @@ export class LayoutModel {
         this.renderContent = contents.renderContent;
         this.renderPreview = contents.renderPreview;
         this.onNodeDelete = contents.onNodeDelete;
+        this.canCloseNode = contents.canCloseNode ?? (() => true);
+        this.canMoveNode = contents.canMoveNode ?? (() => true);
         if (contents.gapSizePx !== undefined) {
             this.setter(this.gapSizePx, contents.gapSizePx);
         }
@@ -614,15 +623,33 @@ export class LayoutModel {
      */
     treeReducer(action: LayoutTreeAction, setState = true) {
         switch (action.type) {
-            case LayoutTreeActionType.ComputeMove:
-                this.setter(
-                    this.pendingTreeAction.throttledValueAtom,
-                    computeMoveNode(this.treeState, action as LayoutTreeComputeMoveNodeAction)
-                );
+            case LayoutTreeActionType.ComputeMove: {
+                const move = action as LayoutTreeComputeMoveNodeAction;
+                const source = findNode(this.treeState.rootNode, move.nodeToMoveId);
+                const target = findNode(this.treeState.rootNode, move.nodeId);
+                if (!source || !target || !this.canMoveNode(source.data, target.data)) {
+                    this.setter(this.pendingTreeAction.throttledValueAtom, undefined);
+                    break;
+                }
+                const pendingAction = computeMoveNode(this.treeState, move) as
+                    | (LayoutTreeAction & { policyTargetNodeId?: string })
+                    | undefined;
+                if (pendingAction) pendingAction.policyTargetNodeId = target.id;
+                this.setter(this.pendingTreeAction.throttledValueAtom, pendingAction);
                 break;
-            case LayoutTreeActionType.Move:
-                moveNode(this.treeState, action as LayoutTreeMoveNodeAction);
+            }
+            case LayoutTreeActionType.Move: {
+                const move = action as LayoutTreeMoveNodeAction & { policyTargetNodeId?: string };
+                const target = move.policyTargetNodeId
+                    ? findNode(this.treeState.rootNode, move.policyTargetNodeId)
+                    : undefined;
+                if (!this.canMoveNode(move.node?.data, target?.data)) {
+                    this.setter(this.pendingTreeAction.throttledValueAtom, undefined);
+                    break;
+                }
+                moveNode(this.treeState, move);
                 break;
+            }
             case LayoutTreeActionType.InsertNode:
                 insertNode(this.treeState, action as LayoutTreeInsertNodeAction);
                 if ((action as LayoutTreeInsertNodeAction).focused) {
@@ -635,12 +662,23 @@ export class LayoutModel {
                     FocusManager.getInstance().requestNodeFocus();
                 }
                 break;
-            case LayoutTreeActionType.DeleteNode:
+            case LayoutTreeActionType.DeleteNode: {
+                const node = findNode(this.treeState.rootNode, (action as LayoutTreeDeleteNodeAction).nodeId);
+                if (!node || !this.canCloseNode(node.data)) break;
                 deleteNode(this.treeState, action as LayoutTreeDeleteNodeAction);
                 break;
-            case LayoutTreeActionType.Swap:
-                swapNode(this.treeState, action as LayoutTreeSwapNodeAction);
+            }
+            case LayoutTreeActionType.Swap: {
+                const swap = action as LayoutTreeSwapNodeAction;
+                const source = findNode(this.treeState.rootNode, swap.node2Id);
+                const target = findNode(this.treeState.rootNode, swap.node1Id);
+                if (!source || !target || !this.canMoveNode(source.data, target.data)) {
+                    this.setter(this.pendingTreeAction.throttledValueAtom, undefined);
+                    break;
+                }
+                swapNode(this.treeState, swap);
                 break;
+            }
             case LayoutTreeActionType.ResizeNode:
                 resizeNode(this.treeState, action as LayoutTreeResizeNodeAction);
                 break;
@@ -674,12 +712,23 @@ export class LayoutModel {
                 magnifyNodeToggle(this.treeState, action as LayoutTreeMagnifyNodeToggleAction);
                 FocusManager.getInstance().requestNodeFocus();
                 break;
-            case LayoutTreeActionType.ClearTree:
-                clearTree(this.treeState);
+            case LayoutTreeActionType.ClearTree: {
+                let allowed = true;
+                if (this.treeState.rootNode) {
+                    walkNodes(this.treeState.rootNode, (node) => {
+                        if (node.data && !this.canCloseNode(node.data)) allowed = false;
+                    });
+                }
+                if (allowed) clearTree(this.treeState);
                 break;
-            case LayoutTreeActionType.ReplaceNode:
-                replaceNode(this.treeState, action as LayoutTreeReplaceNodeAction);
+            }
+            case LayoutTreeActionType.ReplaceNode: {
+                const replace = action as LayoutTreeReplaceNodeAction;
+                const target = findNode(this.treeState.rootNode, replace.targetNodeId);
+                if (!target || !this.canCloseNode(target.data)) break;
+                replaceNode(this.treeState, replace);
                 break;
+            }
             case LayoutTreeActionType.SplitHorizontal:
                 splitHorizontal(this.treeState, action as LayoutTreeSplitHorizontalAction);
                 break;
@@ -1258,28 +1307,41 @@ export class LayoutModel {
         this.treeReducer(action, setState);
     }
 
+    canReplaceNode(nodeId: string): boolean {
+        const node = findNode(this.treeState.rootNode, nodeId);
+        return !!node && this.canCloseNode(node.data);
+    }
+
+    replaceNodeIfAllowed(action: LayoutTreeReplaceNodeAction): boolean {
+        if (!this.canReplaceNode(action.targetNodeId)) return false;
+        this.treeReducer(action);
+        return true;
+    }
+
     /**
      * Close a given node and update the tree state.
      * @param nodeId The id of the node that is being closed.
      */
-    async closeNode(nodeId: string) {
+    async closeNode(nodeId: string): Promise<boolean> {
         const nodeToDelete = findNode(this.treeState.rootNode, nodeId);
         if (!nodeToDelete) {
             // TODO: clean up the ephemeral node handling
             // The ephemeral node is not in the tree, so we need to handle it separately.
             const ephemeralNode = this.getter(this.ephemeralNode);
             if (ephemeralNode?.id === nodeId) {
+                if (!this.canCloseNode(ephemeralNode.data)) return false;
                 this.setter(this.ephemeralNode, undefined);
                 this.treeState.focusedNodeId = undefined;
                 this.updateTree(false);
                 this.setter(this.localTreeStateAtom, { ...this.treeState });
                 this.persistToBackend();
                 await this.onNodeDelete?.(ephemeralNode.data);
-                return;
+                return true;
             }
             console.error("unable to close node, cannot find it in tree", nodeId);
-            return;
+            return false;
         }
+        if (!this.canCloseNode(nodeToDelete.data)) return false;
         if (nodeId === this.magnifiedNodeId) {
             this.magnifyNodeToggle(nodeId);
         }
@@ -1289,6 +1351,7 @@ export class LayoutModel {
         };
         this.treeReducer(deleteAction);
         await this.onNodeDelete?.(nodeToDelete.data);
+        return true;
     }
 
     /**

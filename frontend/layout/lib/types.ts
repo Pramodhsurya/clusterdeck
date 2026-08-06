@@ -355,6 +355,9 @@ export interface TileLayoutContents {
      * @param data The contents of the node that was deleted.
      */
     onNodeDelete?: (data: TabLayoutData) => Promise<void>;
+    /** Synchronous policies used by every UI and backend layout mutation path. */
+    canCloseNode?: (data: TabLayoutData) => boolean;
+    canMoveNode?: (source: TabLayoutData, target?: TabLayoutData) => boolean;
     /**
      * A callback for getting the cursor point in reference to the current window. This removes Electron as a runtime dependency, allowing for better integration with Storybook.
      * @returns The cursor position relative to the current window.

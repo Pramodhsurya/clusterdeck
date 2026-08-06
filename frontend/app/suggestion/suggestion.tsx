@@ -170,7 +170,41 @@ function SuggestionControlNoData({ children }: { children?: React.ReactNode }) {
 
 type SuggestionControlInnerProps = Omit<SuggestionControlProps, "isOpen">;
 
-function SuggestionControlInner({
+export function clampSuggestionIndex(index: number, suggestionCount: number): number {
+    return Math.max(0, Math.min(index, suggestionCount - 1));
+}
+
+export class SuggestionRequestCoordinator {
+    private requestNumber = 0;
+
+    request(
+        fetchSuggestions: SuggestionsFnType,
+        query: string,
+        widgetId: string,
+        onResults: (results: FetchSuggestionsResponse) => void,
+        onError: (error: unknown) => void
+    ): void {
+        const requestNumber = ++this.requestNumber;
+        void fetchSuggestions(query, { widgetid: widgetId, reqnum: requestNumber })
+            .then((results) => {
+                if (requestNumber !== this.requestNumber) return;
+                if (results == null) throw new Error("Suggestion request returned no response");
+                onResults(results);
+            })
+            .catch((error) => {
+                if (requestNumber === this.requestNumber) onError(error);
+            });
+    }
+
+    dispose(fetchSuggestions: SuggestionsFnType, widgetId: string): void {
+        const requestNumber = ++this.requestNumber;
+        void fetchSuggestions("", { widgetid: widgetId, reqnum: requestNumber, dispose: true }).catch((error) =>
+            console.warn("Failed to dispose suggestions:", error)
+        );
+    }
+}
+
+export function SuggestionControlInner({
     anchorRef,
     onClose,
     onSelect,
@@ -181,13 +215,18 @@ function SuggestionControlInner({
     children,
 }: SuggestionControlInnerProps) {
     const widgetId = useId();
+    const listboxId = `${widgetId}-listbox`;
     const [query, setQuery] = useState("");
-    const reqNumRef = useRef(0);
-    let [suggestions, setSuggestions] = useState<SuggestionType[]>([]);
+    const requestCoordinator = useRef(new SuggestionRequestCoordinator());
+    const [suggestions, setSuggestions] = useState<SuggestionType[]>([]);
     const [selectedIndex, setSelectedIndex] = useState(0);
     const [fetched, setFetched] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [retryVersion, setRetryVersion] = useState(0);
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const floatingContainerRef = useRef<HTMLDivElement>(null);
     const { refs, floatingStyles, middlewareData } = useFloating({
         placement: "bottom",
         strategy: "absolute",
@@ -205,22 +244,29 @@ function SuggestionControlInner({
     }, [anchorRef.current]);
 
     useEffect(() => {
-        reqNumRef.current++;
-        fetchSuggestions(query, { widgetid: widgetId, reqnum: reqNumRef.current }).then((results) => {
-            if (results.reqnum !== reqNumRef.current) {
-                return;
+        setLoading(true);
+        setFetched(false);
+        setError(null);
+        requestCoordinator.current.request(
+            fetchSuggestions,
+            query,
+            widgetId,
+            (results) => {
+                setSuggestions(results.suggestions ?? []);
+                setSelectedIndex((index) => clampSuggestionIndex(index, results.suggestions?.length ?? 0));
+                setFetched(true);
+                setLoading(false);
+            },
+            (requestError) => {
+                setSuggestions([]);
+                setFetched(false);
+                setLoading(false);
+                setError(requestError instanceof Error ? requestError.message : "Unable to load suggestions");
             }
-            setSuggestions(results.suggestions ?? []);
-            setFetched(true);
-        });
-    }, [query, fetchSuggestions]);
+        );
+    }, [query, fetchSuggestions, retryVersion, widgetId]);
 
-    useEffect(() => {
-        return () => {
-            reqNumRef.current++;
-            fetchSuggestions("", { widgetid: widgetId, reqnum: reqNumRef.current, dispose: true });
-        };
-    }, []);
+    useEffect(() => () => requestCoordinator.current.dispose(fetchSuggestions, widgetId), [fetchSuggestions, widgetId]);
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -228,7 +274,7 @@ function SuggestionControlInner({
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+            if (floatingContainerRef.current && !floatingContainerRef.current.contains(event.target as Node)) {
                 onClose();
             }
         };
@@ -298,13 +344,24 @@ function SuggestionControlInner({
                 middlewareData?.offset == null ? "opacity-0" : null,
                 className
             )}
-            ref={refs.setFloating}
+            ref={(element) => {
+                floatingContainerRef.current = element;
+                refs.setFloating(element);
+            }}
             style={floatingStyles}
         >
             <div className="p-2">
                 <input
                     ref={inputRef}
                     type="text"
+                    role="combobox"
+                    aria-label={placeholderText ?? "Suggestions"}
+                    aria-expanded={true}
+                    aria-controls={listboxId}
+                    aria-autocomplete="list"
+                    aria-activedescendant={
+                        suggestions[selectedIndex] ? `${listboxId}-option-${selectedIndex}` : undefined
+                    }
                     value={query}
                     onChange={(e) => {
                         setQuery(e.target.value);
@@ -315,20 +372,44 @@ function SuggestionControlInner({
                     placeholder={placeholderText}
                 />
             </div>
-            {fetched &&
-                (suggestions.length > 0 ? (
+            <div id={listboxId} role="listbox" aria-label="Suggestions">
+                {loading ? (
+                    <div
+                        role="status"
+                        aria-live="polite"
+                        className="flex items-center justify-center min-h-[120px] p-4 text-gray-500"
+                    >
+                        Loading suggestions…
+                    </div>
+                ) : error ? (
+                    <div
+                        role="alert"
+                        className="flex flex-col gap-2 items-center justify-center min-h-[120px] p-4 text-error"
+                    >
+                        <span>{error}</span>
+                        <button
+                            type="button"
+                            onClick={() => setRetryVersion((value) => value + 1)}
+                            className="text-accent underline"
+                        >
+                            Retry
+                        </button>
+                    </div>
+                ) : fetched && suggestions.length > 0 ? (
                     <div ref={dropdownRef} className="max-h-96 overflow-y-auto divide-y divide-gray-700">
                         {suggestions.map((suggestion, index) => (
                             <div
-                                key={suggestion.suggestionid}
+                                id={`${listboxId}-option-${index}`}
+                                role="option"
+                                aria-selected={index === selectedIndex}
+                                key={suggestion.suggestionid ?? index}
                                 className={clsx(
                                     "flex items-center gap-3 px-4 py-2 cursor-pointer",
                                     index === selectedIndex ? "bg-accentbg" : "hover:bg-hoverbg",
                                     "text-gray-100"
                                 )}
                                 onClick={() => {
-                                    onSelect(suggestion, query);
-                                    onClose();
+                                    if (onSelect(suggestion, query)) onClose();
                                 }}
                             >
                                 <SuggestionIcon suggestion={suggestion} />
@@ -336,14 +417,14 @@ function SuggestionControlInner({
                             </div>
                         ))}
                     </div>
-                ) : (
-                    // Render the empty state (either a provided child or the default)
+                ) : fetched ? (
                     <div key="empty" className="flex items-center justify-center min-h-[120px] p-4">
                         {query === ""
                             ? (noDataChild ?? <SuggestionControlNoData />)
                             : (emptyStateChild ?? <SuggestionControlNoResults />)}
                     </div>
-                ))}
+                ) : null}
+            </div>
         </div>
     );
 }

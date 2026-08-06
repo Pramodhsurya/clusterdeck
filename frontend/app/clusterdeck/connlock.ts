@@ -20,6 +20,11 @@ export const ClusterdeckZone_Editor = "editor";
 // this is the second half of the key. (Mirrors pkg/wcore/clusterdeck.go.)
 export const ClusterdeckRootDirMetaKey = "clusterdeck:rootdir";
 
+/** The seeded Clusterdeck editor is protected by layout policy, not just UI. */
+export function isClusterdeckPinnedEditorMeta(meta: MetaType | null | undefined): boolean {
+    return meta?.[ClusterdeckZoneMetaKey] === ClusterdeckZone_Editor && meta?.view === "cdeditor";
+}
+
 export function getWorkspaceConnection(workspace: Workspace): string {
     return (workspace?.meta?.[ClusterdeckConnectionMetaKey] as string) ?? "";
 }

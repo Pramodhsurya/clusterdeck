@@ -53,6 +53,7 @@ const WorkspaceElem = memo(() => {
                 ws.oid
             );
         }
+        return () => workspaceLayoutModel.unregisterRefs();
     }, [showLeftTabBar, ws.oid]);
 
     useEffect(() => {
@@ -61,6 +62,8 @@ const WorkspaceElem = memo(() => {
         resizeObserver.observe(panelGroupContainerRef.current);
         return () => resizeObserver.disconnect();
     }, []);
+
+    useEffect(() => () => workspaceLayoutModel.dispose(), []);
 
     useEffect(() => {
         const handleFocus = () => workspaceLayoutModel.syncVTabWidthFromMeta();

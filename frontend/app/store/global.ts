@@ -1,6 +1,7 @@
 // Copyright 2025, Command Line Inc.
 // SPDX-License-Identifier: Apache-2.0
 
+import { replaceBlockWithPolicy } from "@/app/store/block-replacement";
 import { RpcApi } from "@/app/store/wshclientapi";
 import { TabRpcClient } from "@/app/store/wshrpcutil";
 import {
@@ -414,22 +415,27 @@ async function createBlock(blockDef: BlockDef, magnified = false, ephemeral = fa
 async function replaceBlock(blockId: string, blockDef: BlockDef, focus: boolean): Promise<string> {
     const layoutModel = getLayoutModelForStaticTab();
     const rtOpts: RuntimeOpts = { termsize: { rows: 25, cols: 80 } };
-    const newBlockId = await ObjectService.CreateBlock(blockDef, rtOpts);
-    setTimeout(() => {
-        fireAndForget(() => ObjectService.DeleteBlock(blockId));
-    }, 300);
-    const targetNodeId = layoutModel.getNodeByBlockId(blockId)?.id;
-    if (targetNodeId == null) {
-        throw new Error(`targetNodeId not found for blockId: ${blockId}`);
-    }
-    const replaceNodeAction: LayoutTreeReplaceNodeAction = {
-        type: LayoutTreeActionType.ReplaceNode,
-        targetNodeId: targetNodeId,
-        newNode: newLayoutNode(undefined, undefined, undefined, { blockId: newBlockId }),
-        focused: focus,
-    };
-    layoutModel.treeReducer(replaceNodeAction);
-    return newBlockId;
+    return replaceBlockWithPolicy(
+        {
+            findTargetNodeId: (targetBlockId) => layoutModel.getNodeByBlockId(targetBlockId)?.id,
+            canReplaceNode: (nodeId) => layoutModel.canReplaceNode(nodeId),
+            commitReplacement: (targetNodeId, newBlockId) => {
+                const replaceNodeAction: LayoutTreeReplaceNodeAction = {
+                    type: LayoutTreeActionType.ReplaceNode,
+                    targetNodeId,
+                    newNode: newLayoutNode(undefined, undefined, undefined, { blockId: newBlockId }),
+                    focused: focus,
+                };
+                return layoutModel.replaceNodeIfAllowed(replaceNodeAction);
+            },
+        },
+        blockId,
+        () => ObjectService.CreateBlock(blockDef, rtOpts),
+        (newBlockId) => ObjectService.DeleteBlock(newBlockId),
+        (acceptedBlockId) => {
+            setTimeout(() => fireAndForget(() => ObjectService.DeleteBlock(acceptedBlockId)), 300);
+        }
+    );
 }
 
 // when file is not found, returns {data: null, fileInfo: null}
@@ -673,7 +679,6 @@ export {
     getBlockComponentModel,
     getBlockMetaKeyAtom,
     getBlockTermDurableAtom,
-    getTabMetaKeyAtom,
     getConfigBackgroundAtom,
     getConnConfigKeyAtom,
     getConnStatusAtom,
@@ -685,6 +690,7 @@ export {
     getOverrideConfigAtom,
     getSettingsKeyAtom,
     getSettingsPrefixAtom,
+    getTabMetaKeyAtom,
     getUserName,
     globalPrimaryTabStartup,
     globalStore,
