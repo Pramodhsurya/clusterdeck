@@ -1,0 +1,33 @@
+---
+sidebar_position: 99
+id: "privacy"
+title: "Privacy"
+---
+
+# Privacy and network access
+
+Usage telemetry is **off by default**. A fresh installation does not record or upload usage events, send a diagnostic ping, or send a telemetry-state transition. Clusterdeck Authors operate this derivative project; Command Line Inc. independently operates the inherited Wave telemetry endpoints below.
+
+## Optional usage events
+
+While explicitly enabled, Clusterdeck records timestamped usage events associated with a random client UUID. Fields can include app/build/platform properties, aggregate object and feature counts, action names, view types, connection categories, and `wsh` command names/counts. See the [event schema](https://github.com/clusterdeck/app/blob/main/pkg/telemetry/telemetrydata/telemetrydata.go). The queue is sent after the startup delay, approximately every four hours, and at shutdown to `https://api.waveterm.dev/central/tevents`.
+
+No events are recorded while disabled. At startup and before opt-in opens recording, Clusterdeck deletes all pre-existing unsent events and all rows from the obsolete legacy activity table. Opt-out closes recording and deletes the unsent queue. Uploaded event rows are cleaned after approximately seven days while enabled and one day while disabled; cleanup is periodic, not an exact deadline. Clusterdeck does not use the legacy activity collector or `/telemetry` upload path.
+
+## Consent-state transition request
+
+Changing the telemetry setting in either direction sends `clientid` and the new opt-out `value` to `https://api.waveterm.dev/central/no-telemetry`. The value is `false` when enabling and `true` when disabling. A fresh default-disabled start does not send this request.
+
+## Diagnostic ping
+
+While telemetry is enabled, a continuously running process sends at most one ping per local calendar day to `https://ping.waveterm.dev/central/ping`. It contains the client UUID, CPU architecture, app version, local date, and telemetry-enabled state. The last-sent date is not persisted: restarting an opted-in app can cause another ping after its five-minute startup delay on the same day. `WAVETERM_NOPING=1` suppresses the ping independently.
+
+HTTPS recipients necessarily see source IP and request timing. Clusterdeck Authors cannot verify whether Command Line Inc. stores that metadata. See [Wave's privacy policy](https://www.waveterm.dev/privacy) for the endpoint operator's statements.
+
+## Separate network features
+
+- Updates are user initiated through Homebrew or a verified download from `clusterdeck/releases`. The inherited Electron/Wave updater is hard-disabled and no automatic feed is configured.
+- SSH, web widgets, terminal commands, documentation, and external links contact destinations selected by the user.
+- This documentation site configures no analytics or hosted search service.
+
+Clusterdeck Authors cannot promise deletion from a third-party operator. Report policy errors in [clusterdeck/app issues](https://github.com/clusterdeck/app/issues). Public visibility of that repository and `clusterdeck/releases` is an owner prerequisite. The matching repository policy is [PRIVACY.md](https://github.com/clusterdeck/app/blob/main/PRIVACY.md).

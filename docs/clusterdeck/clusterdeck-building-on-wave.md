@@ -38,7 +38,7 @@ These Wave subsystems are orthogonal to our needs and are preserved untouched:
 | **SQLite `wstore` persistence** | Our per-connection layout persistence, already done |
 | **`wsh` command system** | Bonus power; keep |
 | **Secret storage** (native keychain) | Our credential storage requirement, already done |
-| **AI blocks, web blocks, themes, block splitting** | Web blocks and themes kept; AI blocks (Wave's `usechat`) removed in 0.1.3 — see CHANGES.md. Block splitting kept. |
+| **AI blocks, web blocks, themes, block splitting** | Web blocks and themes kept; AI blocks (Wave's `usechat`) removed after 0.1.3 for 0.1.4 — see CHANGES.md. Block splitting kept. |
 
 Net: Phases 1–3 and 6 of the original design doc are **largely pre-built** by Wave.
 
@@ -95,12 +95,12 @@ Ordered by how load-bearing each change is. File paths are from Wave's published
 | C2 | Free block placement vs fixed default layout | Seed default template (§3.4); **keep** Wave's resize/add/remove/split (we want those too) — only the *default* and the *connection binding* are constrained |
 | C3 | Explorer opens in-place / new block vs *open in top editor* | Custom routing (§3.5) |
 | C4 | Workspaces ephemeral unless saved vs connections must persist | Auto-save connection workspaces (§3.2) |
-| C5 | Wave AI / extra blocks in default view | Wave AI was removed in 0.1.3 — see CHANGES.md. Web blocks, block splitting, and themes are kept. |
+| C5 | Wave AI / extra blocks in default view | Wave AI was removed after 0.1.3 for 0.1.4 — see CHANGES.md. k9s/lazygit were also removed; the htop command widget, web blocks, block splitting, and themes are kept. |
 
-No conflict required ripping out a Wave subsystem in 0.1.x, but the AI
-subsystem (~21k lines of `pkg/aiusechat/` plus the in-app chat UI) was
-removed in 0.1.3 because it didn't fit Clusterdeck's lean shell+editor
-identity. See CHANGES.md for the full list of post-1.3 removals.
+No conflict required ripping out a Wave subsystem in the original design, but
+the AI subsystem (~21k lines of `pkg/aiusechat/` plus the in-app chat UI) was
+removed after 0.1.3 for 0.1.4 because it did not fit Clusterdeck's lean
+shell+editor identity. See CHANGES.md for the full list of post-0.1.3 removals.
 
 ---
 

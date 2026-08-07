@@ -1,67 +1,47 @@
-# Clusterdeck Documentation
+# Clusterdeck documentation
 
-This is the home for Clusterdeck's documentation site. This README is specifically
-about _building_ and contributing to the docs site. If you are looking for the actual
-hosted docs, go to **https://docs.clusterdeck.app** (or, while the docs site is still
-under construction, the design + requirements docs in this directory).
+This workspace contains the Docusaurus site intended for `https://docs.clusterdeck.app`. The repository configures that domain, but DNS, GitHub Pages custom-domain settings, TLS issuance, and live availability are external prerequisites and are not implied by this README.
 
-## What's in this folder
+## Layout
 
-```
-docs/
-├── README.md                                     (this file)
-├── clusterdeck/                                 Clusterdeck-specific design docs
-│   ├── clusterdeck-design-considerations.md     Problem statement + comparison vs Wave
-│   ├── clusterdeck-building-on-wave.md          Implementation plan + fork decisions
-│   ├── clusterdeck-explorer-requirements.md     Explorer & editor UX requirements
-│   ├── spike-report.md                          Pre-fork feasibility spike (2026-07-02)
-│   └── images/                                  Screenshots, mockups, GIFs
-└── node_modules/                                Docusaurus install (managed by `task docsite`)
-```
+- `docusaurus.config.ts` — site metadata, navigation, strict link checks, and build configuration
+- `docs/` — live user documentation
+- `src/` — Docusaurus components and styles
+- `static/` — static assets and the Pages `CNAME`
+- `clusterdeck/` — design and implementation history; these files are not live product routes
 
-The `clusterdeck/` subdirectory is the source of truth for design decisions.
-`BUILD.md` and `INSTALL.md` (at the repo root) cover how to build and install
-Clusterdeck itself.
+Root [`BUILD.md`](../BUILD.md) and [`INSTALL.md`](../INSTALL.md) cover the application itself.
 
-## Building the docs site
+## Local development
 
-Clusterdeck's docs site is built with [Docusaurus](https://docusaurus.io/), the same
-generator upstream Wave uses. The site config lives at `docs-site/docusaurus.config.ts`
-(not in this folder) — see the `docsite` task group in [`../Taskfile.yml`](../Taskfile.yml).
-
-### Local development
+From the repository root:
 
 ```sh
-task docsite
+npm ci
+npm run start --workspace docs
 ```
 
-This command starts a local development server and opens a browser window. Most changes
-are reflected live without restarting the server.
-
-### Build
+Validate a production site with:
 
 ```sh
-task docsite:build:public
+npm run typecheck --workspace docs
+npm run build --workspace docs
 ```
 
-This generates static content into the `build` directory and can be served using any
-static content hosting service.
+The build output is `docs/build`. Broken routes, anchors, and Markdown links fail the production build.
 
-### Deployment
+## Deployment
 
-The docs site is published from `main` via the [Docsite workflow](../.github/workflows/deploy-docsite.yml).
-The deployment target is the GitHub Pages site for `clusterdeck/clusterdeck.github.io`
-(or whatever `DOCSITE_*` env vars in the workflow resolve to).
+[`.github/workflows/deploy-docsite.yml`](../.github/workflows/deploy-docsite.yml) validates docs on pull requests and deploys `docs/build` from `main` using the official GitHub Pages actions. Repository administrators must separately:
+
+1. Select **GitHub Actions** as the Pages source for `clusterdeck/app`.
+2. Configure and verify `docs.clusterdeck.app` as the custom domain.
+3. Create the DNS CNAME using the exact Pages target shown by GitHub (normally `clusterdeck.github.io`).
+4. Wait for DNS propagation and certificate issuance, then enforce HTTPS and verify the live routes.
+5. Make `clusterdeck/app`, `clusterdeck/releases`, and `clusterdeck/homebrew-tap` publicly readable, or replace public documentation links with an owner-approved public destination. Repository links are not treated as live merely because they exist in source.
+
+Because `.app` is HSTS-preloaded, DNS without a valid HTTPS certificate is not a usable placeholder.
 
 ## Contributing
 
-When you change a Clusterdeck-specific behavior (a new feature, a fork decision, an API
-change), update the corresponding section in:
-
-- [`../CHANGES.md`](../CHANGES.md) — required for every substantive change (Apache-2.0 §4(b))
-- [`../RELEASES.md`](../RELEASES.md) — release notes for the version that includes the change
-- [`../ROADMAP.md`](../ROADMAP.md) — if the change reorders or closes a planned item
-- The relevant doc under `docs/clusterdeck/` — if the change has user-facing implicationsutely
-
-For changes that only touch the docs site (typography, navigation, layout), no entry
-in `CHANGES.md` is needed — `RELEASES.md` is fine.
+Update live docs whenever behavior, configuration, privacy, or release content changes. Substantive derivative application changes also belong in root [`CHANGES.md`](../CHANGES.md); release-visible changes belong in [`RELEASES.md`](../RELEASES.md). Preserve inherited identifiers only where compatibility still requires them, and label the reason rather than presenting them as Clusterdeck branding.

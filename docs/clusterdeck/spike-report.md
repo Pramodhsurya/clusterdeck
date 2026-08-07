@@ -6,9 +6,9 @@ Date: 2026-07-02. Verified against fork point `c99022c1` (Wave v0.14.5 line).
 No Wave subsystem needs to be removed or fought.
 
 > **Post-fork note (2026-08-05):** the verdict held for the IDE-layout work in
-> 0.1.0–0.1.2. In 0.1.3 two Wave subsystems *were* removed — Wave-AI
-> (`pkg/aiusechat/` ~21k lines) and the k9s/lazygit/htop widget launcher —
-> because they didn't fit Clusterdeck's lean shell+editor identity. See
+> 0.1.0–0.1.3. After 0.1.3, two Wave subsystems *were* removed for 0.1.4 —
+> Wave-AI (`pkg/aiusechat/` ~21k lines) and the k9s/lazygit launcher code.
+> The simple login-shell htop widget remains. See
 > [`../../CHANGES.md`](../../CHANGES.md) for the full list and reasoning.
 
 ---

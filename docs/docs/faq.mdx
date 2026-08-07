@@ -4,54 +4,28 @@ id: "faq"
 title: "FAQ"
 ---
 
-import { VersionBadge } from "@site/src/components/versionbadge";
-
 # FAQ
 
-### How can I see the block numbers?
+## Which platforms are supported?
 
-The block numbers will appear when you hold down Ctrl-Shift (and disappear once you release the key combo).
+Clusterdeck is macOS-first. The published 0.1.x package target is Apple Silicon. Code inherited from Wave may compile elsewhere, but Clusterdeck does not currently claim supported Windows or Linux releases.
 
-### How do I make a remote connection?
+## Why does macOS block the app?
 
-There is a button in the header. Click the <i className="fa-sharp fa-laptop"/> or <i className="fa-sharp fa-arrow-right-arrow-left"/>
-and type the `[user]@[host]` that you wish to connect to.
+Current artifacts are unsigned and unnotarized. Install from the Clusterdeck Homebrew tap, then use Finder's **Open** action or the quarantine instructions in [Getting Started](./gettingstarted). Do not bypass Gatekeeper for an untrusted artifact.
 
-### On Windows, how can I use Git Bash as my default shell?
+## Does every terminal have to use the workspace connection?
 
-Wave automatically detects Git Bash installations and adds them to the connection dropdown. Simply click the <i className="fa-sharp fa-laptop"/> or <i className="fa-sharp fa-arrow-right-arrow-left"/> button in the block header and select "Git Bash" from the list.
+No. The explorer, editor, and new terminals default to the selected workspace connection. One terminal can override its own connection without changing the others.
 
-Alternatively, you can manually set Git Bash as your default shell by setting the configuration variable `term:localshellpath` to
-the location of the Git Bash "bash.exe" binary. By default it is located at "C:\Program Files\Git\bin\bash.exe".
-Just remember in JSON, backslashes need to be escaped. So add this to your [settings.json](./config) file:
+## Why are some paths still named waveterm?
 
-```json
-"term:localshellpath": "C:\\Program Files\\Git\\bin\\bash.exe"
-```
+`~/.waveterm/bin/wsh`, `WAVETERM_*`, internal Go module paths, and the proper name “Wave Shell Extensions” are inherited compatibility contracts. Renaming them without migration would break remote helpers or configuration.
 
-### Can I use WSH outside of Wave?
+## Is there built-in AI?
 
-`wsh` is an internal CLI for extending control over Wave to the command line, you can learn more about it [here](./wsh). To prevent misuse by other applications, `wsh` requires an access token provided by Wave to work and will not function outside of the app.
+No. The inherited AI feature and a short-lived coding-agent integration were removed for 0.1.4. Use tools installed in your terminal if desired.
 
-## Why does Wave warn me about ARM64 translation when it launches?
+## How do I report a problem?
 
-macOS and Windows both have compatibility layers that allow x64 applications to run on ARM computers. This helps more apps run on these systems while developers work to add native ARM support to their applications. However, it comes with significant performance tradeoffs.
-
-To get the best experience using Wave, it is recommended that you uninstall Wave and reinstall the version that is natively compiled for your computer. You can find the right version by consulting our [Installation Instructions](./gettingstarted#installation).
-
-You can disable this warning by setting `app:dismissarchitecturewarning=true` in [your configurations](./config).
-
-## How do I join the beta builds of Wave?
-
-Wave publishes to two channels, `latest` and `beta`. If you've installed the app for macOS, Windows, or Linux via DEB or RPM, you can set the following configurations in your `settings.json` (see [Configuration](./config) for more info):
-
-```json
-"autoupdate:enabled": true,
-"autoupdate:channel": "beta"
-```
-
-If you've installed via Snap, you can use the following command:
-
-```sh
-sudo snap install waveterm --classic --beta
-```
+Open an issue in [clusterdeck/app](https://github.com/clusterdeck/app/issues) with reproduction steps and logs that do not contain credentials. Use `wsh wavepath log` to locate the inherited backend log filename.

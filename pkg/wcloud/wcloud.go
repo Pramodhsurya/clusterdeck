@@ -19,15 +19,12 @@ import (
 
 	"github.com/wavetermdev/waveterm/pkg/telemetry"
 	"github.com/wavetermdev/waveterm/pkg/telemetry/telemetrydata"
-	"github.com/wavetermdev/waveterm/pkg/util/daystr"
 	"github.com/wavetermdev/waveterm/pkg/wavebase"
 )
 
-// WCloudEndpoint and WCloudPingEndpoint point at Wave's hosted control-plane
-// service, operated by Command Line Inc. Clusterdeck's telemetry and web-share
-// features still use that service, so the endpoint names and URLs are preserved;
-// renaming them would break those features or misrepresent who operates them. See
-// CHANGES.md "Remaining Wave→Clusterdeck string rebrand" for the rationale.
+// WCloudEndpoint and WCloudPingEndpoint point at Wave's hosted telemetry
+// services, operated by Command Line Inc. The endpoint names and URLs are
+// preserved because explicit telemetry opt-in still uses those services.
 const WCloudEndpoint = "https://api.waveterm.dev/central"
 const WCloudEndpointVarName = "WCLOUD_ENDPOINT"
 const WCloudPingEndpoint = "https://ping.waveterm.dev/central"
@@ -42,16 +39,13 @@ const MaxUpdatesPerReq = 10
 const MaxUpdatesToDeDup = 1000
 const MaxUpdateWriterErrors = 3
 const WCloudDefaultTimeout = 5 * time.Second
-const WCloudWebShareUpdateTimeout = 15 * time.Second
 
 // setting to 1M to be safe (max is 6M for API-GW + Lambda, but there is base64 encoding and upload time)
 // we allow one extra update past this estimated size
 const MaxUpdatePayloadSize = 1 * (1024 * 1024)
 
-const TelemetryUrl = "/telemetry"
 const TEventsUrl = "/tevents"
 const NoTelemetryUrl = "/no-telemetry"
-const WebShareUpdateUrl = "/auth/web-share-update"
 const PingUrl = "/ping"
 
 func CacheAndRemoveEnvVars() error {
@@ -212,49 +206,13 @@ func SendAllTelemetry(clientId string) error {
 	if err := telemetry.CleanOldTEvents(ctx); err != nil {
 		log.Printf("error cleaning old telemetry events: %v\n", err)
 	}
-	if !telemetry.IsTelemetryEnabled() {
+	if !telemetry.IsTelemetryRecordingEnabled() {
 		log.Printf("telemetry disabled, not sending\n")
 		return nil
 	}
 	_, err := sendTEvents(clientId)
 	if err != nil {
 		return err
-	}
-	return nil
-}
-
-func sendTelemetry(clientId string) error {
-	ctx, cancelFn := context.WithTimeout(context.Background(), WCloudDefaultTimeout)
-	defer cancelFn()
-	activity, err := telemetry.GetNonUploadedActivity(ctx)
-	if err != nil {
-		return fmt.Errorf("cannot get activity: %v", err)
-	}
-	if len(activity) == 0 {
-		return nil
-	}
-	log.Printf("[wcloud] sending telemetry data\n")
-	dayStr := daystr.GetCurDayStr()
-	input := TelemetryInputType{
-		ClientId:          clientId,
-		UserId:            clientId,
-		AppType:           "w2",
-		AutoUpdateEnabled: telemetry.IsAutoUpdateEnabled(),
-		AutoUpdateChannel: telemetry.AutoUpdateChannel(),
-		CurDay:            dayStr,
-		Activity:          activity,
-	}
-	req, err := makeAnonPostReq(ctx, TelemetryUrl, input)
-	if err != nil {
-		return err
-	}
-	_, err = doRequest(req, nil, true)
-	if err != nil {
-		return err
-	}
-	err = telemetry.MarkActivityAsUploaded(ctx, activity)
-	if err != nil {
-		return fmt.Errorf("error marking activity as uploaded: %v", err)
 	}
 	return nil
 }

@@ -1,164 +1,72 @@
 # Clusterdeck release notes
 
-## 0.1.x line — "lean shell + editor"
+## 0.1.x line — lean shell, explorer, and editor
 
-The 0.1.x line is the first public Clusterdeck line. It is built on the Wave Terminal
-0.14.5 line and is **macOS-first** (Apple Silicon `arm64`).
+The 0.1.x line is the first public Clusterdeck line. It derives from Wave Terminal 0.14.5 and is macOS-first, with Apple Silicon as the published package target.
 
-### 0.1.3 — editor polish + cleanup
+### 0.1.4 — privacy, layout, and product consistency
 
-- **Editor-at-top layout restructure.** The Monaco editor block now pins to
-  the top of the workspace; the editor zone is the canonical home for opened
-  files, never a side panel. (`4da2bee2b`)
-- **AI subsystem removed.** Wave's AI chat (~21k lines including
-  `pkg/aiusechat/`, the `waveai.json` schema, the `usechat`/`ai-mode` view,
-  and the in-app AI toggle IPC) is deleted.
-- **k9s / lazygit / htop app widgets removed.** The `tsunami` widget launcher
-  that backed them is removed from the widget rail and `widgets.json`.
-- **Stale editor content fix.** Switching files in the editor block no longer
-  briefly flashes the previous file's contents. (`3abcd7fa0`)
-- **Autosave.** The editor block now autosaves pending edits 600ms after
-  the last change (via Wave's existing `handleFileSave()`), and flushes
-  a pending edit when the user switches or closes files. (`31434bd46`)
+- Removed the built-in Wave AI subsystem and the short-lived coding-agent integration.
+- Removed the k9s and lazygit launcher widgets and their Kubernetes launcher code. The simple `htop` widget remains and runs in a login shell.
+- Pinned the routed editor to the top of the workspace and hardened editor, workspace, keyboard, screen-reader, and layout behavior.
+- Integrated config preview/typeahead, PDF preview, and context-menu fixes.
+- Made telemetry consent non-retroactive, removed dead legacy activity collection, and kept `WAVETERM_NOPING` as an additional ping override.
+- Hard-disabled the inherited Wave updater and feed; 0.1.4 updates use Homebrew and `clusterdeck/releases`.
+- Corrected application, package-lock, release-history, legal-notice, documentation, and deployment identity.
+- Replaced inherited product documentation with macOS-first Clusterdeck documentation and an operator-specific privacy policy.
 
-### 0.1.2 — first editor polish
+### 0.1.3 — editor autosave and file switching
 
-- **Editor stale-content flash on file switch eliminated.** The routed
-  editor no longer shows a stale Monaco model from the previously-opened
-  file when switching files via the explorer's open-editors list.
-  (`9e9328362`)
-- **Autosave on the editor block.** 600ms debounced autosave via Wave's
-  `handleFileSave()`; only writes to disk + updates the save-tracking
-  buffer — the Monaco model and undo stack are not touched.
-  (`31434bd46`)
+The immutable `v0.1.2..v0.1.3` range contains three editor fixes, the version/release-note updates, and an incidental `.gitignore` update:
 
-### 0.1.1 — k9s, kube, explorer fixes
+- Added 600 ms debounced editor autosave without disrupting Monaco undo history.
+- Flushed a pending save to the correct file when switching or closing files.
+- Corrected stale content and stale flashes when switching between open files.
+- Updated the application version/onboarding notes and `.gitignore`; this range did not add editor test files.
 
-- **k9s, lazygit, htop app widgets.** A new widget-rail launcher opens
-  `k9s`, `lazygit`, or `htop` bound to the active connection
-  (`3089b021e`). Each runs in its own shell block.
-- **Explorer reconnect fix.** The explorer's SFTP reconnect-on-mount now
-  triggers when a connection status flips to connected, not only at mount
-  time. (`f770f5850`)
-- **VS Code–style file ops.** The explorer adds New File / New Folder /
-  Rename / Delete on top of the existing tree.
-- **Remember-password race fix.** The "remember password" prompt no longer
-  races with the auto-connect on first SSH handshake (`093116b05`).
-- **Workspace history.** Recent workspaces surface on the Welcome screen
-  and can be reopened with a click.
+### 0.1.2 — launcher PATH, Homebrew guidance, and branding
+
+The immutable `v0.1.1..v0.1.2` range contains:
+
+- Started the then-present k9s, lazygit, and htop command widgets in a login shell so Homebrew-installed tools can be found on PATH.
+- Documented automatic quarantine clearing and how to force a Homebrew tap refresh.
+- Corrected remaining user-facing Wave branding in dialogs and errors.
+- Bumped the application version to 0.1.2.
+
+### 0.1.1 — app widgets, connections, and explorer fixes
+
+- Added the original k9s, lazygit, and htop launcher widgets.
+- Fixed explorer reconnection behavior and added VS Code-style file operations.
+- Fixed remembered-password connection timing and improved workspace history.
 
 ### 0.1.0 — first Clusterdeck release
 
-The first public Clusterdeck release. Built on the Wave Terminal 0.14.5
-line; the Clusterdeck-specific commits are all rebased onto a single
-project identity (see [`CHANGES.md`](./CHANGES.md) for the full list).
+- Made the selected connection the workspace context for the explorer, editor, and new terminals.
+- Added the full-height SFTP explorer, open-editors list, routed Monaco editor, and per-connection layout persistence.
+- Preserved inherited `wsh`, terminal widgets, and durable SSH sessions.
 
-- **The connection is the workspace.** A vertical, collapsible
-  connections rail on the left of the window lists every SSH host from
-  `~/.ssh/config` (and `/etc/ssh/config`); clicking one becomes the
-  active workspace for the entire window — the file explorer, the
-  editor, and every terminal all bind to it.
-- **VS Code–style explorer + routed editor.** A full-height file
-  explorer with an open-editors list and git decorations, plus a routed
-  Monaco editor pane with tabs.
-- **Per-connection layout persistence.** The explorer/editor/terminal
-  arrangement is remembered per connection and restored on switch.
-- **`wsh` and durable SSH sessions.** Wave's command system and
-  long-running SSH sessions are preserved unchanged.
+See [`CHANGES.md`](./CHANGES.md) for the derivative-work change record. The annotated `v0.1.2` and `v0.1.3` tags remain immutable historical boundaries.
 
-## Building for release
+## Building and validating a release
 
-> Note: Clusterdeck currently ships via Homebrew tap rather than the
-> Wave-era GitHub release flow. The Bump Version + Build Helper +
-> Publish Release workflows in `.github/workflows/` are inherited
-> from upstream Wave and aren't wired to Clusterdeck's release cadence
-> yet. Building from source via `task package` works the same way
-> (see [`BUILD.md`](./BUILD.md)).
+Clusterdeck does not use the inherited Wave signing, notarization, S3, or multi-platform package-manager pipeline.
 
-### Step-by-step guide (legacy Wave flow)
+1. Start from a clean checkout of `main`. Confirm `package.json`, `package-lock.json`, onboarding, and release notes all use the intended version.
+2. Install exactly the locked dependencies with `npm ci`.
+3. Run the release gates:
 
-1. Go to the [Actions tab](https://github.com/wavetermdev/waveterm/actions) and select "Bump Version" from the left sidebar.
-2. Click on "Run workflow".
-   - You will see two options:
-     - "SemVer Bump": This defaults to `none`. Adjust this if you want to increment the version number according to semantic versioning rules (`patch`, `minor`, `major`).
-     - "Is Prerelease": This defaults to `true`. If set to `true`, a `-beta.X` version will be appended to the end of the version. If one is already present and the base SemVer is not being incremented, the `-beta` version will be incremented (i.e. `0.11.1-beta.0` to `0.11.1-beta.1`). If set to `false`, the `-beta.X` suffix will be removed from the version number. If one was not already present, it will remain absent.
-   - Some examples:
-     - If you are creating a new prerelease following an official release, you would set "SemVer Bump" to to the expected version bump (`patch`, `minor`, or `major`) and "Is Prerelease" to `true`.
-     - If you are bumping an existing prerelease to a new prerelease under the same version, you would set "SemVer Bump" to `none` and "Is Prerelease" to `true`.
-     - If you are promoting a prerelease version to an official release, you would set "SemVer Bump" to `none` and "Is Prerelease" to `false`.
-3. After "Bump Version" a "Build Helper" run will kick off automatically for the new version. When this completes, it will generate a [draft GitHub Release](https://github.com/wavetermdev/waveterm/releases) with all the built artifacts.
-4. Review the artifacts in the release and test them locally.
-5. When you are confident that the build is good, edit the GitHub Release to add a changelog and release summary and publish the release.
-6. The new version will be published to our release feed automatically when the GitHub Release is published. If the build is a prerelease, it will only release to users subscribed to the `beta` channel. If it is a general release, it will be released to all users.
+   ```sh
+   go test ./...
+   npm test -- --run
+   npx tsc --noEmit
+   npm run build:prod
+   npm run typecheck --workspace docs
+   npm run build --workspace docs
+   git diff --check
+   ```
 
-## Details
+4. Build the unsigned Apple Silicon DMG from the prospective release commit with `task package -- --mac dmg --arm64`. Inspect the packaged About/version metadata and smoke-test onboarding, SSH workspace switching, the explorer/editor, terminal override, and telemetry opt-in/opt-out.
+5. Only after validation, create an annotated release tag on that exact commit and publish matching artifacts and notes in [clusterdeck/releases](https://github.com/clusterdeck/releases), the artifact repository used by the Homebrew cask. Clusterdeck artifacts are currently unsigned and not notarized; do not claim otherwise.
+6. Update [clusterdeck/homebrew-tap](https://github.com/clusterdeck/homebrew-tap) with the exact version, artifact URL, and checksum, then test tap refresh, install, and upgrade.
 
-### Bump Version workflow
-
-All releases start by first bumping the package version and creating a new Git tag. We have a workflow set up to automate this.
-
-To run it, trigger a new run of the [Bump Version workflow](https://github.com/wavetermdev/waveterm/actions/workflows/bump-version.yml). When triggering the run, you will be prompted to select a version bump type, either `none`, `patch`, `minor`, or `major`, and whether the version is prerelease or not. This determines how much the version number is incremented.
-
-See [`version.cjs`](./version.cjs) for more details on how this works.
-
-Once the tag has been created, a new [Build Helper](#build-helper-workflow) run will be automatically queued to generate the artifacts.
-
-### Build Helper workflow
-
-Our release builds are managed by the [Build Helper workflow](https://github.com/wavetermdev/waveterm/actions/workflows/build-helper.yml).
-
-Under the hood, this will call the `package` task in [`Taskfile.yml`](./Taskfile.yml), which will build the `wavesrv` and `wsh` binaries, then the frontend and Electron codebases using Vite, then it will call `electron-builder` to generate the distributable app packages. The configuration for `electron-builder` is defined in [`electron-builder.config.cjs`](./electron-builder.config.cjs).
-
-This will also sign and notarize the macOS app packages and sign the Windows packages.
-
-Once a build is complete, the artifacts will be placed in `s3://waveterm-github-artifacts/staging-w2/<version>`. A new draft release will be created on GitHub and the artifacts will be uploaded there too.
-
-### Testing new releases
-
-The [Build Helper workflow](https://github.com/wavetermdev/waveterm/actions/workflows/build-helper.yml). creates a draft release on GitHub once it completes. You can find this on the [Releases page](https://github.com/wavetermdev/waveterm/releases) of the repo. You can use this to download the build artifacts for testing.
-
-You can also use the `artifacts:download` task in the [`Taskfile.yml`](./Taskfile.yml) to download all the artifacts for a build. You will need to configure an AWS CLI profile with write permissions for the S3 buckets in order for the script to work. You should invoke the tasks as follows:
-
-```bash
-task artifacts:download:<version> -- --profile <aws-profile>
-```
-
-### Publishing a release
-
-Once you have validated that the new release is ready, navigate to the [Releases page](https://github.com/wavetermdev/waveterm/releases) and click on the draft release for the version that is ready. Click the pencil button in the top right corner to edit the draft. Use this opportunity to adjust the release notes as needed. When you are ready to publish, scroll all the way to the bottom of the release editor and click Publish. This will kick off the [Publish Release workflow](https://github.com/wavetermdev/waveterm/actions/workflows/publish-release.yml), at which point all further tasks are automated and hands-off.
-
-### Automatic updates
-
-Thanks to [`electron-updater`](https://www.electron.build/auto-update.html), we are able to provide automatic app updates for macOS, Linux, and Windows, as long as the app was distributed as a DMG, AppImage, RPM, or DEB file (all Windows targets support auto updates).
-
-With each release, YAML files will be produced that point to the newest release for the current channel. These also include file sizes and checksums to aid in validating the packages. The app will check these files in our S3 bucket every hour to see if a new version is available.
-
-#### Update channels
-
-We utilize update channels to roll out beta and stable releases. These are determined based on the package versioning [described above](#bump-version-workflow). Users can select their update channel using the `autoupdate:channel` setting in Wave. See [here](https://www.electron.build/tutorials/release-using-channels.html) for more information.
-
-### Package Managers
-
-We currently publish to Homebrew (macOS), WinGet (Windows), Chocolatey (Windows), and Snap (Linux or macOS).
-
-#### Homebrew
-
-Homebrew maintains an Autobump bot that regularly checks our release feed for new general releases and updates our Cask automatically. You can find the configuration for our cask [here](https://github.com/Homebrew/homebrew-cask/blob/master/Casks/w/wave.rb). We added ourselves to [this list](https://github.com/Homebrew/homebrew-cask/blob/master/.github/autobump.txt) to indicate that we want the bot to autobump us.
-
-#### WinGet
-
-WinGet uses PRs to manage version bumps for packages. They ship a tool called [`wingetcreate`](https://github.com/microsoft/winget-create) which automates most of this process. We run this tool in our [Publish Release workflow](https://github.com/wavetermdev/waveterm/actions/workflows/publish-release.yml) for all general releases. This publishes a PR to their repository using our [Wave Release Bot](https://github.com/wave-releaser) service account. They usually pick up these changes within a day.
-
-#### Chocolatey
-
-Chocolatey maintains a [PowerShell module](https://github.com/chocolatey-community/chocolatey-au) for publishing releases to their system. We have a separate repository which contains this script and the workflow to run it: [wavetermdev/chocolatey](https://github.com/wavetermdev/chocolatey). This workflow gets run once a day. It checks whether there are new changes, validates the SHA and that the package can install, and then pushes the new version to Chocolatey. It then commits the updated package spec back to our repository. They usually take up to two weeks to accept our updates.
-
-#### Snap
-
-Snap maintains [snapcraft](https://snapcraft.io/docs/snapcraft) to build and publish Snaps to the Snap Store. We run this tool in our [Publish Release workflow](https://github.com/wavetermdev/waveterm/actions/workflows/publish-release.yml) workflow for all beta and general releases. Beta releases publish only to the `beta` channel, while general releases publish to both `beta` and `stable`. These changes are picked up immediately.
-
-### `electron-build` configuration
-
-Most of our configuration is fairly standard. The main exception to this is that we exclude our Go binaries from the ASAR archive that Electron generates. ASAR files cannot be executed by NodeJS because they are not seen as files and therefore cannot be executed via a Shell command. More information can be found [here](https://www.electronjs.org/docs/latest/tutorial/asar-archives#executing-binaries-inside-asar-archive).
-
-We also exclude most of our `node_modules` from packaging, as Vite handles packaging of any dependencies for us. The one exception is `monaco-editor`.
+Do not move or recreate an existing release tag. GitHub Pages deployment and the documentation custom domain have their own workflow and external DNS/TLS prerequisites; see [`docs/README.md`](./docs/README.md).

@@ -145,6 +145,10 @@ func ResolveBlockIdFromPrefix(ctx context.Context, tabId string, blockIdPrefix s
 	return "", fmt.Errorf("widget_id not found: %q", blockIdPrefix)
 }
 
+func noTelemetryValue(telemetryEnabled bool) bool {
+	return !telemetryEnabled
+}
+
 func GoSendNoTelemetryUpdate(telemetryEnabled bool) {
 	go func() {
 		defer func() {
@@ -153,7 +157,7 @@ func GoSendNoTelemetryUpdate(telemetryEnabled bool) {
 		ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancelFn()
 		clientId := wstore.GetClientId()
-		err := wcloud.SendNoTelemetryUpdate(ctx, clientId, !telemetryEnabled)
+		err := wcloud.SendNoTelemetryUpdate(ctx, clientId, noTelemetryValue(telemetryEnabled))
 		if err != nil {
 			log.Printf("[error] sending no-telemetry update: %v\n", err)
 			return

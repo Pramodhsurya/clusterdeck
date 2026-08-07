@@ -4,109 +4,84 @@ id: "keybindings"
 title: "Key Bindings"
 ---
 
-import { Kbd, KbdChord } from "@site/src/components/kbd";
-import { PlatformProvider, PlatformSelectorButton } from "@site/src/components/platformcontext";
-import { VersionBadge } from "@site/src/components/versionbadge";
+# Key bindings
 
-<PlatformProvider>
+Clusterdeck's documented shortcuts use macOS `Cmd` notation. Some actions vary by focused view; the application menu and `wsh --help` are the installed-version authorities.
 
-Here's the set of default keybindings available in Wave. It is split into sections.
-Some keybindings are always active. Others are only active for certain types of blocks.
+## Global and layout
 
-Note that these are the MacOS keybindings (they use "Cmd"). For Windows and Linux,
-replace "Cmd" with "Alt" (note that "Ctrl" is "Ctrl" on both Mac, Windows, and Linux).
+| Shortcut | Action |
+|---|---|
+| `Cmd+Shift+N` | New window |
+| `Cmd+N` | Create the configured default block (a terminal by default) |
+| `Cmd+T` | New tab |
+| `Cmd+W` | Close the focused block; the pinned editor is protected |
+| `Cmd+Shift+W` | Close the tab |
+| `Cmd+1` … `Cmd+9` | Select a connection workspace from the rail |
+| `Cmd+D` / `Cmd+Shift+D` | Split with a new block horizontally/vertically |
+| `Ctrl+Shift+S`, then an arrow | Split above, below, left, or right |
+| `Cmd+[` / `Cmd+]` | Previous/next tab |
+| `Cmd+M` | Magnify or restore the focused block |
+| `Cmd+I` | Refocus the current block |
+| `Ctrl+Shift` | Show block numbers |
+| `Ctrl+Shift+1` … `Ctrl+Shift+9` | Focus a numbered block |
+| `Ctrl+Shift+Arrow` or `Ctrl+Shift+H/J/K/L` | Move focus among blocks |
+| `Ctrl+Shift+X` | Replace an ordinary focused block with the launcher |
+| `Ctrl+Shift+I` | Toggle terminal multi-input when multiple terminals exist |
+| `F2` | Rename the current tab |
+| `Cmd+F` | Search the focused supported view |
+| `Cmd++` / `Cmd+-` / `Cmd+0` | Zoom the application in/out or reset zoom |
+| `Cmd+Shift+R` | Refresh the UI |
 
-Chords are shown with a + between the keys. You have 2 seconds to hit the 2nd chord key after typing the first key. Hitting Escape after an initial chord key will always be a no-op.
+The designated editor cannot be closed or replaced through protected layout shortcuts. `app:disablectrlshiftarrows` disables directional block navigation; `app:disablectrlshiftdisplay` hides the overlay.
 
-## Global Keybindings
+## Explorer and file preview
 
-<PlatformSelectorButton />
-<div style={{ marginBottom: 20 }}></div>
+| Shortcut | Action |
+|---|---|
+| Typed characters | Type-ahead selection in directory trees |
+| `ArrowUp` / `ArrowDown` | Move selection |
+| `PageUp` / `PageDown` | Move by a page where supported |
+| `Enter` | Open the selected file or directory |
+| `Backspace` or `Cmd+ArrowUp` | Go to the parent directory where supported |
+| `Cmd+ArrowLeft` / `Cmd+ArrowRight` | Back/forward |
+| `Cmd+O` | Open a path |
+| `Cmd+E` | Toggle preview/edit for supported files |
+| `Cmd+S` | Save in an editable preview or editor |
+| `Cmd+R` | Revert in an editable preview |
+| `Escape` | Close search/filter UI |
 
-| Key                                               | Function                                                                                                                                               |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| <Kbd k="Cmd:t"/>                                  | Open a new tab                                                                                                                                         |
-| <Kbd k="Cmd:n"/>                                  | Open a new block (defaults to a terminal block with the same connection and working directory). Switch to launcher using `app:defaultnewblock` setting |
-| <Kbd k="Cmd:d"/>                                  | Split horizontally, open a new block to the right                                                                                                      |
-| <Kbd k="Cmd:Shift:d"/>                            | Split vertically, open a new block below                                                                                                               |
-| <KbdChord karr={["Ctrl:Shift:s", "ArrowUp"]}/>    | Split vertically, open a new block above                                                                                                               |
-| <KbdChord karr={["Ctrl:Shift:s", "ArrowDown"]}/>  | Split vertically, open a new block below                                                                                                               |
-| <KbdChord karr={["Ctrl:Shift:s", "ArrowLeft"]}/>  | Split horizontally, open a new block to the left                                                                                                       |
-| <KbdChord karr={["Ctrl:Shift:s", "ArrowRight"]}/> | Split horizontally, open a new block to the right                                                                                                      |
-| <Kbd k="Cmd:Shift:n"/>                            | Open a new window                                                                                                                                      |
-| <Kbd k="Cmd:w"/>                                  | Close the current block                                                                                                                                |
-| <Kbd k="Cmd:Shift:w"/>                            | Close the current tab                                                                                                                                  |
-| <Kbd k="Cmd:m"/>                                  | Magnify / Un-Magnify the current block                                                                                                                 |
-| <Kbd k="Cmd:g"/>                                  | Open the "connection" switcher                                                                                                                         |
-| <Kbd k="Cmd:i"/>                                  | Refocus the current block (useful if the block has lost input focus)                                                                                   |
-| <Kbd k="Ctrl:Shift"/>                             | Show block numbers                                                                                                                                     |
-| <Kbd k="Ctrl:Shift:1-9"/>                         | Switch to block number                                                                                                                                 |
-| <Kbd k="Ctrl:Shift:Arrows"/> / <Kbd k="Ctrl:Shift:h/j/k/l"/> | Move left, right, up, down between blocks                                                                                                              |
-| <Kbd k="Ctrl:Shift:x"/>                           | Replace the current block with a launcher block                                                                                                        |
-| <Kbd k="F2"/>                                     | Rename the current tab <VersionBadge version="v0.15" />                                                                                                |
-| <Kbd k="Cmd:1-9"/>                                | Switch to tab number                                                                                                                                   |
-| <Kbd k="Cmd:["/> / <Kbd k="Shift:Cmd:["/>         | Switch tab left                                                                                                                                        |
-| <Kbd k="Cmd:]"/> / <Kbd k="Shift:Cmd:]"/>         | Switch tab right                                                                                                                                       |
-| <Kbd k="Cmd:Ctrl:1-9"/>                           | Switch to workspace number                                                                                                                             |
-| <Kbd k="Cmd:Shift:r"/>                            | Refresh the UI                                                                                                                                         |
-| <Kbd k="Ctrl:Shift:i"/>                           | Toggle terminal multi-input mode                                                                                                                       |
+Explorer file activation routes supported files into Clusterdeck's designated editor at the top of the workspace.
 
-## File Preview Keybindings
+## Web
 
-| Key                                       | Function                                                                                           |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------- |
-| <Kbd k="[text]"/>                         | Any regular character (e.g. "a", "b") will filter the file list                                    |
-| <Kbd k="Escape"/>                         | Clears the filter                                                                                  |
-| <Kbd k="ArrowUp"/> / <Kbd k="ArrowDown"/> | Change file selection up/down                                                                      |
-| <Kbd k="Enter"/>                          | Open the currently selected file/directory                                                         |
-| <Kbd k="Cmd:ArrowUp"/>                    | Move "up" a directory (parent directory)                                                           |
-| <Kbd k="Cmd:ArrowLeft"/>                  | Back, move to the previously selected file/directory                                               |
-| <Kbd k="Cmd:ArrowRight"/>                 | Forward (opposite of back)                                                                         |
-| <Kbd k="Cmd:o"/>                          | Open a new file (accepts relative paths to the current directory)                                  |
-| <Kbd k="Cmd:s"/>                          | When file editor is open, save file                                                                |
-| <Kbd k="Cmd:e"/>                          | For files that can be previewed or edited (markdown, CSVs), switches between preview and edit mode |
-| <Kbd k="Cmd:r"/>                          | When file editor is open, revert changes                                                           |
+| Shortcut | Action |
+|---|---|
+| `Cmd+L` | Focus the URL field |
+| `Cmd+R` | Reload |
+| `Cmd+ArrowLeft` / `Cmd+ArrowRight` | Back/forward |
+| `Cmd+O` | Open a bookmark |
+| `Escape` | Leave URL-field focus or close applicable UI |
 
-## Web Keybindings
+`Cmd+F` uses the web view's find behavior when that view is focused.
 
-| Key                       | Function                                                      |
-| ------------------------- | ------------------------------------------------------------- |
-| <Kbd k="Cmd:l"/>          | Focus the URL input bar                                       |
-| <Kbd k="Escape"/>         | When the URL input bar is focused, will focus the web content |
-| <Kbd k="Cmd:r"/>          | Reload webpage                                                |
-| <Kbd k="Cmd:ArrowLeft"/>  | Back                                                          |
-| <Kbd k="Cmd:ArrowRight"/> | Forward                                                       |
-| <Kbd k="Cmd:f"/>          | Find in webpage                                               |
-| <Kbd k="Cmd:o"/>          | Open a bookmark                                               |
+## Terminal
 
-## Terminal Keybindings
+| Shortcut | Action |
+|---|---|
+| `Ctrl+Shift+C` / `Ctrl+Shift+V` | Copy/paste |
+| `Cmd+K` | Clear terminal |
+| `Cmd+F` | Find in terminal |
+| `Shift+Home` / `Shift+End` | Scroll to top/bottom |
+| `Shift+PageUp` / `Shift+PageDown` | Scroll by a page |
+| `Cmd+Home` / `Cmd+End` | Scroll to top/bottom on macOS |
+| `Cmd+ArrowLeft` / `Cmd+ArrowRight` | Move to beginning/end of line on macOS |
+| `Shift+Enter` | Send the configured Shift+Enter newline sequence |
 
-| Key                     | Function                     |
-| ----------------------- | ---------------------------- |
-| <Kbd k="Ctrl:Shift:c"/> | Copy                         |
-| <Kbd k="Ctrl:Shift:v"/> | Paste                        |
-| <Kbd k="Ctrl:v" mac="N/A" linux="N/A"/> | Paste (Windows Only) |
-| <Kbd k="Cmd:k"/>        | Clear Terminal               |
-| <Kbd k="Cmd:f"/>        | Find in Terminal             |
-| <Kbd k="Shift:Home"/>   | Scroll to top                |
-| <Kbd k="Shift:End"/>    | Scroll to bottom             |
-| <Kbd k="Cmd:Home" windows="N/A" linux="N/A"/>     | Scroll to top (macOS only)   |
-| <Kbd k="Cmd:End" windows="N/A" linux="N/A"/>      | Scroll to bottom (macOS only)|
-| <Kbd k="Cmd:ArrowLeft" windows="N/A" linux="N/A"/> | Move to beginning of line (macOS only) |
-| <Kbd k="Cmd:ArrowRight" windows="N/A" linux="N/A"/> | Move to end of line (macOS only) |
-| <Kbd k="Shift:PageUp"/> | Scroll up one page           |
-| <Kbd k="Shift:PageDown"/>| Scroll down one page        |
+Terminal applications continue to receive ordinary control chords such as `Ctrl+C`. Bracketed paste, Option-as-Meta, and Shift+Enter behavior can be changed in [Configuration](./config).
 
-## Process Viewer Keybindings
+## Process viewer and tab lists
 
-| Key                     | Function                              |
-| ----------------------- | ------------------------------------- |
-| <Kbd k="Space"/>        | Pause / resume live updates           |
-| <Kbd k="Cmd:f"/>        | Open process filter / search          |
-| <Kbd k="Escape"/>       | Close search bar                      |
+The process viewer uses `Space` to pause/resume updates, `Cmd+F` to open filtering, and `Escape` to close it. Tab lists support arrow navigation, `Home`, `End`, `Enter`, and `Space` through their accessible tab controls.
 
-## Customizeable Systemwide Global Hotkey
-
-Wave allows setting a custom global hotkey to focus your most recent window from anywhere in your computer. For more information on this, see [the config docs](./config#customizable-systemwide-global-hotkey).
-
-</PlatformProvider>
+Clusterdeck has no built-in AI shortcut. Keyboard navigation and accessible labels were expanded in 0.1.4; report unreachable controls in [GitHub issues](https://github.com/clusterdeck/app/issues).

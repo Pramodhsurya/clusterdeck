@@ -1,0 +1,59 @@
+name: Docs site
+
+on:
+    pull_request:
+        paths:
+            - "docs/**"
+            - "package.json"
+            - "package-lock.json"
+            - ".github/workflows/deploy-docsite.yml"
+    push:
+        branches: [main]
+        paths:
+            - "docs/**"
+            - "package.json"
+            - "package-lock.json"
+            - ".github/workflows/deploy-docsite.yml"
+    workflow_dispatch:
+
+permissions:
+    contents: read
+
+concurrency:
+    group: pages-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: npm
+            - run: npm ci
+            - run: npm run typecheck --workspace docs
+            - run: npm run build --workspace docs
+            - name: Upload Pages artifact
+              if: github.event_name != 'pull_request'
+              uses: actions/upload-pages-artifact@v3
+              with:
+                  path: docs/build
+
+    deploy:
+        if: github.event_name != 'pull_request'
+        needs: build
+        runs-on: ubuntu-latest
+        permissions:
+            pages: write
+            id-token: write
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
+        steps:
+            - name: Configure Pages
+              uses: actions/configure-pages@v5
+            - name: Deploy to GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

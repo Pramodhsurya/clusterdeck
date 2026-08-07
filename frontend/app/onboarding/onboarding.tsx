@@ -151,7 +151,8 @@ const InitPage = ({
                         </div>
                         <div className="flex flex-col items-start gap-1 flex-1">
                             <div className="text-secondary leading-5">
-                                Anonymous usage data helps us improve features you use.
+                                Optional usage telemetry is off by default. If enabled, data is sent to a Command Line
+                                Inc.-operated Wave endpoint; other network features are described in the policy.
                                 <br />
                                 <a
                                     className="text-secondary! hover:underline!"

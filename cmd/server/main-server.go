@@ -150,7 +150,16 @@ func diagnosticLoop() {
 	}
 }
 
+func diagnosticPingEnabled(telemetryEnabled bool, noPingEnv string) bool {
+	return telemetryEnabled && noPingEnv == ""
+}
+
 func sendDiagnosticPing() bool {
+	usageTelemetry := telemetry.IsTelemetryRecordingEnabled()
+	if !diagnosticPingEnabled(usageTelemetry, os.Getenv("WAVETERM_NOPING")) {
+		return false
+	}
+
 	ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFn()
 
@@ -160,7 +169,6 @@ func sendDiagnosticPing() bool {
 		return false
 	}
 	clientId := wstore.GetClientId()
-	usageTelemetry := telemetry.IsTelemetryEnabled()
 	wcloud.SendDiagnosticPing(ctx, clientId, usageTelemetry)
 	return true
 }
@@ -172,22 +180,32 @@ func setupTelemetryConfigHandler() {
 	}
 	currentConfig := watcher.GetFullConfig()
 	currentTelemetryEnabled := currentConfig.Settings.TelemetryEnabled
+	ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+	err := telemetry.ApplyTelemetryConsent(ctx, currentTelemetryEnabled)
+	cancelFn()
+	if err != nil {
+		log.Printf("error initializing telemetry consent; recording remains disabled: %v\n", err)
+		currentTelemetryEnabled = false
+	}
 
 	watcher.RegisterUpdateHandler(func(newConfig wconfig.FullConfigType) {
 		newTelemetryEnabled := newConfig.Settings.TelemetryEnabled
-		if newTelemetryEnabled != currentTelemetryEnabled {
-			currentTelemetryEnabled = newTelemetryEnabled
-			wcore.GoSendNoTelemetryUpdate(newTelemetryEnabled)
+		if newTelemetryEnabled == currentTelemetryEnabled {
+			return
 		}
+		ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
+		err := telemetry.ApplyTelemetryConsent(ctx, newTelemetryEnabled)
+		cancelFn()
+		if err != nil {
+			log.Printf("error applying telemetry consent; recording remains disabled: %v\n", err)
+			return
+		}
+		currentTelemetryEnabled = newTelemetryEnabled
+		wcore.GoSendNoTelemetryUpdate(newTelemetryEnabled)
 	})
 }
 
 func panicTelemetryHandler(panicName string) {
-	activity := wshrpc.ActivityUpdate{NumPanics: 1}
-	err := telemetry.UpdateActivity(context.Background(), activity)
-	if err != nil {
-		log.Printf("error updating activity (panicTelemetryHandler): %v\n", err)
-	}
 	telemetry.RecordTEvent(context.Background(), telemetrydata.MakeTEvent("debug:panic", telemetrydata.TEventProps{
 		PanicType: panicName,
 	}))
@@ -197,9 +215,6 @@ func sendTelemetryWrapper() {
 	defer func() {
 		panichandler.PanicHandler("sendTelemetryWrapper", recover())
 	}()
-	ctx, cancelFn := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancelFn()
-	beforeSendActivityUpdate(ctx)
 	clientId := wstore.GetClientId()
 	err := wcloud.SendAllTelemetry(clientId)
 	if err != nil {
@@ -262,34 +277,12 @@ func updateTelemetryCountsLoop() {
 	}
 }
 
-func beforeSendActivityUpdate(ctx context.Context) {
-	activity := wshrpc.ActivityUpdate{}
-	activity.NumTabs, _ = wstore.DBGetCount[*waveobj.Tab](ctx)
-	activity.NumBlocks, _ = wstore.DBGetCount[*waveobj.Block](ctx)
-	activity.Blocks, _ = wstore.DBGetBlockViewCounts(ctx)
-	activity.NumWindows, _ = wstore.DBGetCount[*waveobj.Window](ctx)
-	activity.NumSSHConn = conncontroller.GetNumSSHHasConnected()
-	activity.NumWSLConn = wslconn.GetNumWSLHasConnected()
-	activity.NumWSNamed, activity.NumWS, _ = wstore.DBGetWSCounts(ctx)
-	err := telemetry.UpdateActivity(ctx, activity)
-	if err != nil {
-		log.Printf("error updating before activity: %v\n", err)
-	}
-}
-
 func startupActivityUpdate(firstLaunch bool) {
 	defer func() {
 		panichandler.PanicHandler("startupActivityUpdate", recover())
 	}()
 	ctx, cancelFn := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancelFn()
-	activity := wshrpc.ActivityUpdate{Startup: 1}
-	err := telemetry.UpdateActivity(ctx, activity) // set at least one record into activity (don't use go routine wrap here)
-	if err != nil {
-		log.Printf("error updating startup activity: %v\n", err)
-	}
-	autoUpdateChannel := telemetry.AutoUpdateChannel()
-	autoUpdateEnabled := telemetry.IsAutoUpdateEnabled()
 	shellType, shellVersion, shellErr := shellutil.DetectShellTypeAndVersion()
 	if shellErr != nil {
 		shellType = "error"
@@ -320,8 +313,6 @@ func startupActivityUpdate(firstLaunch bool) {
 			ClientIsDev:         wavebase.IsDevMode(),
 			ClientPackageType:   wavebase.ClientPackageType(),
 			ClientMacOSVersion:  wavebase.ClientMacOSVersion(),
-			AutoUpdateChannel:   autoUpdateChannel,
-			AutoUpdateEnabled:   autoUpdateEnabled,
 			LocalShellType:      shellType,
 			LocalShellVersion:   shellVersion,
 			SettingsTransparent: fullConfig.Settings.WindowTransparent,
@@ -332,7 +323,7 @@ func startupActivityUpdate(firstLaunch bool) {
 		props.AppFirstLaunch = true
 	}
 	tevent := telemetrydata.MakeTEvent("app:startup", props)
-	err = telemetry.RecordTEvent(ctx, tevent)
+	err := telemetry.RecordTEvent(ctx, tevent)
 	if err != nil {
 		log.Printf("error recording startup event: %v\n", err)
 	}
@@ -341,12 +332,7 @@ func startupActivityUpdate(firstLaunch bool) {
 func shutdownActivityUpdate() {
 	ctx, cancelFn := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancelFn()
-	activity := wshrpc.ActivityUpdate{Shutdown: 1}
-	err := telemetry.UpdateActivity(ctx, activity) // do NOT use the go routine wrap here (this needs to be synchronous)
-	if err != nil {
-		log.Printf("error updating shutdown activity: %v\n", err)
-	}
-	err = telemetry.TruncateActivityTEventForShutdown(ctx)
+	err := telemetry.TruncateActivityTEventForShutdown(ctx)
 	if err != nil {
 		log.Printf("error truncating activity t-event for shutdown: %v\n", err)
 	}

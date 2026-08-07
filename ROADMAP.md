@@ -13,12 +13,10 @@ Clusterdeck is **macOS-first** (Apple Silicon), and is intentionally a leaner
 shell + editor + explorer. Several Wave subsystems that don't fit that
 identity have been **removed** rather than kept-around-in-a-disabled-state:
 
-- ❌ Wave AI chat (the `pkg/aiusechat/` subsystem, including the
-  `waveai.json` schema and the in-app AI toggle).
-- ❌ `k9s` / `lazygit` / `htop` app widgets (the `tsunami` widget launcher
-  that backed them).
-
-Both removals happened in v0.1.3.
+- ❌ Wave AI chat (the former `pkg/aiusechat/` subsystem) was removed for v0.1.4.
+- ❌ The `k9s` and `lazygit` app launchers and their Kubernetes launcher code
+  were removed for v0.1.4.
+- ✅ The simple `htop` command widget remains and runs in a login shell.
 
 ## IDE layout
 
@@ -45,8 +43,10 @@ Both removals happened in v0.1.3.
 ## Connections
 
 - ✅ Shell connections rail (vertical, collapsible; status dots;
-  `⌘1–⌘n` hotkeys; per-connection workspace).
-- ✅ SSH-config auto-discovery into connection workspaces
+  `⌘1–⌘n` hotkeys). Selecting a rail connection explicitly creates or restores
+  its workspace; SSH-config discovery does not automatically convert every host
+  into a workspace.
+- ✅ SSH-config auto-discovery into the connection list
   (`pkg/clusterdeck/sshsync.go`).
 - ✅ Per-terminal connection override (a block can opt out of the
   rail-bound connection).
@@ -58,9 +58,9 @@ Both removals happened in v0.1.3.
 
 ## Kubernetes integration (post-removal)
 
-The k9s/lazygit app widgets were removed in 0.1.3 because they were
-Waves-era app-launcher wrappers that didn't fit Clusterdeck's leaner
-identity. If we add Kubernetes support later, it will be native
+The k9s/lazygit app widgets were removed after 0.1.3 for the 0.1.4 line
+because they were Wave-era app-launcher wrappers that didn't fit Clusterdeck's
+leaner identity. The login-shell htop command widget remains. If we add Kubernetes support later, it will be native
 (in-cluster via `kubectl` exec) rather than a launcher widget.
 
 - 🔷 Read-only `kubectl get` output pane (per-namespace) bound to the

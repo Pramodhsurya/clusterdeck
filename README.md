@@ -29,8 +29,9 @@ A mockup per feature (animated versions in
 
 - **Shell connections rail** — a vertical, collapsible workspace switcher with status
   dots and `⌘1–⌘n` hotkeys; each connection is a saved workspace.
-- **Connection = workspace** — new terminals, the editor, and the explorer all bind to
-  the active connection; no per-block connection picker.
+- **Connection = workspace** — new terminals, the editor, and the explorer default to
+  the active workspace connection. An individual terminal can override its connection
+  without changing the explorer, editor, or other terminals.
 - **Full-height file explorer** — a VS Code–style tree over SFTP with an open-editors
   list, git decorations, and single-click open.
 - **Routed editor** — clicking a file opens it in one designated Monaco editor pane
@@ -116,8 +117,9 @@ terminal — please check it out, and consider
 [sponsoring the upstream project](https://github.com/sponsors/wavetermdev).
 
 - **Upstream:** https://github.com/wavetermdev/waveterm
-- **License:** Apache License 2.0 — Wave's original [`LICENSE`](./LICENSE) and
-  [`NOTICE`](./NOTICE) are preserved unmodified at the repo root.
+- **License:** Apache License 2.0 — the upstream [`LICENSE`](./LICENSE) is preserved.
+  [`NOTICE`](./NOTICE) retains the upstream Command Line Inc. attribution and adds the
+  Clusterdeck derivative-work notice.
 - **What we changed:** every substantive modification is recorded in
   [`CHANGES.md`](./CHANGES.md), per Apache-2.0 §4(b). Third-party dependency licenses are
   listed in [`ACKNOWLEDGEMENTS.md`](./ACKNOWLEDGEMENTS.md).
@@ -125,6 +127,14 @@ terminal — please check it out, and consider
 Clusterdeck is an independent project. It is **not affiliated with, sponsored by, or
 endorsed by Command Line Inc.** "Wave" and "Wave Terminal" are names of the upstream
 project and are used here only to credit and identify it.
+
+## Privacy and network access
+
+Usage telemetry and its diagnostic ping are off by default. Clusterdeck records no
+telemetry events before opt-in and hard-disables the inherited Wave updater. See
+[`PRIVACY.md`](./PRIVACY.md) for event-schema links, transition and ping payloads,
+controls, local cleanup behavior, recipients, and operator separation. Upgrade the app
+through Homebrew or a verified artifact from `clusterdeck/releases`.
 
 ## License
 

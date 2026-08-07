@@ -180,7 +180,7 @@ function makeAppMenuItems(webContents: electron.WebContents): Electron.MenuItemC
             },
         },
         {
-            label: "Check for Updates",
+            label: "Update with Homebrew",
             click: () => {
                 fireAndForget(() => updater?.checkForUpdates(true));
             },

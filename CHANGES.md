@@ -1,8 +1,8 @@
 # Changes from Wave Terminal
 
 Clusterdeck is a derivative work of [Wave Terminal](https://github.com/wavetermdev/waveterm)
-(Apache License 2.0, © Command Line Inc.). Wave's original `LICENSE` and `NOTICE` files are
-preserved unmodified at the repo root.
+(Apache License 2.0, © Command Line Inc.). Wave's original `LICENSE` is preserved;
+`NOTICE` retains the upstream attribution and adds Clusterdeck's derivative-work notice.
 
 Fork point: the merge-base with upstream `main` (July 2026) — find it with
 `git merge-base HEAD upstream/main`. Clusterdeck's commit history was rewritten once
@@ -14,6 +14,15 @@ preserved so upstream changes can still be merged or cherry-picked.
 
 This file records every substantive change made to the Wave Terminal codebase, per
 Apache-2.0 §4(b). It is updated as changes land.
+
+### release/0.1.4-consistency (2026-08-05)
+
+- Corrected immutable 0.1.2/0.1.3 release history and added the post-0.1.3 0.1.4 notes.
+- Aligned the root manifest and lockfile at `clusterdeck@0.1.4` and renamed the docs workspace to `clusterdeck-docs`.
+- Made telemetry and the diagnostic ping opt-in, made consent non-retroactive by purging pre-consent queues, removed dead legacy activity collection, and added focused policy tests.
+- Hard-disabled the inherited Wave updater/feed and obsolete Wave artifact-publishing tasks; Clusterdeck updates use Homebrew and `clusterdeck/releases`.
+- Replaced inherited Wave product documentation and deployment claims with macOS-first Clusterdeck docs, strict Docusaurus checks, and a GitHub Pages workflow.
+- Corrected `NOTICE` attribution prose by removing the obsolete AI endpoint statement while retaining upstream attribution.
 
 ### feat/rebrand-icons (2026-07-04)
 
@@ -472,8 +481,9 @@ integration.
 
 - **Wave-AI subsystem removed.** The chat backend, schema, UI, state plumbing,
   and desktop bridge were deleted.
-- **k9s / lazygit app widgets removed.** The launcher, controller, widget
-  configuration, and related `k9s`/`lazygit`/`htop` entries were deleted.
+- **k9s / lazygit app widgets removed.** The launcher, controller, and related
+  `k9s`/`lazygit` entries were deleted. The standalone `htop` command widget was
+  retained and continues to run through a login shell.
 - **Layout cleanup.** Follow-up work removed the obsolete AI side-panel state
   and kept the editor pinned at the top of the workspace.
 
