@@ -598,3 +598,32 @@ tasks:
         desc: Start the Go documentation server for the tsunami module
         cmd: $(go env GOPATH)/bin/pkgsite -http=:6060
         dir: tsunami
+
+    verify:clusterdeck:
+        desc: Run the static Clusterdeck verifier (CD-* automated checks). Pass --ci for strict mode and --base-ref <ref> for the diff-based secret scan.
+        cmd: bash scripts/verify-clusterdeck.sh {{.CLI_ARGS}}
+
+    test:verify:
+        desc: Run the bash regression tests for scripts/verify-clusterdeck.sh.
+        cmd: bash scripts/tests/verify-clusterdeck.test.sh
+
+    test:frontend:
+        desc: Run the Vitest suite in non-watch mode.
+        cmd: npm test -- --run
+
+    test:go:
+        desc: Run the Go test suite.
+        cmd: go test ./...
+
+    check:docs:
+        desc: Typecheck and build the public docs site.
+        cmds:
+            - npm run typecheck --workspace docs
+            - npm run build --workspace docs
+
+    build:ci:
+        desc: Build the frontend and Go binaries for CI/release gates.
+        cmds:
+            - npm run build:prod
+            - cmd: go build ./cmd/server ./cmd/wsh
+              ignore_error: true
