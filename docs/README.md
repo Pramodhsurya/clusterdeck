@@ -34,11 +34,11 @@ The build output is `docs/build`. Broken routes, anchors, and Markdown links fai
 
 [`.github/workflows/deploy-docsite.yml`](../.github/workflows/deploy-docsite.yml) validates docs on pull requests and deploys `docs/build` from `main` using the official GitHub Pages actions. Repository administrators must separately:
 
-1. Select **GitHub Actions** as the Pages source for `clusterdeck/app`.
+1. Select **GitHub Actions** as the Pages source for `Pramodhsurya/clusterdeck`.
 2. Configure and verify `docs.clusterdeck.app` as the custom domain.
 3. Create the DNS CNAME using the exact Pages target shown by GitHub (normally `clusterdeck.github.io`).
 4. Wait for DNS propagation and certificate issuance, then enforce HTTPS and verify the live routes.
-5. Make `clusterdeck/app`, `clusterdeck/releases`, and `clusterdeck/homebrew-tap` publicly readable, or replace public documentation links with an owner-approved public destination. Repository links are not treated as live merely because they exist in source.
+5. Make `Pramodhsurya/clusterdeck` and `Pramodhsurya/homebrew-tap` publicly readable, or replace public documentation links with an owner-approved public destination. Repository links are not treated as live merely because they exist in source.
 
 Because `.app` is HSTS-preloaded, DNS without a valid HTTPS certificate is not a usable placeholder.
 

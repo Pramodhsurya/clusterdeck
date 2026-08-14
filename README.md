@@ -50,7 +50,7 @@ Clusterdeck is **macOS-first** (Apple Silicon). Recommended path: Homebrew.
 **1. Add the Clusterdeck tap** (so Homebrew trusts the source):
 
 ```sh
-brew tap clusterdeck/tap
+brew tap pramodhsurya/tap
 ```
 
 **2. Install the app** (no admin/sudo needed):
@@ -76,7 +76,7 @@ Apple yet, so Gatekeeper may show *"Clusterdeck" Not Opened*. Clear it once, eit
   ```
 
 Only do this for a build from clusterdeck's own
-[tap](https://github.com/clusterdeck/homebrew-tap) /
+[tap](https://github.com/Pramodhsurya/homebrew-tap) /
 [releases](https://github.com/Pramodhsurya/clusterdeck/releases) — it bypasses a real macOS security
 check, so only trust it for a source you trust. Full notice and details in [`INSTALL.md`](INSTALL.md).
 
@@ -90,8 +90,8 @@ brew upgrade --cask clusterdeck
 If it's still not on the latest version, force a fresh pull of the tap:
 
 ```sh
-brew untap clusterdeck/tap
-brew tap clusterdeck/tap
+brew untap pramodhsurya/tap
+brew tap pramodhsurya/tap
 brew reinstall --cask clusterdeck
 ```
 

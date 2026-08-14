@@ -67,6 +67,6 @@ Clusterdeck does not use the inherited Wave signing, notarization, S3, or multi-
 
 4. Build the unsigned Apple Silicon DMG from the prospective release commit with `task package -- --mac dmg --arm64`. Inspect the packaged About/version metadata and smoke-test onboarding, SSH workspace switching, the explorer/editor, terminal override, and telemetry opt-in/opt-out.
 5. Only after validation, create an annotated release tag on that exact commit and publish matching artifacts and notes as a [GitHub Release](https://github.com/Pramodhsurya/clusterdeck/releases) on this repo, used by the Homebrew cask. Clusterdeck artifacts are currently unsigned and not notarized; do not claim otherwise.
-6. Update [clusterdeck/homebrew-tap](https://github.com/clusterdeck/homebrew-tap) with the exact version, artifact URL, and checksum, then test tap refresh, install, and upgrade.
+6. Update [Pramodhsurya/homebrew-tap](https://github.com/Pramodhsurya/homebrew-tap) with the exact version, artifact URL, and checksum, then test tap refresh, install, and upgrade.
 
 Do not move or recreate an existing release tag. GitHub Pages deployment and the documentation custom domain have their own workflow and external DNS/TLS prerequisites; see [`docs/README.md`](./docs/README.md).

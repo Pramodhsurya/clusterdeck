@@ -37,9 +37,9 @@ xattr -dr com.apple.quarantine ~/Applications/Clusterdeck.app
 **Open** in the dialog. Only needed once per install/update.
 
 **Only do this for a build from an official source** —
-[`clusterdeck/homebrew-tap`](https://github.com/clusterdeck/homebrew-tap),
-[`clusterdeck/releases`](https://github.com/clusterdeck/releases), or one you built
-yourself from [`clusterdeck/app`](https://github.com/clusterdeck/app). Clearing the
+[`Pramodhsurya/homebrew-tap`](https://github.com/Pramodhsurya/homebrew-tap),
+[`Pramodhsurya/clusterdeck` releases](https://github.com/Pramodhsurya/clusterdeck/releases), or one you built
+yourself from [`Pramodhsurya/clusterdeck`](https://github.com/Pramodhsurya/clusterdeck). Clearing the
 quarantine flag bypasses a real macOS security check, so only do it for a binary whose
 origin you trust — never for a `.app` sent to you directly or downloaded from an
 unfamiliar link. See [`SECURITY.md`](SECURITY.md) to report a vulnerability.
@@ -49,7 +49,7 @@ unfamiliar link. See [`SECURITY.md`](SECURITY.md) to report a vulnerability.
 ## Option A — Homebrew (recommended)
 
 ```sh
-brew tap clusterdeck/tap
+brew tap pramodhsurya/tap
 brew install --appdir=~/Applications --cask clusterdeck
 ```
 
@@ -76,7 +76,7 @@ Produces `Clusterdeck.app` yourself, which you run like any other macOS app.
 
 ```sh
 # 1. clone
-git clone https://github.com/clusterdeck/app.git clusterdeck
+git clone https://github.com/Pramodhsurya/clusterdeck.git clusterdeck
 cd clusterdeck
 
 # 2. install dependencies (JS + Go)
@@ -106,7 +106,7 @@ reads config from `~/.config/clusterdeck`. (Running via `task dev` instead uses
 Runs the app straight from the repo with hot-reload — no install step.
 
 ```sh
-git clone https://github.com/clusterdeck/app.git clusterdeck
+git clone https://github.com/Pramodhsurya/clusterdeck.git clusterdeck
 cd clusterdeck
 task init
 task dev          # launches the app; frontend changes hot-reload (⌘R)
@@ -131,15 +131,15 @@ brew upgrade --cask clusterdeck
 ```
 
 Run `brew update` first — Homebrew only re-fetches third-party taps (like
-`clusterdeck/tap`) when you update, not on every `install`/`upgrade`, so skipping it
+`pramodhsurya/tap`) when you update, not on every `install`/`upgrade`, so skipping it
 can leave you stuck installing an older version even after a new one is released.
 
 If you're still not getting the latest version after that, force a fresh pull of the
 tap itself:
 
 ```sh
-brew untap clusterdeck/tap
-brew tap clusterdeck/tap
+brew untap pramodhsurya/tap
+brew tap pramodhsurya/tap
 brew reinstall --cask clusterdeck
 ```
 
