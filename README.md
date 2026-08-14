@@ -77,7 +77,7 @@ Apple yet, so Gatekeeper may show *"Clusterdeck" Not Opened*. Clear it once, eit
 
 Only do this for a build from clusterdeck's own
 [tap](https://github.com/clusterdeck/homebrew-tap) /
-[releases](https://github.com/clusterdeck/releases) — it bypasses a real macOS security
+[releases](https://github.com/Pramodhsurya/clusterdeck/releases) — it bypasses a real macOS security
 check, so only trust it for a source you trust. Full notice and details in [`INSTALL.md`](INSTALL.md).
 
 ### Upgrading
@@ -98,7 +98,7 @@ brew reinstall --cask clusterdeck
 Or build from the repo:
 
 ```sh
-git clone https://github.com/clusterdeck/app.git clusterdeck && cd clusterdeck
+git clone https://github.com/Pramodhsurya/clusterdeck.git clusterdeck && cd clusterdeck
 task init                                   # install deps (needs node, go, go-task)
 task package -- --mac dir --arm64           # build make/mac-arm64/Clusterdeck.app
 cp -R make/mac-arm64/Clusterdeck.app ~/Applications/ && \
@@ -134,7 +134,8 @@ Usage telemetry and its diagnostic ping are off by default. Clusterdeck records 
 telemetry events before opt-in and hard-disables the inherited Wave updater. See
 [`PRIVACY.md`](./PRIVACY.md) for event-schema links, transition and ping payloads,
 controls, local cleanup behavior, recipients, and operator separation. Upgrade the app
-through Homebrew or a verified artifact from `clusterdeck/releases`.
+through Homebrew or a verified artifact from this repo's
+[Releases](https://github.com/Pramodhsurya/clusterdeck/releases) page.
 
 ## License
 
